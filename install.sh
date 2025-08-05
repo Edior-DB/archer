@@ -3,7 +3,8 @@
 # Archer - Arch Linux Home PC Transformation Suite
 # Main installer script
 
-set -e
+# Remove set -e temporarily for debugging
+# set -e
 
 
 # Color codes
@@ -337,32 +338,10 @@ run_script() {
         local github_url="$REPO_RAW_URL/install/system/arch-server-setup.sh"
         local temp_file="/tmp/arch-server-setup.sh"
 
-        echo -e "${YELLOW}DEBUG: REPO_RAW_URL = $REPO_RAW_URL${NC}"
-        echo -e "${YELLOW}DEBUG: Full GitHub URL = $github_url${NC}"
-        echo -e "${YELLOW}DEBUG: Temp file path = $temp_file${NC}"
-
-        echo -e "${YELLOW}DEBUG: Testing URL accessibility first...${NC}"
-        if curl -I "$github_url" 2>/dev/null | head -1 | grep -q "200"; then
-            echo -e "${GREEN}DEBUG: URL is accessible${NC}"
-        else
-            echo -e "${RED}DEBUG: URL is NOT accessible${NC}"
-            curl -I "$github_url" 2>&1 | head -5
-        fi
-
-        echo -e "${YELLOW}DEBUG: Attempting download...${NC}"
         if curl -fsSL "$github_url" -o "$temp_file"; then
             chmod +x "$temp_file"
             actual_script_path="$temp_file"
-
-            # Debug: Show what we fetched
-            echo -e "${YELLOW}DEBUG: File size: $(wc -c < "$temp_file") bytes${NC}"
-            echo -e "${YELLOW}DEBUG: First 10 lines of fetched script:${NC}"
-            head -10 "$temp_file" | sed 's/^/  /'
-            echo -e "${YELLOW}DEBUG: Last 5 lines of fetched script:${NC}"
-            tail -5 "$temp_file" | sed 's/^/  /'
-            echo -e "${YELLOW}DEBUG: Script is executable: $(test -x "$temp_file" && echo "YES" || echo "NO")${NC}"
-
-            read -p "Press Enter to continue with execution..."
+            echo -e "${GREEN}Successfully downloaded arch-server-setup.sh ($(wc -c < "$temp_file") bytes)${NC}"
         else
             echo -e "${RED}Failed to fetch arch-server-setup.sh from GitHub${NC}"
             echo -e "${YELLOW}Please check your internet connection${NC}"
@@ -578,9 +557,7 @@ main() {
     # Setup repository on installed systems
     if ! grep -q "archiso" /proc/cmdline 2>/dev/null; then
         setup_archer_repo
-    fi
-
-    # Interactive menu
+    fi    # Interactive menu
     while true; do
         show_menu
 
