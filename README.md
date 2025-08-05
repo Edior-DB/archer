@@ -44,6 +44,18 @@ archer --development     # Complete dev environment
 archer --multimedia      # Complete multimedia setup
 ```
 
+**Hardware Management (Perfect for Upgrades):**
+```bash
+archer --gpu             # Re-detect and install GPU drivers
+archer --wifi            # WiFi setup and network configuration
+```
+
+**Note:** The `archer` command includes sudo privilege checking and is perfect for:
+- 🔧 **Hardware upgrades** (new GPU, WiFi card)
+- 🛠️ **Driver issues** (GPU driver problems, network issues)
+- 📦 **Additional software** (gaming, development, multimedia)
+- ⚙️ **System optimization** (performance tweaks, security)
+
 ## 📁 Project Structure
 
 ```

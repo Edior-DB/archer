@@ -33,7 +33,12 @@ The GPU driver installer now detects virtualization environments:
 
 After base installation and reboot, the `archer` command provides:
 
-### Features
+### Hardware Management
+- **GPU Driver Management**: Re-detect and install optimal drivers (perfect for hardware upgrades)
+- **WiFi Setup**: Network configuration and driver installation
+- **Sudo Privilege Checking**: Ensures user has proper permissions before proceeding
+
+### Software Features
 - Gaming setup (Steam, Lutris, Wine, emulators)
 - Development environment (languages, editors, containers)
 - Multimedia workstation (media apps, codecs, themes)
@@ -43,11 +48,20 @@ After base installation and reboot, the `archer` command provides:
 
 ### Usage
 ```bash
-archer                    # Interactive menu
+archer                    # Interactive menu with hardware management
+archer --gpu             # GPU drivers (hardware upgrades)
+archer --wifi            # WiFi setup and network drivers
 archer --gaming          # Complete gaming setup
 archer --development     # Complete dev environment
 archer --multimedia      # Complete multimedia setup
 ```
+
+### Hardware Upgrade Support
+The `archer` tool is specifically designed to handle:
+- 🔧 **GPU upgrades**: Automatically detects new graphics cards and installs appropriate drivers
+- 📡 **WiFi hardware**: Configures new WiFi cards and network adapters
+- 🛠️ **Driver issues**: Re-runs hardware detection to fix driver problems
+- 🖥️ **Virtualization**: Detects VM environments and installs guest tools
 
 ## Benefits of This Approach
 
