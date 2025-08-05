@@ -78,7 +78,14 @@ interactive_mode() {
         # Live ISO - use pacman directly
         pacman -Sy --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
     elif [[ -f /etc/arch-release ]]; then
-        # Installed Arch - ensure extra repository is enabled and update
+        # Installed Arch - check sudo access first
+        if ! sudo -n true 2>/dev/null; then
+            echo -e "${YELLOW}This script requires sudo access.${NC}"
+            echo -e "${CYAN}Please enter your password when prompted, or run as root.${NC}"
+            echo ""
+        fi
+
+        # Ensure extra repository is enabled and update
         echo -e "${CYAN}Ensuring extra repository is enabled...${NC}"
 
         # Enable extra repository if not already enabled

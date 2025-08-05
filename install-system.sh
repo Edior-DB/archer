@@ -582,7 +582,7 @@ ln -s /usr/share/zoneinfo/${TIMEZONE} /etc/localtime 2>/dev/null || true
 echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
 echo "XKBLAYOUT=${KEYMAP}" >> /etc/vconsole.conf
 
-# Configure sudo
+# Configure sudo - temporarily enable passwordless for installation
 sed -i 's/^# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
 
 # Configure pacman
@@ -783,9 +783,29 @@ systemctl disable dhcpcd.service
 systemctl enable NetworkManager.service
 systemctl enable reflector.timer
 
-# Configure sudo properly
-sed -i 's/^%wheel ALL=(ALL) NOPASSWD: ALL/# %wheel ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
-sed -i 's/^# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/' /etc/sudoers
+# Configure sudo properly for post-installation security
+# Backup sudoers file
+cp /etc/sudoers /etc/sudoers.backup
+
+# Use visudo-safe method to configure wheel group
+# Remove any existing wheel entries to avoid conflicts
+sed -i '/^%wheel/d' /etc/sudoers
+sed -i '/^# %wheel/d' /etc/sudoers
+
+# Add proper wheel group configuration with password requirement
+cat >> /etc/sudoers << 'SUDOERS_EOF'
+
+# User privilege specification
+%wheel ALL=(ALL) ALL
+SUDOERS_EOF
+
+# Verify sudoers file syntax
+if ! visudo -c -f /etc/sudoers; then
+    echo -e "${RED}ERROR: Invalid sudoers configuration, restoring backup${NC}"
+    cp /etc/sudoers.backup /etc/sudoers
+else
+    echo -e "${GREEN}Sudoers configuration verified and applied${NC}"
+fi
 
 EOF
 
