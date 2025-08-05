@@ -337,7 +337,19 @@ run_script() {
         local github_url="$REPO_RAW_URL/install/system/arch-server-setup.sh"
         local temp_file="/tmp/arch-server-setup.sh"
 
-        echo -e "${YELLOW}DEBUG: Fetching from URL: $github_url${NC}"
+        echo -e "${YELLOW}DEBUG: REPO_RAW_URL = $REPO_RAW_URL${NC}"
+        echo -e "${YELLOW}DEBUG: Full GitHub URL = $github_url${NC}"
+        echo -e "${YELLOW}DEBUG: Temp file path = $temp_file${NC}"
+
+        echo -e "${YELLOW}DEBUG: Testing URL accessibility first...${NC}"
+        if curl -I "$github_url" 2>/dev/null | head -1 | grep -q "200"; then
+            echo -e "${GREEN}DEBUG: URL is accessible${NC}"
+        else
+            echo -e "${RED}DEBUG: URL is NOT accessible${NC}"
+            curl -I "$github_url" 2>&1 | head -5
+        fi
+
+        echo -e "${YELLOW}DEBUG: Attempting download...${NC}"
         if curl -fsSL "$github_url" -o "$temp_file"; then
             chmod +x "$temp_file"
             actual_script_path="$temp_file"
