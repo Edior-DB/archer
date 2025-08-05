@@ -16,7 +16,6 @@ REPO_RAW_URL="https://raw.githubusercontent.com/Edior-DB/archer/master"
 
 # Logo
 show_logo() {
-    clear
     echo -e "${BLUE}"
     cat << "LOGOEOF"
  █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
@@ -73,6 +72,10 @@ detect_environment() {
 
 # Interactive mode for direct execution
 interactive_mode() {
+    # Show environment detection first
+    detect_environment
+    echo ""
+
     if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
         # Live ISO as root - offer system installation
         echo -e "${YELLOW}Do you want to proceed with Arch Linux system installation?${NC}"
@@ -98,8 +101,8 @@ interactive_mode() {
         fi
 
     else
-        # Show guidance only
-        detect_environment
+        # Show guidance only - already shown above
+        echo -e "${CYAN}Please follow the instructions above for your environment.${NC}"
     fi
 }
 

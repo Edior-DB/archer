@@ -111,19 +111,23 @@ userinfo_collection() {
 
     # Username
     while true; do
-        read -r -p "Please enter username: " username
-        if [[ "${username,,}" =~ ^[a-z_][a-z0-9_-]*$ ]] && [[ ${#username} -le 32 ]] && [[ ${#username} -ge 1 ]]; then
+        echo -n "Please enter username: "
+        read -r username </dev/tty
+        if [[ -n "$username" ]] && [[ "$username" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] && [[ ${#username} -le 32 ]]; then
             break
         fi
-        echo -e "${RED}Invalid username. Must start with letter/underscore, contain only lowercase letters, numbers, underscore, dash (max 32 chars).${NC}"
+        echo -e "${RED}Invalid username. Must start with letter/underscore, contain only letters, numbers, underscore, dash (max 32 chars).${NC}"
+        echo -e "${YELLOW}Examples: john, user123, my_user, test-user${NC}"
     done
     export USERNAME=$username
 
     # Password
     while true; do
-        read -rs -p "Please enter password: " PASSWORD1
+        echo -n "Please enter password: "
+        read -rs PASSWORD1 </dev/tty
         echo ""
-        read -rs -p "Please re-enter password: " PASSWORD2
+        echo -n "Please re-enter password: "
+        read -rs PASSWORD2 </dev/tty
         echo ""
         if [[ "$PASSWORD1" == "$PASSWORD2" ]]; then
             break
@@ -135,15 +139,12 @@ userinfo_collection() {
 
     # Hostname
     while true; do
-        read -r -p "Please name your machine: " name_of_machine
-        if [[ "${name_of_machine,,}" =~ ^[a-z][a-z0-9.-]*[a-z0-9]$ ]] && [[ ${#name_of_machine} -le 63 ]] && [[ ${#name_of_machine} -ge 2 ]]; then
-            break
-        elif [[ ${#name_of_machine} -eq 1 ]] && [[ "${name_of_machine,,}" =~ ^[a-z]$ ]]; then
+        echo -n "Please name your machine: "
+        read -r name_of_machine </dev/tty
+        if [[ -n "$name_of_machine" ]] && [[ ${#name_of_machine} -le 63 ]]; then
             break
         fi
-        echo -e "${YELLOW}Hostname should start with letter, contain letters/numbers/dots/dashes, end with alphanumeric.${NC}"
-        read -r -p "Use '$name_of_machine' anyway? (y/N): " force
-        [[ "${force,,}" == "y" ]] && break
+        echo -e "${YELLOW}Please enter a valid hostname (1-63 characters).${NC}"
     done
     export NAME_OF_MACHINE=$name_of_machine
 }
@@ -170,9 +171,11 @@ filesystem_selection() {
 # Set LUKS password
 set_luks_password() {
     while true; do
-        read -rs -p "Please enter password for LUKS encryption: " password1
+        echo -n "Please enter password for LUKS encryption: "
+        read -rs password1 </dev/tty
         echo ""
-        read -rs -p "Please re-enter password: " password2
+        echo -n "Please re-enter password: "
+        read -rs password2 </dev/tty
         echo ""
         if [[ "$password1" == "$password2" ]]; then
             export LUKS_PASSWORD="$password1"
@@ -189,11 +192,12 @@ timezone_selection() {
     time_zone="$(curl --fail https://ipapi.co/timezone 2>/dev/null || echo 'UTC')"
     echo -e "${CYAN}System detected your timezone to be '${time_zone}'${NC}"
 
-    read -r -p "Is this correct? (Y/n): " confirm
+    echo -n "Is this correct? (Y/n): "
+    read -r confirm </dev/tty
     case "${confirm,,}" in
         n|no)
             echo -n "Please enter your desired timezone (e.g. Europe/London): "
-            read -r new_timezone
+            read -r new_timezone </dev/tty
             export TIMEZONE=$new_timezone
             ;;
         *)
@@ -523,7 +527,8 @@ EOF
     echo -e "${CYAN} 2. Login as ${USERNAME}${NC}"
     echo -e "${CYAN} 3. Run: curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-archer.sh | bash${NC}"
     echo ""
-    read -p "Press Enter to continue..."
+    echo -n "Press Enter to continue..."
+    read </dev/tty
 }
 
 # Main execution
