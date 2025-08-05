@@ -80,10 +80,6 @@ install_essentials() {
     echo -e "${YELLOW}Updating system packages...${NC}"
     sudo pacman -Syu --noconfirm
 
-    # Install gum for better UX
-    echo -e "${YELLOW}Installing gum for better user experience...${NC}"
-    sudo pacman -S --noconfirm gum || echo -e "${YELLOW}Warning: Could not install gum${NC}"
-
     # Install git if not present
     sudo pacman -S --noconfirm git
 
@@ -320,15 +316,8 @@ run_setup() {
     echo -e "${YELLOW}The 'archer' command is now available for additional setup options.${NC}"
 
     # Ask if user wants to run archer now
-    if command -v gum >/dev/null 2>&1; then
-        if gum confirm "Do you want to run Archer now?"; then
-            exec "$ARCHER_DIR/bin/archer.sh"
-        fi
-    else
-        read -r -p "Do you want to run Archer now? (y/N): " response
-        if [[ "${response,,}" =~ ^(y|yes)$ ]]; then
-            exec "$ARCHER_DIR/bin/archer.sh"
-        fi
+    if gum confirm "Do you want to run Archer now?"; then
+        exec "$ARCHER_DIR/bin/archer.sh"
     fi
 }
 

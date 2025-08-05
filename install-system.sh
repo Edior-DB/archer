@@ -111,9 +111,16 @@ userinfo_collection() {
 
     # Username
     while true; do
-        echo -n "Please enter username: "
-        read -r username </dev/tty
-        if [[ -n "$username" ]] && [[ "$username" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] && [[ ${#username} -le 32 ]]; then
+        username=$(gum input --placeholder "Enter username...")
+
+        # Check if username is empty
+        if [[ -z "$username" ]]; then
+            echo -e "${RED}ERROR! Username cannot be empty.${NC}"
+            continue
+        fi
+
+        # Check username format and length
+        if [[ "$username" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] && [[ ${#username} -le 32 ]]; then
             break
         fi
         echo -e "${RED}Invalid username. Must start with letter/underscore, contain only letters, numbers, underscore, dash (max 32 chars).${NC}"
@@ -123,12 +130,9 @@ userinfo_collection() {
 
     # Password
     while true; do
-        echo -n "Please enter password: "
-        read -rs PASSWORD1 </dev/tty
-        echo ""
-        echo -n "Please re-enter password: "
-        read -rs PASSWORD2 </dev/tty
-        echo ""
+        PASSWORD1=$(gum input --password --placeholder "Enter password...")
+        PASSWORD2=$(gum input --password --placeholder "Re-enter password...")
+
         if [[ "$PASSWORD1" == "$PASSWORD2" ]]; then
             break
         else
@@ -139,8 +143,8 @@ userinfo_collection() {
 
     # Hostname
     while true; do
-        echo -n "Please name your machine: "
-        read -r name_of_machine </dev/tty
+        name_of_machine=$(gum input --placeholder "Enter machine name...")
+
         if [[ -n "$name_of_machine" ]] && [[ ${#name_of_machine} -le 63 ]]; then
             break
         fi
@@ -171,12 +175,9 @@ filesystem_selection() {
 # Set LUKS password
 set_luks_password() {
     while true; do
-        echo -n "Please enter password for LUKS encryption: "
-        read -rs password1 </dev/tty
-        echo ""
-        echo -n "Please re-enter password: "
-        read -rs password2 </dev/tty
-        echo ""
+        password1=$(gum input --password --placeholder "Enter LUKS encryption password...")
+        password2=$(gum input --password --placeholder "Re-enter LUKS password...")
+
         if [[ "$password1" == "$password2" ]]; then
             export LUKS_PASSWORD="$password1"
             break
@@ -192,18 +193,12 @@ timezone_selection() {
     time_zone="$(curl --fail https://ipapi.co/timezone 2>/dev/null || echo 'UTC')"
     echo -e "${CYAN}System detected your timezone to be '${time_zone}'${NC}"
 
-    echo -n "Is this correct? (Y/n): "
-    read -r confirm </dev/tty
-    case "${confirm,,}" in
-        n|no)
-            echo -n "Please enter your desired timezone (e.g. Europe/London): "
-            read -r new_timezone </dev/tty
-            export TIMEZONE=$new_timezone
-            ;;
-        *)
-            export TIMEZONE=$time_zone
-            ;;
-    esac
+    if gum confirm "Is this timezone correct: ${time_zone}?"; then
+        export TIMEZONE=$time_zone
+    else
+        new_timezone=$(gum input --placeholder "Enter your timezone (e.g. Europe/London)...")
+        export TIMEZONE=$new_timezone
+    fi
     echo -e "${GREEN}Timezone set to: ${TIMEZONE}${NC}"
 }
 
@@ -270,10 +265,6 @@ run_installation() {
 
     # Background checks
     background_checks
-
-    # Try to install gum for better UX
-    echo -e "${CYAN}Installing gum for better user experience...${NC}"
-    pacman -Sy --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
 
     # Collect user information
     userinfo_collection
@@ -527,8 +518,8 @@ EOF
     echo -e "${CYAN} 2. Login as ${USERNAME}${NC}"
     echo -e "${CYAN} 3. Run: curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-archer.sh | bash${NC}"
     echo ""
-    echo -n "Press Enter to continue..."
-    read </dev/tty
+
+    gum confirm "Press Enter to continue..."
 }
 
 # Main execution

@@ -72,16 +72,24 @@ detect_environment() {
 
 # Interactive mode for direct execution
 interactive_mode() {
+    # Install gum for better UX across all environments
+    echo -e "${CYAN}Installing gum for better user experience...${NC}"
+    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        # Live ISO - use pacman directly
+        pacman -Sy --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
+    elif [[ -f /etc/arch-release ]]; then
+        # Installed Arch - use sudo
+        sudo pacman -S --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
+    fi
+    echo ""
+
     # Show environment detection first
     detect_environment
     echo ""
 
     if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
         # Live ISO as root - offer system installation
-        echo -e "${YELLOW}Do you want to proceed with Arch Linux system installation?${NC}"
-        read -r -p "(y/N): " response
-
-        if [[ "${response,,}" =~ ^(y|yes)$ ]]; then
+        if gum confirm "Do you want to proceed with Arch Linux system installation?"; then
             echo -e "${CYAN}Downloading and running system installer...${NC}"
             curl -fsSL "$REPO_RAW_URL/install-system.sh" | bash
         else
@@ -90,10 +98,7 @@ interactive_mode() {
 
     elif [[ -f /etc/arch-release ]] && [[ "$EUID" -ne 0 ]]; then
         # Installed Arch as user - offer post-installation setup
-        echo -e "${YELLOW}Do you want to proceed with Archer post-installation setup?${NC}"
-        read -r -p "(y/N): " response
-
-        if [[ "${response,,}" =~ ^(y|yes)$ ]]; then
+        if gum confirm "Do you want to proceed with Archer post-installation setup?"; then
             echo -e "${CYAN}Downloading and running post-installation setup...${NC}"
             curl -fsSL "$REPO_RAW_URL/install-archer.sh" | bash
         else
