@@ -165,13 +165,13 @@ run_arch_install() {
         echo -e "${CYAN}Press Enter to continue...${NC}"
         read -r
 
-        # Clear screen and execute the installation script directly
+        # Clear screen and source the installation script
         clear
         echo -e "${CYAN}Starting arch-server-setup.sh...${NC}"
         echo ""
 
-        # Execute directly - no redirection
-        if "$temp_file"; then
+        # Source the script instead of executing it
+        if source "$temp_file"; then
             echo ""
             echo -e "${GREEN}Installation script completed successfully!${NC}"
         else
