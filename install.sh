@@ -96,10 +96,10 @@ show_livecd_prompt() {
     echo -e "${YELLOW}Ready to install Arch Linux to your system${NC}"
     echo ""
     echo -e "${GREEN}This will:${NC}"
-    echo -e "${GREEN} • Download and run arch-server-setup.sh${NC}"
     echo -e "${GREEN} • Guide you through disk partitioning${NC}"
     echo -e "${GREEN} • Install base Arch Linux system${NC}"
     echo -e "${GREEN} • Create user account${NC}"
+    echo -e "${GREEN} • Configure bootloader and services${NC}"
     echo ""
     echo -e "${CYAN}After installation:${NC}"
     echo -e "${CYAN} • Reboot and login as your new user${NC}"
@@ -143,6 +143,12 @@ show_menu() {
 
 # Background checks
 background_checks() {
+    # Skip all checks in test mode
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${YELLOW}TEST MODE: Skipping background checks${NC}"
+        return 0
+    fi
+
     # Root check
     if [[ "$(id -u)" != "0" ]]; then
         echo -e "${RED}ERROR! This script must be run under the 'root' user!${NC}"
@@ -350,10 +356,11 @@ userinfo_collection() {
     # Username
     while true; do
         read -r -p "Please enter username: " username
-        if [[ "${username,,}" =~ ^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\$)$ ]]; then
+        # Validate username: start with letter/underscore, contain only letters, numbers, underscore, dash
+        if [[ "${username,,}" =~ ^[a-z_][a-z0-9_-]*$ ]] && [[ ${#username} -le 32 ]] && [[ ${#username} -ge 1 ]]; then
             break
         fi
-        echo -e "${RED}Incorrect username. Use lowercase letters, numbers, underscore, and dash only.${NC}"
+        echo -e "${RED}Incorrect username. Must start with letter/underscore, contain only lowercase letters, numbers, underscore, and dash (max 32 chars).${NC}"
     done
     export USERNAME=$username
 
@@ -374,7 +381,11 @@ userinfo_collection() {
     # Hostname
     while true; do
         read -r -p "Please name your machine: " name_of_machine
-        if [[ "${name_of_machine,,}" =~ ^[a-z][a-z0-9_.-]{0,62}[a-z0-9]$ ]]; then
+        # Validate hostname: start with letter, contain letters/numbers/dots/dashes, end with alphanumeric
+        if [[ "${name_of_machine,,}" =~ ^[a-z][a-z0-9.-]*[a-z0-9]$ ]] && [[ ${#name_of_machine} -le 63 ]] && [[ ${#name_of_machine} -ge 2 ]]; then
+            break
+        elif [[ ${#name_of_machine} -eq 1 ]] && [[ "${name_of_machine,,}" =~ ^[a-z]$ ]]; then
+            # Allow single letter hostnames
             break
         fi
 
@@ -388,7 +399,27 @@ userinfo_collection() {
 
 # Run the complete Arch Linux installation
 run_arch_install() {
-    # Redirect output to log file
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${CYAN}TEST MODE: Simulating Arch Linux installation...${NC}"
+        echo -e "${YELLOW}In actual installation, this would guide you through:${NC}"
+        echo -e "${YELLOW} • User account creation${NC}"
+        echo -e "${YELLOW} • Disk partitioning${NC}"
+        echo -e "${YELLOW} • System installation${NC}"
+        echo ""
+
+        # Allow testing of user input in test mode
+        clear
+        show_logo
+        echo -e "${CYAN}========== User Information (TEST MODE) ===========${NC}"
+        userinfo_collection
+
+        echo -e "${CYAN}TEST MODE: Collected user info - Username: ${USERNAME}, Hostname: ${NAME_OF_MACHINE}${NC}"
+        echo -e "${YELLOW}In actual installation, would continue with disk partitioning...${NC}"
+        read -p "Press Enter to continue..."
+        return 0
+    fi
+
+    # Real installation mode - redirect output to log file
     exec > >(tee -i archsetup.txt)
     exec 2>&1
 
@@ -399,7 +430,7 @@ run_arch_install() {
     echo -e "${YELLOW} • System installation${NC}"
     echo ""
 
-    # Background checks
+    # Background checks (will be skipped in test mode)
     background_checks
 
     # Collect user information
@@ -811,8 +842,8 @@ main() {
             case "$choice" in
                 1)
                     if [[ "$TEST_MODE" == "true" ]]; then
-                        echo -e "${CYAN}TEST MODE: Would execute Fresh Arch Linux Installation${NC}"
-                        read -p "Press Enter to continue..."
+                        echo -e "${CYAN}TEST MODE: Executing Fresh Arch Linux Installation${NC}"
+                        run_arch_install
                     else
                         echo -e "${YELLOW}Fresh Arch Linux Installation should be run from Live ISO as root${NC}"
                         read -p "Press Enter to continue..."
