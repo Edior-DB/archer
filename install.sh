@@ -14,6 +14,35 @@ NC='\033[0m' # No Color
 # Repository configuration
 REPO_RAW_URL="https://raw.githubusercontent.com/Edior-DB/archer/master"
 
+# Enhanced input function using gum if available
+get_user_confirmation() {
+    local prompt="$1"
+    local default="${2:-N}"
+
+    # Try to install gum if not available and we're on Arch
+    if ! command -v gum >/dev/null 2>&1 && [[ "$TEST_MODE" != "true" ]]; then
+        if command -v pacman >/dev/null 2>&1; then
+            echo -e "${CYAN}Installing gum for better user experience...${NC}"
+            pacman -Sy --noconfirm gum >/dev/null 2>&1 || true
+        fi
+    fi
+
+    if command -v gum >/dev/null 2>&1; then
+        # Use gum for better UX
+        if gum confirm "$prompt"; then
+            echo "y"
+        else
+            echo "n"
+        fi
+    else
+        # Fallback to standard read
+        echo -e "${YELLOW}$prompt (y/N)${NC}"
+        echo -n "> "
+        read -r response
+        echo "${response:-$default}"
+    fi
+}
+
 # Logo
 show_logo() {
     clear
@@ -154,8 +183,9 @@ main() {
             # Live ISO mode - direct installation prompt
             show_livecd_prompt
             echo ""
-            echo -e "${YELLOW}Do you want to proceed with Arch Linux installation? (y/N)${NC}"
-            read -r -p "> " confirm
+
+            # Get user confirmation using gum if available
+            confirm=$(get_user_confirmation "Do you want to proceed with Arch Linux installation?")
 
             case "${confirm,,}" in
                 y|yes)
@@ -170,7 +200,8 @@ main() {
                     ;;
                 *)
                     echo -e "${RED}Please answer 'y' for yes or 'n' for no.${NC}"
-                    sleep 2
+                    echo ""
+                    read -p "Press Enter to try again..." -r
                     ;;
             esac
         else
