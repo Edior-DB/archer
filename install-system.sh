@@ -288,8 +288,8 @@ run_installation() {
     echo -e "${CYAN}========== Starting Installation ===========${NC}"
 
     # Set up mirrors and basic packages
-    echo -e "${CYAN}Setting up mirrors for optimal download${NC}"
-    iso=$(curl -4 ifconfig.io/country_code 2>/dev/null || echo "US")
+    #echo -e "${CYAN}Setting up mirrors for optimal download${NC}"
+    #iso=$(curl -4 ifconfig.io/country_code 2>/dev/null || echo "US")
     timedatectl set-ntp true
     pacman -Sy --noconfirm
     pacman -S --noconfirm archlinux-keyring
