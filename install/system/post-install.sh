@@ -12,6 +12,18 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
 echo -e "${BLUE}
 =========================================================================
                     Post-Installation Setup
@@ -156,8 +168,7 @@ for package in "${aur_packages[@]}"; do
     echo "  - $package"
 done
 
-read -p "Install recommended AUR packages? (y/N): " install_aur
-if [[ "$install_aur" =~ ^[Yy]$ ]]; then
+if confirm_action "Install recommended AUR packages?"; then
     for package in "${aur_packages[@]}"; do
         echo -e "${YELLOW}Installing $package...${NC}"
         yay -S --noconfirm "$package" || echo -e "${RED}Failed to install $package${NC}"
@@ -247,4 +258,4 @@ Next steps:
 
 ${NC}"
 
-read -p "Press Enter to continue..."
+wait_for_input

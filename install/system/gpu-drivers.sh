@@ -14,6 +14,25 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
+# Input function using gum
+get_input() {
+    local prompt="$1"
+    local placeholder="${2:-}"
+    gum input --prompt "$prompt " --placeholder "$placeholder"
+}
+
 echo -e "${BLUE}
 =========================================================================
                     GPU Driver Detection & Installation
@@ -348,7 +367,7 @@ install_nvidia_drivers() {
             echo -e "${YELLOW}Please choose driver manually:${NC}"
             echo "1. Latest driver (for modern GPUs)"
             echo "2. Legacy driver (for older GPUs)"
-            read -p "Enter choice [1-2]: " choice
+            choice=$(get_input "Enter choice [1-2]:" "1")
 
             case "$choice" in
                 1) install_nvidia_drivers "nvidia-latest" ;;
@@ -500,8 +519,7 @@ main() {
     echo -e "${BLUE}Supported: NVIDIA (proprietary), AMD (AMDGPU/Mesa), Intel (Mesa)${NC}"
     echo ""
 
-    read -p "Continue with GPU driver installation? (Y/n): " continue_install
-    if [[ "$continue_install" =~ ^[Nn]$ ]]; then
+    if ! confirm_action "Continue with GPU driver installation?"; then
         echo -e "${YELLOW}GPU driver installation cancelled.${NC}"
         exit 0
     fi
@@ -540,8 +558,7 @@ main() {
     done
     echo ""
 
-    read -p "Proceed with installation? (Y/n): " proceed
-    if [[ "$proceed" =~ ^[Nn]$ ]]; then
+    if ! confirm_action "Proceed with installation?"; then
         echo -e "${YELLOW}Installation cancelled.${NC}"
         exit 0
     fi
@@ -561,7 +578,7 @@ main() {
     # Show summary
     show_summary
 
-    read -p "Press Enter to continue..."
+    wait_for_input
 }
 
 # Run main function
