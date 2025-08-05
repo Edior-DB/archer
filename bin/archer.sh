@@ -30,51 +30,10 @@ wait_for_input() {
     gum input --placeholder "$message" --value "" > /dev/null
 }
 
-# Enhanced selection function using gum if available
+# Enhanced selection function using gum
 select_option() {
     local options=("$@")
-
-    if command -v gum >/dev/null 2>&1; then
-        gum choose "${options[@]}"
-    else
-        # Fallback to arrow navigation
-        local num_options=${#options[@]}
-        local selected=0
-        local last_selected=-1
-
-        while true; do
-            if [ $last_selected -ne -1 ]; then
-                echo -ne "\033[${num_options}A"
-            fi
-
-            if [ $last_selected -eq -1 ]; then
-                echo "Please select an option using the arrow keys and Enter:"
-            fi
-            for i in "${!options[@]}"; do
-                if [ "$i" -eq $selected ]; then
-                    echo "> ${options[$i]}"
-                else
-                    echo "  ${options[$i]}"
-                fi
-            done
-
-            last_selected=$selected
-
-            read -rsn1 key
-            case $key in
-                $'\x1b')
-                    read -rsn2 -t 0.1 key
-                    case $key in
-                        '[A') ((selected--)); [ $selected -lt 0 ] && selected=$((num_options - 1));;
-                        '[B') ((selected++)); [ $selected -ge $num_options ] && selected=0;;
-                    esac
-                    ;;
-                '') break;;
-            esac
-        done
-
-        echo "${options[$selected]}"
-    fi
+    gum choose "${options[@]}"
 }
 
 # Logo
@@ -391,57 +350,36 @@ main() {
         local choice=""
         local selection_error=false
 
-        if command -v gum >/dev/null 2>&1; then
-            # Use gum for menu selection
-            options=(
-                "1) GPU Drivers Installation"
-                "2) WiFi Setup & Network Configuration"
-                "3) KDE Plasma (macOS-like)"
-                "4) GNOME (Windows-like)"
-                "5) Development Tools & Languages"
-                "6) Code Editors & IDEs"
-                "7) Gaming Setup (Steam, Lutris, Wine)"
-                "8) Multimedia Applications"
-                "9) Office Suite Installation"
-                "10) AUR Helper Setup"
-                "11) System Utilities"
-                "12) Complete Gaming Workstation"
-                "13) Complete Development Environment"
-                "14) Complete Multimedia Setup"
-                "0) Exit"
-            )
+        # Use gum for menu selection
+        options=(
+            "1) GPU Drivers Installation"
+            "2) WiFi Setup & Network Configuration"
+            "3) KDE Plasma (macOS-like)"
+            "4) GNOME (Windows-like)"
+            "5) Development Tools & Languages"
+            "6) Code Editors & IDEs"
+            "7) Gaming Setup (Steam, Lutris, Wine)"
+            "8) Multimedia Applications"
+            "9) Office Suite Installation"
+            "10) AUR Helper Setup"
+            "11) System Utilities"
+            "12) Complete Gaming Workstation"
+            "13) Complete Development Environment"
+            "14) Complete Multimedia Setup"
+            "0) Exit"
+        )
 
-            # Handle gum selection with error checking
-            if selection=$(select_option "${options[@]}" 2>/dev/null); then
-                # Extract number from selection like "10) AUR Helper Setup" -> "10"
-                choice=$(echo "$selection" | cut -d')' -f1)
-            else
-                selection_error=true
-            fi
+        # Handle gum selection with error checking
+        if selection=$(select_option "${options[@]}" 2>/dev/null); then
+            # Extract number from selection like "10) AUR Helper Setup" -> "10"
+            choice=$(echo "$selection" | cut -d')' -f1)
         else
-            # Fallback to traditional input with better error handling
-            echo -n "Select an option [0-14]: "
-
-            # Clear input buffer first
-            while read -r -t 0.01; do true; done 2>/dev/null || true
-
-            if read -r choice 2>/dev/null; then
-                # Validate input is numeric
-                if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-                    selection_error=true
-                fi
-            else
-                selection_error=true
-            fi
+            selection_error=true
         fi
 
         # Handle selection errors
         if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
-            if command -v gum >/dev/null 2>&1; then
-                gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
-            else
-                echo -e "${RED}Invalid selection or input error. Please try again.${NC}"
-            fi
+            gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
             sleep 2
             continue
         fi
@@ -468,13 +406,8 @@ main() {
                 exit 0
                 ;;
             *)
-                if command -v gum >/dev/null 2>&1; then
-                    gum style --foreground="#ff0000" "Invalid selection. Please try again."
-                    sleep 1
-                else
-                    echo -e "${RED}Invalid option. Please try again.${NC}"
-                    sleep 1
-                fi
+                gum style --foreground="#ff0000" "Invalid selection. Please try again."
+                sleep 1
                 ;;
         esac
     done
