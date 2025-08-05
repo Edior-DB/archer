@@ -341,7 +341,7 @@ run_script() {
         if curl -fsSL "$github_url" -o "$temp_file"; then
             chmod +x "$temp_file"
             actual_script_path="$temp_file"
-            
+
             # Debug: Show what we fetched
             echo -e "${YELLOW}DEBUG: File size: $(wc -c < "$temp_file") bytes${NC}"
             echo -e "${YELLOW}DEBUG: First 10 lines of fetched script:${NC}"
@@ -349,7 +349,7 @@ run_script() {
             echo -e "${YELLOW}DEBUG: Last 5 lines of fetched script:${NC}"
             tail -5 "$temp_file" | sed 's/^/  /'
             echo -e "${YELLOW}DEBUG: Script is executable: $(test -x "$temp_file" && echo "YES" || echo "NO")${NC}"
-            
+
             read -p "Press Enter to continue with execution..."
         else
             echo -e "${RED}Failed to fetch arch-server-setup.sh from GitHub${NC}"
