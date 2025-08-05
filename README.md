@@ -1,53 +1,44 @@
-# Archer - Arch Linux Home PC Transformation Suite
+# Archer - Arch Linux Installation Suite
 
-Transform your vanilla Arch Linux from Live ISO into a fully-featured home PC with gaming, development, and multimedia capabilities.
+A comprehensive Arch Linux installation and post-installation management suite with three distinct components.
 
 ## 🎯 Project Overview
 
-**Archer** is a comprehensive installation suite that takes you from Arch Linux Live ISO to a complete home PC setup. The installation is split into two phases:
+**Archer** provides a complete Arch Linux installation workflow from Live ISO to fully configured system:
 
-1. **Base Installation** (`install.sh`): Core system setup from Live ISO - handles OS installation, GPU drivers, desktop environment, and WiFi
-2. **Post-Installation** (`archer` command): Additional software, customizations, and specialized setups
-
-This design handles reboots gracefully and provides a better user experience.
+1. **`install-system.sh`**: Fresh Arch installation from Live ISO
+2. **`install-archer.sh`**: Post-installation development environment setup
+3. **`archer`**: System management and customization menu
 
 ## 🚀 Quick Start
 
-### Phase 1: Base Installation (Run from Live ISO)
-
-**Method 1: Robust Network-Aware Installer (Recommended for Live ISO)**
-```bash
-curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/quick-install.sh | bash
-```
-
-**Method 2: Direct Download**
+### Smart Installer (Detects Environment)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh | bash
 ```
 
-**Method 3: If Methods 1-2 fail (Network/DNS issues)**
-```bash
-# Fix DNS first
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+### Direct Installation Routes
 
-# Then try download
-curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh | bash
+**Fresh Installation (Live ISO only):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-system.sh | bash
 ```
 
-**Method 4: Manual Download and Execute**
+**Post-Installation Setup (Installed Arch only):**
 ```bash
-# Download first, then execute
-curl -fsSL -o install.sh https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh
-chmod +x install.sh
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-archer.sh | bash
 ```
 
-**Method 5: Git Clone (Most Reliable)**
+### Alternative Methods
+
+**Git Clone (Most Reliable):**
 ```bash
-pacman -Sy git --noconfirm  # Install git if needed
+pacman -Sy git --noconfirm  # If needed
 git clone https://github.com/Edior-DB/archer.git
 cd archer
+./install-system.sh  # On Live ISO
+# OR
+./install-archer.sh  # On installed Arch
 ./install.sh
 ```
 
@@ -56,57 +47,68 @@ cd archer
 ./install.sh --gaming     # Gaming-ready system
 ./install.sh --developer  # Developer workstation
 ./install.sh --base       # Minimal desktop system
-```
+## Complete Installation Workflow
 
-### Phase 2: Post-Installation (After Reboot)
+1. **Boot Arch Linux Live ISO** as root
+2. **Fresh Installation:**
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-system.sh | bash
+   ```
+3. **Reboot and login** as your created user
+4. **Post-Installation Setup:**
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-archer.sh | bash
+   ```
+5. **System Management:**
+   ```bash
+   archer  # Main menu for customization
+   ```
 
-After base installation and reboot, use the `archer` command:
-```bash
-archer                    # Interactive menu
-archer --gaming          # Complete gaming setup
-archer --development     # Complete dev environment
-archer --multimedia      # Complete multimedia setup
-```
+## 📁 Architecture
 
-**Hardware Management (Perfect for Upgrades):**
-```bash
-archer --gpu             # Re-detect and install GPU drivers
-archer --wifi            # WiFi setup and network configuration
-```
+### Core Scripts
+- **`install.sh`** - Smart entry point with environment detection
+- **`install-system.sh`** - Fresh Arch installation (Live ISO only)
+- **`install-archer.sh`** - Post-installation setup (installed Arch only)
+- **`bin/archer.sh`** - Main system management menu
 
-**Note:** The `archer` command includes sudo privilege checking and is perfect for:
-- 🔧 **Hardware upgrades** (new GPU, WiFi card)
-- 🛠️ **Driver issues** (GPU driver problems, network issues)
-- 📦 **Additional software** (gaming, development, multimedia)
-- ⚙️ **System optimization** (performance tweaks, security)
-
-## 📁 Project Structure
+### Installation Modules
 
 ```
 archer/
-├── install/
-│   ├── system/          # Core system installation and setup
-│   │   ├── arch-server-setup.sh    # Base Arch installation
-│   │   ├── post-install.sh         # Post-installation essentials
-│   │   └── system-tweaks.sh        # System optimizations
-│   ├── network/         # Network configuration
-│   │   ├── wifi-setup.sh           # WiFi management
-│   │   └── wifi-install.sh         # Installation-time WiFi
-│   ├── desktop/         # Desktop environment setup
-│   │   ├── de-installer.sh         # Desktop environment installer
-│   │   ├── themes.sh               # Theme and customization
-│   │   └── applications.sh         # Essential applications
-│   ├── terminal/        # Terminal and CLI tools
-│   │   ├── shell-setup.sh          # Shell configuration (zsh, oh-my-zsh)
-│   │   ├── terminal-apps.sh        # CLI applications
-│   │   └── dotfiles.sh             # Dotfiles management
-│   ├── development/     # Development environment
-│   │   ├── dev-tools.sh            # Programming languages & tools
-│   │   ├── editors.sh              # Code editors (VS Code, Vim, etc.)
-│   │   └── containers.sh           # Docker, Podman setup
-│   ├── multimedia/      # Media and entertainment
-│   │   ├── media-apps.sh           # Media players, editors
-│   │   ├── gaming.sh               # Gaming setup (Steam, etc.)
+├── install-system.sh           # Fresh Arch installation from Live ISO
+├── install-archer.sh           # Post-installation development setup
+├── install.sh                  # Smart entry point with environment detection
+├── bin/
+│   └── archer.sh              # Main system management menu
+└── install/                   # Modular installation components
+    ├── desktop/               # Desktop environments & office tools
+    ├── development/           # Programming languages & dev tools
+    ├── multimedia/            # Gaming, media applications
+    ├── network/               # WiFi setup & network configuration
+    ├── system/                # Hardware drivers & system utilities
+    └── extras/                # Additional tools & customizations
+```
+
+## 🎯 Features
+
+### System Installation (`install-system.sh`)
+- **Modern Interface**: gum-powered interactive menus
+- **Multiple Filesystems**: btrfs, ext4, LUKS encryption
+- **Hardware Detection**: Automatic GPU drivers, microcode
+- **Optimized Setup**: Parallel downloads, compilation tuning
+
+### Post-Installation (`install-archer.sh`)
+- **Development Ready**: Complete toolchain (gcc, python, node, etc.)
+- **Hardware Support**: GPU drivers, WiFi configuration
+- **AUR Integration**: yay AUR helper installation
+- **Modern CLI**: Enhanced terminal experience
+
+### Management System (`archer`)
+- **Hardware Management**: Perfect for upgrades and driver issues
+- **Desktop Environments**: GNOME, KDE one-click installation
+- **Gaming Setup**: Steam, Lutris, Wine configuration
+- **Development Profiles**: Complete dev environment setup
 │   │   └── codecs.sh               # Audio/video codecs
 │   ├── security/        # Security and privacy
 │   │   ├── firewall.sh            # UFW/iptables setup
@@ -288,9 +290,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Chris Titus Tech](https://github.com/ChrisTitusTech) for LinUtil inspiration
-- [Arch Linux](https://archlinux.org/) community
-- All contributors and testers
+- **[Chris Titus Tech](https://github.com/ChrisTitusTech)** - The core system installer (`install-system.sh`) is based on his excellent [ArchTitus](https://github.com/ChrisTitusTech/ArchTitus) project
+- [Arch Linux](https://archlinux.org/) community for the amazing distribution
+- All contributors and testers who make this project better
 
 ## 📞 Support
 

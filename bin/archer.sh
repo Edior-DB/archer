@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Archer - Post-Installation Management Tool
-# Comprehensive system management after initial installation
+# Archer - Main Menu and Tools System
+# Comprehensive post-installation management and customization
 
 set -e
 
@@ -18,8 +18,56 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$(dirname "$SCRIPT_DIR")/install"
 
+# Enhanced selection function using gum if available
+select_option() {
+    local options=("$@")
+
+    if command -v gum >/dev/null 2>&1; then
+        gum choose "${options[@]}"
+    else
+        # Fallback to arrow navigation
+        local num_options=${#options[@]}
+        local selected=0
+        local last_selected=-1
+
+        while true; do
+            if [ $last_selected -ne -1 ]; then
+                echo -ne "\033[${num_options}A"
+            fi
+
+            if [ $last_selected -eq -1 ]; then
+                echo "Please select an option using the arrow keys and Enter:"
+            fi
+            for i in "${!options[@]}"; do
+                if [ "$i" -eq $selected ]; then
+                    echo "> ${options[$i]}"
+                else
+                    echo "  ${options[$i]}"
+                fi
+            done
+
+            last_selected=$selected
+
+            read -rsn1 key
+            case $key in
+                $'\x1b')
+                    read -rsn2 -t 0.1 key
+                    case $key in
+                        '[A') ((selected--)); [ $selected -lt 0 ] && selected=$((num_options - 1));;
+                        '[B') ((selected++)); [ $selected -ge $num_options ] && selected=0;;
+                    esac
+                    ;;
+                '') break;;
+            esac
+        done
+
+        echo "${options[$selected]}"
+    fi
+}
+
 # Logo
 show_logo() {
+    clear
     echo -e "${BLUE}"
     cat << "EOF"
  █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
@@ -29,7 +77,7 @@ show_logo() {
 ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
 ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 
-    Post-Installation System Management
+       Archer - System Management & Customization
 EOF
     echo -e "${NC}"
 }
@@ -38,14 +86,15 @@ EOF
 check_installed_system() {
     if [[ ! -f /etc/arch-release ]]; then
         echo -e "${RED}This script requires a properly installed Arch Linux system.${NC}"
-        echo -e "${YELLOW}Use the main install.sh for fresh installations.${NC}"
+        echo -e "${YELLOW}For fresh installations, use install-system.sh from Live ISO.${NC}"
+        echo -e "${YELLOW}For initial setup, use install-archer.sh after installation.${NC}"
         exit 1
     fi
 
     # Check if we're running from Live ISO
     if grep -q "archiso" /proc/cmdline 2>/dev/null; then
         echo -e "${RED}This script should not be run from Live ISO.${NC}"
-        echo -e "${YELLOW}Use the main install.sh for fresh installations.${NC}"
+        echo -e "${YELLOW}For fresh installations, use install-system.sh instead.${NC}"
         exit 1
     fi
 }
@@ -99,53 +148,43 @@ check_internet() {
 
 # Show main menu
 show_menu() {
-    clear
     show_logo
     echo -e "${CYAN}===============================================${NC}"
-    echo -e "${CYAN}        Post-Installation Management         ${NC}"
+    echo -e "${CYAN}    System Management & Customization Menu   ${NC}"
     echo -e "${CYAN}===============================================${NC}"
     echo ""
-    echo -e "${GREEN}Hardware & Drivers:${NC}"
-    echo "  1) GPU Drivers (Hardware Upgrade/Issues)"
-    echo "  2) WiFi Setup & Network Drivers"
+    echo -e "${GREEN}Hardware & System:${NC}"
+    echo "  1) GPU Drivers Installation"
+    echo "  2) WiFi Setup & Network Configuration"
+    echo ""
+    echo -e "${GREEN}Desktop Environments:${NC}"
+    echo "  3) GNOME (Cupertino-like)"
+    echo "  4) KDE Plasma (Windows-like)"
+    echo ""
+    echo -e "${GREEN}Development:${NC}"
+    echo "  5) Development Tools & Languages"
+    echo "  6) Code Editors & IDEs"
     echo ""
     echo -e "${GREEN}Gaming & Multimedia:${NC}"
-    echo "  3) Gaming Setup (Steam, Lutris, Wine)"
-    echo "  4) Media Applications (VLC, OBS, etc.)"
-    echo "  5) Audio/Video Codecs"
-    echo ""
-    echo -e "${GREEN}Terminal & Shell:${NC}"
-    echo "  6) Terminal Setup (Zsh, Oh-My-Zsh)"
-    echo "  7) Terminal Applications"
-    echo "  8) Dotfiles Management"
-    echo ""
-    echo -e "${GREEN}Development Environment:${NC}"
-    echo "  9) Development Tools & Languages"
-    echo " 10) Code Editors & IDEs"
-    echo " 11) Container Tools (Docker, Podman)"
-    echo ""
-    echo -e "${GREEN}Security & Privacy:${NC}"
-    echo " 12) Security Tools"
-    echo " 13) Privacy Applications"
-    echo " 14) Backup Solutions"
+    echo "  7) Gaming Setup (Steam, Lutris, Wine)"
+    echo "  8) Multimedia Applications"
     echo ""
     echo -e "${GREEN}Office & Productivity:${NC}"
-    echo " 15) Office Suites"
-    echo " 16) Personal Tweaks"
+    echo "  9) Office Suite Installation"
     echo ""
-    echo -e "${GREEN}System Utilities:${NC}"
-    echo " 17) Flatpak Setup"
-    echo " 18) System Optimizations"
+    echo -e "${GREEN}System Tools:${NC}"
+    echo " 10) AUR Helper Setup"
+    echo " 11) System Utilities"
     echo ""
     echo -e "${YELLOW}Quick Profiles:${NC}"
-    echo " 19) Complete Gaming Setup"
-    echo " 20) Complete Development Environment"
-    echo " 21) Complete Multimedia Workstation"
+    echo " 12) Complete Gaming Workstation"
+    echo " 13) Complete Development Environment"
+    echo " 14) Complete Multimedia Setup"
     echo ""
     echo " 0) Exit"
     echo ""
     echo -e "${CYAN}===============================================${NC}"
-    echo -e "${YELLOW}Note: Options 1-2 are perfect for hardware upgrades${NC}"
+    echo -e "${YELLOW}Perfect for customizing your fresh Arch installation!${NC}"
 }
 
 # Execute script safely
@@ -294,37 +333,65 @@ main() {
     # Interactive menu
     while true; do
         show_menu
-        read -p "Select an option [0-21]: " choice
+
+        if command -v gum >/dev/null 2>&1; then
+            # Use gum for menu selection
+            options=(
+                "1) GPU Drivers Installation"
+                "2) WiFi Setup & Network Configuration"
+                "3) GNOME (Cupertino-like)"
+                "4) KDE Plasma (Windows-like)"
+                "5) Development Tools & Languages"
+                "6) Code Editors & IDEs"
+                "7) Gaming Setup (Steam, Lutris, Wine)"
+                "8) Multimedia Applications"
+                "9) Office Suite Installation"
+                "10) AUR Helper Setup"
+                "11) System Utilities"
+                "12) Complete Gaming Workstation"
+                "13) Complete Development Environment"
+                "14) Complete Multimedia Setup"
+                "0) Exit"
+            )
+
+            selection=$(select_option "${options[@]}")
+            choice="${selection:0:2}"  # Extract number from selection
+            choice="${choice// /}"     # Remove any spaces
+        else
+            # Fallback to traditional input
+            echo -n "Select an option [0-14]: "
+            read -r choice
+        fi
+
+        echo ""
 
         case $choice in
-            1) run_script "$INSTALL_DIR/system/gpu-drivers.sh" ;;
-            2) run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
-            3) run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
-            4) run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
-            5) run_script "$INSTALL_DIR/multimedia/codecs.sh" ;;
-            6) run_script "$INSTALL_DIR/terminal/shell-setup.sh" ;;
-            7) run_script "$INSTALL_DIR/terminal/terminal-apps.sh" ;;
-            8) run_script "$INSTALL_DIR/terminal/dotfiles.sh" ;;
-            9) run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
-            10) run_script "$INSTALL_DIR/development/editors.sh" ;;
-            11) run_script "$INSTALL_DIR/development/containers.sh" ;;
-            12) run_script "$INSTALL_DIR/security/firewall.sh" ;;
-            13) run_script "$INSTALL_DIR/security/privacy.sh" ;;
-            14) run_script "$INSTALL_DIR/security/backup.sh" ;;
-            15) run_script "$INSTALL_DIR/desktop/office-tools/office-suite.sh" ;;
-            16) run_script "$INSTALL_DIR/extras/personal-tweaks.sh" ;;
-            17) run_script "$INSTALL_DIR/extras/flatpak.sh" ;;
-            18) run_script "$INSTALL_DIR/system/system-tweaks.sh" ;;
-            19) install_profile "gaming" ;;
-            20) install_profile "development" ;;
-            21) install_profile "multimedia" ;;
+            1)  run_script "$INSTALL_DIR/system/gpu-drivers.sh" ;;
+            2)  run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
+            3)  run_script "$INSTALL_DIR/desktop/cupertini.sh" ;;
+            4)  run_script "$INSTALL_DIR/desktop/redmondi.sh" ;;
+            5)  run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
+            6)  run_script "$INSTALL_DIR/development/editors.sh" ;;
+            7)  run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
+            8)  run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
+            9)  run_script "$INSTALL_DIR/desktop/office-tools/office-suite.sh" ;;
+            10) run_script "$INSTALL_DIR/extras/aur-helper.sh" ;;
+            11) run_script "$INSTALL_DIR/system/system-utilities.sh" ;;
+            12) install_profile "gaming" ;;
+            13) install_profile "development" ;;
+            14) install_profile "multimedia" ;;
             0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
                 exit 0
                 ;;
             *)
-                echo -e "${RED}Invalid option. Please try again.${NC}"
-                read -p "Press Enter to continue..."
+                if command -v gum >/dev/null 2>&1; then
+                    gum style --foreground="#ff0000" "Invalid selection. Please try again."
+                    sleep 1
+                else
+                    echo -e "${RED}Invalid option. Please try again.${NC}"
+                    sleep 1
+                fi
                 ;;
         esac
     done
