@@ -15,13 +15,37 @@ This design handles reboots gracefully and provides a better user experience.
 
 ### Phase 1: Base Installation (Run from Live ISO)
 
-Download and run the main installer:
+**Method 1: Robust Network-Aware Installer (Recommended for Live ISO)**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/quick-install.sh | bash
+```
+
+**Method 2: Direct Download**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh | bash
 ```
 
-Or clone and run manually:
+**Method 3: If Methods 1-2 fail (Network/DNS issues)**
 ```bash
+# Fix DNS first
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+
+# Then try download
+curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh | bash
+```
+
+**Method 4: Manual Download and Execute**
+```bash
+# Download first, then execute
+curl -fsSL -o install.sh https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+**Method 5: Git Clone (Most Reliable)**
+```bash
+pacman -Sy git --noconfirm  # Install git if needed
 git clone https://github.com/Edior-DB/archer.git
 cd archer
 ./install.sh
@@ -162,7 +186,88 @@ This project integrates with and extends [Chris Titus' LinUtil](https://github.c
 - Provides additional customization options
 - Maintains compatibility with LinUtil workflows
 
-## 📋 Requirements
+## � Troubleshooting
+
+### Installation Issues
+
+### Installation Issues
+
+**Error 400/404/Connection issues when downloading from Live ISO:**
+
+The most common cause is network/DNS configuration in Live ISO environments.
+
+```bash
+# Solution 1: Use the robust installer (handles network issues automatically)
+curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/quick-install.sh | bash
+
+# Solution 2: Manual DNS fix
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh | bash
+
+# Solution 3: Git clone method (most reliable)
+pacman -Sy git --noconfirm
+git clone https://github.com/Edior-DB/archer.git
+cd archer && ./install.sh
+
+# Solution 4: Test network connectivity first
+ping -c 3 8.8.8.8          # Test internet
+ping -c 3 github.com        # Test DNS
+```
+
+**Other common Live ISO issues:**
+```bash
+# Ensure you're root
+whoami  # should return 'root'
+
+# Check available space
+df -h
+
+# Verify Arch Live ISO
+cat /proc/cmdline | grep archiso
+```
+
+**Network connectivity issues:**
+```bash
+# Check network
+ping -c 3 8.8.8.8
+
+# Setup WiFi in Live ISO
+iwctl
+[iwd]# device list
+[iwd]# station wlan0 scan
+[iwd]# station wlan0 get-networks
+[iwd]# station wlan0 connect "YOUR_NETWORK"
+```
+
+**Permission denied errors:**
+```bash
+# Ensure you're running as root in Live ISO
+whoami  # should return 'root'
+
+# If not root:
+sudo -i
+```
+
+### Post-Installation Issues
+
+**"archer" command not found:**
+```bash
+# Manually add to PATH
+export PATH="/usr/local/bin:$PATH"
+
+# Or run directly
+/usr/local/bin/archer
+```
+
+**Sudo privilege errors:**
+```bash
+# Add user to wheel group
+su -c 'usermod -aG wheel $USER'
+# Logout and login again
+```
+
+## �📋 Requirements
 
 - Fresh Arch Linux installation (minimal/server)
 - Internet connection
