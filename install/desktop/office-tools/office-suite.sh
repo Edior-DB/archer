@@ -14,6 +14,25 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
+# Input function using gum
+get_input() {
+    local prompt="$1"
+    local placeholder="${2:-}"
+    gum input --prompt "$prompt " --placeholder "$placeholder"
+}
+
 # Show logo
 show_logo() {
     echo -e "${BLUE}"

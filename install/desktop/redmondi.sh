@@ -30,6 +30,18 @@ EOF
     echo -e "${NC}"
 }
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
 # Install GNOME desktop environment
 install_gnome() {
     echo -e "${BLUE}Installing GNOME desktop environment...${NC}"
@@ -303,9 +315,8 @@ main() {
     echo -e "${CYAN}This will install a Windows-like desktop environment using GNOME.${NC}"
     echo -e "${CYAN}It includes themes, extensions, and applications for a familiar Windows experience.${NC}"
     echo ""
-    read -p "Continue with Redmondi installation? (Y/n): " continue_install
 
-    if [[ "$continue_install" =~ ^[Nn]$ ]]; then
+    if ! confirm_action "Continue with Redmondi installation?"; then
         exit 0
     fi
 
@@ -363,7 +374,7 @@ EOF
 
 ${NC}"
 
-    read -p "Press Enter to continue..."
+    wait_for_input "Press Enter to continue..."
 }
 
 # Handle configuration-only mode

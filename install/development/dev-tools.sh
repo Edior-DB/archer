@@ -12,6 +12,25 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
+# Input function using gum
+get_input() {
+    local prompt="$1"
+    local placeholder="${2:-}"
+    gum input --prompt "$prompt " --placeholder "$placeholder"
+}
+
 echo -e "${BLUE}
 =========================================================================
                     Development Tools Installation
@@ -39,7 +58,7 @@ select_languages() {
     echo "0. Skip language installation"
     echo ""
 
-    read -p "Enter your choice (1-9, or multiple separated by spaces): " lang_choice
+    lang_choice=$(get_input "Enter your choice (1-9, or multiple separated by spaces):" "1 2 3")
 
     # Install selected languages
     if [[ "$lang_choice" == *"1"* ]] || [[ "$lang_choice" == "9" ]]; then
@@ -226,16 +245,14 @@ install_dev_tools() {
 setup_databases() {
     echo -e "${BLUE}Setting up databases...${NC}"
 
-    read -p "Initialize PostgreSQL? (y/N): " init_postgres
-    if [[ "$init_postgres" =~ ^[Yy]$ ]]; then
+    if confirm_action "Initialize PostgreSQL?"; then
         sudo -u postgres initdb -D /var/lib/postgres/data
         sudo systemctl enable postgresql
         sudo systemctl start postgresql
         echo -e "${GREEN}PostgreSQL initialized and started${NC}"
     fi
 
-    read -p "Initialize MariaDB? (y/N): " init_mariadb
-    if [[ "$init_mariadb" =~ ^[Yy]$ ]]; then
+    if confirm_action "Initialize MariaDB?"; then
         sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
         sudo systemctl enable mariadb
         sudo systemctl start mariadb
@@ -243,8 +260,7 @@ setup_databases() {
         echo -e "${YELLOW}Run 'sudo mysql_secure_installation' to secure MariaDB${NC}"
     fi
 
-    read -p "Enable Redis? (y/N): " enable_redis
-    if [[ "$enable_redis" =~ ^[Yy]$ ]]; then
+    if confirm_action "Enable Redis?"; then
         sudo systemctl enable redis
         sudo systemctl start redis
         echo -e "${GREEN}Redis enabled and started${NC}"
@@ -263,8 +279,7 @@ install_dev_editors() {
     )
 
     for editor in "${editors[@]}"; do
-        read -p "Install $editor? (y/N): " install_editor
-        if [[ "$install_editor" =~ ^[Yy]$ ]]; then
+        if confirm_action "Install $editor?"; then
             if pacman -Si "$editor" &> /dev/null; then
                 sudo pacman -S "$editor"
             else
@@ -278,8 +293,8 @@ install_dev_editors() {
 configure_git() {
     echo -e "${BLUE}Configuring Git...${NC}"
 
-    read -p "Enter your Git username: " git_username
-    read -p "Enter your Git email: " git_email
+    git_username=$(get_input "Enter your Git username:" "johndoe")
+    git_email=$(get_input "Enter your Git email:" "john@example.com")
 
     if [[ -n "$git_username" && -n "$git_email" ]]; then
         git config --global user.name "$git_username"
@@ -297,9 +312,7 @@ configure_git() {
 # Main execution
 main() {
     echo -e "${YELLOW}This script will install development tools and programming languages.${NC}"
-    read -p "Continue? (y/N): " continue_install
-
-    if [[ ! "$continue_install" =~ ^[Yy]$ ]]; then
+    if ! confirm_action "Continue with development tools installation?"; then
         echo -e "${YELLOW}Installation cancelled.${NC}"
         exit 0
     fi
@@ -345,7 +358,7 @@ Next steps:
 
 ${NC}"
 
-    read -p "Press Enter to continue..."
+    wait_for_input
 }
 
 # Run main function

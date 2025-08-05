@@ -30,6 +30,18 @@ EOF
     echo -e "${NC}"
 }
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
 # Install KDE Plasma desktop environment
 install_kde() {
     echo -e "${BLUE}Installing KDE Plasma desktop environment...${NC}"
@@ -308,9 +320,8 @@ main() {
     echo -e "${CYAN}This will install a macOS-like desktop environment using KDE Plasma.${NC}"
     echo -e "${CYAN}It includes themes, widgets, and applications for a familiar macOS experience.${NC}"
     echo ""
-    read -p "Continue with Cupertini installation? (Y/n): " continue_install
 
-    if [[ "$continue_install" =~ ^[Nn]$ ]]; then
+    if ! confirm_action "Continue with Cupertini installation?"; then
         exit 0
     fi
 
@@ -367,7 +378,7 @@ EOF
 
 ${NC}"
 
-    read -p "Press Enter to continue..."
+    wait_for_input "Press Enter to continue..."
 }
 
 # Handle configuration-only mode

@@ -13,6 +13,25 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
+# Input function using gum
+get_input() {
+    local prompt="$1"
+    local placeholder="${2:-}"
+    gum input --prompt "$prompt " --placeholder "$placeholder"
+}
+
 echo -e "${BLUE}
 =========================================================================
                         Gaming Setup for Arch Linux
@@ -43,38 +62,28 @@ install_gaming_platforms() {
     echo -e "${BLUE}Installing gaming platforms...${NC}"
 
     # Steam
-    read -p "Install Steam? (Y/n): " install_steam
-    if [[ "$install_steam" =~ ^[Nn]$ ]]; then
-        echo -e "${YELLOW}Skipping Steam installation${NC}"
-    else
+    if confirm_action "Install Steam?"; then
         echo -e "${YELLOW}Installing Steam...${NC}"
         sudo pacman -S --noconfirm steam
         echo -e "${GREEN}Steam installed!${NC}"
     fi
 
     # Lutris
-    read -p "Install Lutris (Game manager for Wine, emulators, etc.)? (Y/n): " install_lutris
-    if [[ "$install_lutris" =~ ^[Nn]$ ]]; then
-        echo -e "${YELLOW}Skipping Lutris installation${NC}"
-    else
+    if confirm_action "Install Lutris (Game manager for Wine, emulators, etc.)?"; then
         echo -e "${YELLOW}Installing Lutris...${NC}"
         sudo pacman -S --noconfirm lutris
         echo -e "${GREEN}Lutris installed!${NC}"
     fi
 
     # Heroic Games Launcher (Epic Games, GOG)
-    read -p "Install Heroic Games Launcher (Epic Games & GOG)? (Y/n): " install_heroic
-    if [[ "$install_heroic" =~ ^[Nn]$ ]]; then
-        echo -e "${YELLOW}Skipping Heroic Games Launcher${NC}"
-    else
+    if confirm_action "Install Heroic Games Launcher (Epic Games & GOG)?"; then
         echo -e "${YELLOW}Installing Heroic Games Launcher...${NC}"
         yay -S --noconfirm heroic-games-launcher-bin
         echo -e "${GREEN}Heroic Games Launcher installed!${NC}"
     fi
 
     # GameHub (Steam, GOG, Humble Bundle)
-    read -p "Install GameHub (Multi-platform game manager)? (y/N): " install_gamehub
-    if [[ "$install_gamehub" =~ ^[Yy]$ ]]; then
+    if confirm_action "Install GameHub (Multi-platform game manager)?"; then
         echo -e "${YELLOW}Installing GameHub...${NC}"
         yay -S --noconfirm gamehub
         echo -e "${GREEN}GameHub installed!${NC}"
@@ -86,8 +95,7 @@ install_wine() {
     echo -e "${BLUE}Installing Wine and Windows compatibility layer...${NC}"
 
     # Wine
-    read -p "Install Wine (Windows compatibility layer)? (Y/n): " install_wine_prompt
-    if [[ "$install_wine_prompt" =~ ^[Nn]$ ]]; then
+    if ! confirm_action "Install Wine (Windows compatibility layer)?"; then
         echo -e "${YELLOW}Skipping Wine installation${NC}"
         return
     fi
@@ -117,7 +125,7 @@ install_wine() {
     done
 
     # Bottles (Modern Wine prefix manager)
-    read -p "Install Bottles (Modern Wine prefix manager)? (Y/n): " install_bottles
+    if confirm_action "Install Bottles (Modern Wine prefix manager)?"; then
     if [[ "$install_bottles" =~ ^[Nn]$ ]]; then
         echo -e "${YELLOW}Skipping Bottles installation${NC}"
     else

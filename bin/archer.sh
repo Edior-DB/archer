@@ -18,6 +18,18 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="$(dirname "$SCRIPT_DIR")/install"
 
+# Confirm function using gum
+confirm_action() {
+    local message="$1"
+    gum confirm "$message"
+}
+
+# Wait function using gum
+wait_for_input() {
+    local message="${1:-Press Enter to continue...}"
+    gum input --placeholder "$message" --value "" > /dev/null
+}
+
 # Enhanced selection function using gum if available
 select_option() {
     local options=("$@")
@@ -202,8 +214,7 @@ run_script() {
                 echo -e "${CYAN}Hardware Detection: Checking for GPU changes...${NC}"
                 echo -e "${YELLOW}This will re-detect your GPU hardware and update drivers accordingly.${NC}"
                 echo -e "${YELLOW}Perfect for hardware upgrades or driver issues.${NC}"
-                read -p "Continue with GPU driver detection and installation? (y/N): " gpu_confirm
-                if [[ ! "$gpu_confirm" =~ ^[Yy]$ ]]; then
+                if ! confirm_action "Continue with GPU driver detection and installation?"; then
                     echo -e "${YELLOW}GPU driver installation cancelled.${NC}"
                     return 0
                 fi
@@ -211,8 +222,7 @@ run_script() {
             "wifi-setup.sh")
                 echo -e "${CYAN}Network Setup: Configuring WiFi connections...${NC}"
                 echo -e "${YELLOW}This will help you set up new WiFi connections or fix network issues.${NC}"
-                read -p "Continue with WiFi setup? (y/N): " wifi_confirm
-                if [[ ! "$wifi_confirm" =~ ^[Yy]$ ]]; then
+                if ! confirm_action "Continue with WiFi setup?"; then
                     echo -e "${YELLOW}WiFi setup cancelled.${NC}"
                     return 0
                 fi
@@ -228,11 +238,11 @@ run_script() {
         fi
 
         echo -e "${GREEN}$script_name completed successfully!${NC}"
-        read -p "Press Enter to continue..."
+        wait_for_input
     else
         echo -e "${RED}Script not found: $script_path${NC}"
         echo -e "${YELLOW}This feature is coming soon!${NC}"
-        read -p "Press Enter to continue..."
+        wait_for_input
     fi
 }
 
