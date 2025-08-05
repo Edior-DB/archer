@@ -318,12 +318,38 @@ run_installation() {
         echo -e "${CYAN}Using default mirrors${NC}"
     fi
 
-    # Install prerequisites
+    # Install prerequisites with retry logic
     [ ! -d "/mnt" ] && mkdir /mnt
     echo -e "${CYAN}Installing Prerequisites${NC}"
-    pacman -S --noconfirm --needed gptfdisk btrfs-progs glibc
 
-    # Format disk
+    retry_count=0
+    max_retries=3
+
+    while [ $retry_count -lt $max_retries ]; do
+        echo -e "${CYAN}Installing prerequisites - Attempt $((retry_count + 1)) of $max_retries...${NC}"
+        if pacman -S --noconfirm --needed gptfdisk btrfs-progs glibc; then
+            echo -e "${GREEN}Prerequisites installed successfully${NC}"
+            break
+        fi
+
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            echo -e "${YELLOW}Prerequisites installation failed, retrying in 3 seconds...${NC}"
+            sleep 3
+            pacman -Sy --noconfirm
+        else
+            echo -e "${RED}ERROR: Prerequisites installation failed after $max_retries attempts!${NC}"
+            echo -e "${RED}Please check your network connection.${NC}"
+            if gum confirm "Would you like to try installing prerequisites again?"; then
+                retry_count=0  # Reset retry counter
+                echo -e "${CYAN}Retrying prerequisites installation...${NC}"
+                pacman -Sy --noconfirm
+            else
+                echo -e "${RED}Installation cannot continue without prerequisites.${NC}"
+                exit 1
+            fi
+        fi
+    done    # Format disk
     echo -e "${CYAN}Formatting Disk${NC}"
     umount -A --recursive /mnt 2>/dev/null || true
 
@@ -399,15 +425,47 @@ run_installation() {
     mkdir -p /mnt/boot
     mount -U "${BOOT_UUID}" /mnt/boot/
 
-    # Install base system
+    # Install base system with retry logic
     echo -e "${CYAN}Installing Arch Linux Base System${NC}"
-    if [[ ! -d "/sys/firmware/efi" ]]; then
-        pacstrap /mnt base base-devel linux-lts linux-firmware --noconfirm --needed
-    else
-        pacstrap /mnt base base-devel linux-lts linux-firmware efibootmgr --noconfirm --needed
-    fi
 
-    echo "keyserver hkp://keyserver.ubuntu.com" >> /mnt/etc/pacman.d/gnupg/gpg.conf
+    # Retry pacstrap up to 3 times
+    retry_count=0
+    max_retries=3
+
+    while [ $retry_count -lt $max_retries ]; do
+        echo -e "${CYAN}Attempt $((retry_count + 1)) of $max_retries...${NC}"
+
+        if [[ ! -d "/sys/firmware/efi" ]]; then
+            if pacstrap /mnt base base-devel linux-lts linux-firmware --noconfirm --needed; then
+                echo -e "${GREEN}Base system installation successful${NC}"
+                break
+            fi
+        else
+            if pacstrap /mnt base base-devel linux-lts linux-firmware efibootmgr --noconfirm --needed; then
+                echo -e "${GREEN}Base system installation successful${NC}"
+                break
+            fi
+        fi
+
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            echo -e "${YELLOW}Installation failed, retrying in 5 seconds...${NC}"
+            sleep 5
+            echo -e "${CYAN}Refreshing package databases...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${RED}ERROR: Base system installation failed after $max_retries attempts!${NC}"
+            echo -e "${RED}Please check your network connection.${NC}"
+            if gum confirm "Would you like to try installing the base system again?"; then
+                retry_count=0  # Reset retry counter
+                echo -e "${CYAN}Retrying base system installation...${NC}"
+                pacman -Sy --noconfirm
+            else
+                echo -e "${RED}Installation cannot continue without base system.${NC}"
+                exit 1
+            fi
+        fi
+    done    echo "keyserver hkp://keyserver.ubuntu.com" >> /mnt/etc/pacman.d/gnupg/gpg.conf
     cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 
     # Generate fstab
@@ -447,15 +505,64 @@ run_installation() {
     # Configure the installed system
     arch-chroot /mnt /bin/bash -c "KEYMAP='${KEYMAP}' /bin/bash" <<EOF
 
-# Network setup
+# Network setup with retry logic
 echo -e "${CYAN}Setting up network${NC}"
-pacman -S --noconfirm --needed networkmanager dhcpcd
-systemctl enable NetworkManager
+retry_count=0
+max_retries=3
 
-# Install essential packages
-pacman -S --noconfirm --needed pacman-contrib curl reflector rsync grub arch-install-scripts git ntp wget os-prober
+while [ \$retry_count -lt \$max_retries ]; do
+    echo -e "${CYAN}Installing network packages - Attempt \$((retry_count + 1)) of \$max_retries...${NC}"
+    if pacman -S --noconfirm --needed networkmanager dhcpcd; then
+        echo -e "${GREEN}Network packages installed successfully${NC}"
+        break
+    fi
 
-# Optimize compilation
+    retry_count=\$((retry_count + 1))
+    if [ \$retry_count -lt \$max_retries ]; then
+        echo -e "${YELLOW}Network setup failed, retrying in 3 seconds...${NC}"
+        sleep 3
+        pacman -Sy --noconfirm
+    else
+        echo -e "${RED}ERROR: Network setup failed after \$max_retries attempts${NC}"
+        if gum confirm "Would you like to try installing network packages again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying network packages installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without network packages (you may need to install them manually later)${NC}"
+            break
+        fi
+    fi
+donesystemctl enable NetworkManager
+
+# Install essential packages with retry logic
+echo -e "${CYAN}Installing essential packages${NC}"
+retry_count=0
+
+while [ \$retry_count -lt \$max_retries ]; do
+    echo -e "${CYAN}Installing essential packages - Attempt \$((retry_count + 1)) of \$max_retries...${NC}"
+    if pacman -S --noconfirm --needed pacman-contrib curl reflector rsync grub arch-install-scripts git ntp wget os-prober; then
+        echo -e "${GREEN}Essential packages installed successfully${NC}"
+        break
+    fi
+
+    retry_count=\$((retry_count + 1))
+    if [ \$retry_count -lt \$max_retries ]; then
+        echo -e "${YELLOW}Essential packages installation failed, retrying in 3 seconds...${NC}"
+        sleep 3
+        pacman -Sy --noconfirm
+    else
+        echo -e "${RED}ERROR: Essential packages installation failed after \$max_retries attempts${NC}"
+        if gum confirm "Would you like to try installing essential packages again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying essential packages installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without some essential packages (you may need to install them manually later)${NC}"
+            break
+        fi
+    fi
+done# Optimize compilation
 nc=\$(grep -c ^"cpu cores" /proc/cpuinfo || echo "2")
 TOTAL_MEM=\$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')
 if [[ \$TOTAL_MEM -gt 8000000 ]]; then
@@ -483,20 +590,120 @@ sed -i 's/^#Color/Color\\nILoveCandy/' /etc/pacman.conf
 sed -i "/\\[multilib\\]/,/Include/"'s/^#//' /etc/pacman.conf
 pacman -Sy --noconfirm --needed
 
-# Install microcode
+# Install microcode with retry logic
 if grep -q "GenuineIntel" /proc/cpuinfo; then
-    pacman -S --noconfirm --needed intel-ucode
+    echo -e "${CYAN}Installing Intel microcode${NC}"
+    retry_count=0
+    while [ \$retry_count -lt \$max_retries ]; do
+        if pacman -S --noconfirm --needed intel-ucode; then
+            echo -e "${GREEN}Intel microcode installed successfully${NC}"
+            break
+        fi
+        retry_count=\$((retry_count + 1))
+        if [ \$retry_count -lt \$max_retries ]; then
+            echo -e "${YELLOW}Microcode installation failed, retrying...${NC}"
+            sleep 2
+            pacman -Sy --noconfirm
+        elif gum confirm "Intel microcode installation failed. Would you like to try again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying Intel microcode installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without Intel microcode (you may install it manually later)${NC}"
+            break
+        fi
+    done
 elif grep -q "AuthenticAMD" /proc/cpuinfo; then
-    pacman -S --noconfirm --needed amd-ucode
+    echo -e "${CYAN}Installing AMD microcode${NC}"
+    retry_count=0
+    while [ \$retry_count -lt \$max_retries ]; do
+        if pacman -S --noconfirm --needed amd-ucode; then
+            echo -e "${GREEN}AMD microcode installed successfully${NC}"
+            break
+        fi
+        retry_count=\$((retry_count + 1))
+        if [ \$retry_count -lt \$max_retries ]; then
+            echo -e "${YELLOW}Microcode installation failed, retrying...${NC}"
+            sleep 2
+            pacman -Sy --noconfirm
+        elif gum confirm "AMD microcode installation failed. Would you like to try again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying AMD microcode installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without AMD microcode (you may install it manually later)${NC}"
+            break
+        fi
+    done
 fi
 
-# Install graphics drivers
+# Install graphics drivers with retry logic
 if echo "${gpu_type}" | grep -E "NVIDIA|GeForce"; then
-    pacman -S --noconfirm --needed nvidia-lts
+    echo -e "${CYAN}Installing NVIDIA drivers${NC}"
+    retry_count=0
+    while [ \$retry_count -lt \$max_retries ]; do
+        if pacman -S --noconfirm --needed nvidia-lts; then
+            echo -e "${GREEN}NVIDIA drivers installed successfully${NC}"
+            break
+        fi
+        retry_count=\$((retry_count + 1))
+        if [ \$retry_count -lt \$max_retries ]; then
+            echo -e "${YELLOW}GPU driver installation failed, retrying...${NC}"
+            sleep 2
+            pacman -Sy --noconfirm
+        elif gum confirm "NVIDIA driver installation failed. Would you like to try again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying NVIDIA driver installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without NVIDIA drivers (you may install them manually later)${NC}"
+            break
+        fi
+    done
 elif echo "${gpu_type}" | grep 'VGA' | grep -E "Radeon|AMD"; then
-    pacman -S --noconfirm --needed xf86-video-amdgpu
+    echo -e "${CYAN}Installing AMD GPU drivers${NC}"
+    retry_count=0
+    while [ \$retry_count -lt \$max_retries ]; do
+        if pacman -S --noconfirm --needed xf86-video-amdgpu; then
+            echo -e "${GREEN}AMD GPU drivers installed successfully${NC}"
+            break
+        fi
+        retry_count=\$((retry_count + 1))
+        if [ \$retry_count -lt \$max_retries ]; then
+            echo -e "${YELLOW}GPU driver installation failed, retrying...${NC}"
+            sleep 2
+            pacman -Sy --noconfirm
+        elif gum confirm "AMD GPU driver installation failed. Would you like to try again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying AMD GPU driver installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without AMD GPU drivers (you may install them manually later)${NC}"
+            break
+        fi
+    done
 elif echo "${gpu_type}" | grep -E "Integrated Graphics Controller|Intel Corporation UHD"; then
-    pacman -S --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils lib32-mesa
+    echo -e "${CYAN}Installing Intel GPU drivers${NC}"
+    retry_count=0
+    while [ \$retry_count -lt \$max_retries ]; do
+        if pacman -S --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils lib32-mesa; then
+            echo -e "${GREEN}Intel GPU drivers installed successfully${NC}"
+            break
+        fi
+        retry_count=\$((retry_count + 1))
+        if [ \$retry_count -lt \$max_retries ]; then
+            echo -e "${YELLOW}GPU driver installation failed, retrying...${NC}"
+            sleep 2
+            pacman -Sy --noconfirm
+        elif gum confirm "Intel GPU driver installation failed. Would you like to try again?"; then
+            retry_count=0  # Reset retry counter
+            echo -e "${CYAN}Retrying Intel GPU driver installation...${NC}"
+            pacman -Sy --noconfirm
+        else
+            echo -e "${YELLOW}Continuing without Intel GPU drivers (you may install them manually later)${NC}"
+            break
+        fi
+    done
 fi
 
 # Create user
