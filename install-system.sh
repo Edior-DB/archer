@@ -394,10 +394,15 @@ run_installation() {
     genfstab -U /mnt >> /mnt/etc/fstab
     echo -e "${GREEN}Generated /etc/fstab${NC}"
 
-    # Install GRUB for BIOS systems
+    # Detect firmware type and install GRUB for BIOS systems
     if [[ ! -d "/sys/firmware/efi" ]]; then
-        echo -e "${CYAN}Installing GRUB BIOS Bootloader${NC}"
-        grub-install --boot-directory=/mnt/boot "${DISK}"
+        echo -e "${CYAN}BIOS system detected - Installing GRUB BIOS Bootloader${NC}"
+        if ! grub-install --boot-directory=/mnt/boot "${DISK}"; then
+            echo -e "${RED}ERROR: GRUB BIOS installation failed!${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${CYAN}UEFI system detected - GRUB will be installed from chroot${NC}"
     fi
 
     # Check for low memory and add swap if needed
@@ -428,7 +433,7 @@ pacman -S --noconfirm --needed networkmanager dhcpcd
 systemctl enable NetworkManager
 
 # Install essential packages
-pacman -S --noconfirm --needed pacman-contrib curl reflector rsync grub arch-install-scripts git ntp wget
+pacman -S --noconfirm --needed pacman-contrib curl reflector rsync grub arch-install-scripts git ntp wget os-prober
 
 # Optimize compilation
 nc=\$(grep -c ^"cpu cores" /proc/cpuinfo || echo "2")
@@ -480,15 +485,24 @@ useradd -m -G wheel,libvirt -s /bin/bash ${USERNAME}
 echo "${USERNAME}:${PASSWORD}" | chpasswd
 echo ${NAME_OF_MACHINE} > /etc/hostname
 
-# Handle LUKS encryption
+# Handle LUKS encryption and regenerate initramfs
 if [[ "${FS}" == "luks" ]]; then
     sed -i 's/filesystems/encrypt filesystems/g' /etc/mkinitcpio.conf
-    mkinitcpio -p linux-lts
 fi
+
+# Regenerate initramfs for all systems
+mkinitcpio -p linux-lts
 
 # Install and configure GRUB
 if [[ -d "/sys/firmware/efi" ]]; then
-    grub-install --efi-directory=/boot ${DISK}
+    echo -e "${CYAN}Installing GRUB for UEFI system${NC}"
+    if ! grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB; then
+        echo -e "${RED}ERROR: GRUB UEFI installation failed!${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}GRUB UEFI installation successful${NC}"
+else
+    echo -e "${CYAN}BIOS system - GRUB already installed${NC}"
 fi
 
 # Configure GRUB
@@ -497,7 +511,19 @@ if [[ "${FS}" == "luks" ]]; then
 fi
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*/& splash /' /etc/default/grub
 
+# Enable os-prober for detecting other operating systems
+sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
+
+# Generate GRUB configuration
 grub-mkconfig -o /boot/grub/grub.cfg
+
+# Verify GRUB configuration
+if [[ ! -f /boot/grub/grub.cfg ]]; then
+    echo -e "${RED}ERROR: GRUB configuration not generated!${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}GRUB installation and configuration completed${NC}"
 
 # Enable essential services
 systemctl enable ntpd.service
