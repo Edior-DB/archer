@@ -350,7 +350,14 @@ run_setup() {
 
     # Ask if user wants to run archer now
     if confirm_action "Do you want to run Archer now?"; then
-        exec "$ARCHER_DIR/bin/archer.sh"
+        echo -e "${BLUE}Starting Archer...${NC}"
+        # Pre-authenticate sudo to avoid issues in archer
+        echo -e "${CYAN}Authenticating sudo access...${NC}"
+        if sudo -v; then
+            echo -e "${GREEN}✓ Sudo access confirmed${NC}"
+        fi
+        # Use direct execution instead of exec to maintain terminal state
+        "$ARCHER_DIR/bin/archer.sh"
     fi
 }
 

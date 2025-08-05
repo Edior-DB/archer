@@ -96,18 +96,28 @@ EOF
 
 # Check if we're on a properly installed Arch system
 check_installed_system() {
-    if [[ ! -f /etc/arch-release ]]; then
-        echo -e "${RED}This script requires a properly installed Arch Linux system.${NC}"
+    # Check if we're running from Live ISO first (most restrictive)
+    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        echo -e "${RED}This script should not be run from Live ISO.${NC}"
+        echo -e "${YELLOW}For fresh installations, use install-system.sh instead.${NC}"
+        exit 1
+    fi
+
+    # Check for Arch Linux indicators (more flexible)
+    if [[ ! -f /etc/arch-release ]] && [[ ! -f /etc/os-release ]] && ! command -v pacman >/dev/null 2>&1; then
+        echo -e "${RED}This script requires an Arch Linux system.${NC}"
         echo -e "${YELLOW}For fresh installations, use install-system.sh from Live ISO.${NC}"
         echo -e "${YELLOW}For initial setup, use install-archer.sh after installation.${NC}"
         exit 1
     fi
 
-    # Check if we're running from Live ISO
-    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
-        echo -e "${RED}This script should not be run from Live ISO.${NC}"
-        echo -e "${YELLOW}For fresh installations, use install-system.sh instead.${NC}"
-        exit 1
+    # Additional check for os-release if arch-release doesn't exist
+    if [[ ! -f /etc/arch-release ]] && [[ -f /etc/os-release ]]; then
+        if ! grep -q "Arch Linux" /etc/os-release 2>/dev/null; then
+            echo -e "${YELLOW}Warning: This script is designed for Arch Linux systems.${NC}"
+            echo -e "${YELLOW}Detected system may not be fully compatible.${NC}"
+            # Don't exit here, just warn
+        fi
     fi
 }
 
@@ -132,17 +142,19 @@ check_sudo() {
         exit 1
     fi
 
-    # Test sudo access
+    # Test sudo access (non-interactive first)
     if sudo -n true 2>/dev/null; then
-        echo -e "${GREEN}✓ Sudo access confirmed${NC}"
+        echo -e "${GREEN}✓ Sudo access confirmed (cached)${NC}"
     else
-        echo -e "${YELLOW}Testing sudo access...${NC}"
-        if sudo -v; then
+        echo -e "${YELLOW}Sudo access verification required...${NC}"
+        echo -e "${CYAN}Please enter your password when prompted:${NC}"
+        if timeout 30 sudo -v 2>/dev/null; then
             echo -e "${GREEN}✓ Sudo access granted${NC}"
         else
-            echo -e "${RED}✗ Sudo access denied${NC}"
-            echo -e "${YELLOW}This script requires sudo privileges to install packages and modify system settings.${NC}"
-            exit 1
+            echo -e "${YELLOW}Sudo verification timed out or failed${NC}"
+            echo -e "${YELLOW}Some features may require manual sudo password entry${NC}"
+            echo -e "${YELLOW}Continuing with limited functionality...${NC}"
+            # Don't exit here, just warn and continue
         fi
     fi
 }
@@ -326,6 +338,11 @@ handle_args() {
             install_profile "multimedia"
             exit 0
             ;;
+        "--skip-checks")
+            # Hidden flag for testing/development
+            SKIP_CHECKS=true
+            return 0
+            ;;
         "--help"|"-h")
             show_logo
             echo "Usage: archer [option]"
@@ -355,10 +372,14 @@ main() {
         handle_args "$@"
     fi
 
-    # Initial checks
-    check_installed_system
-    check_sudo
-    check_internet
+    # Initial checks (unless skipped)
+    if [[ "$SKIP_CHECKS" != "true" ]]; then
+        check_installed_system
+        check_sudo
+        check_internet
+    else
+        echo -e "${YELLOW}Skipping system checks (development mode)${NC}"
+    fi
 
     # Interactive menu
     while true; do
