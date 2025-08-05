@@ -111,7 +111,8 @@ userinfo_collection() {
 
     # Username
     while true; do
-        username=$(gum input --placeholder "Enter username...")
+        echo -e "${CYAN}Enter your username:${NC}"
+        username=$(gum input --placeholder "e.g., john, alice, user123")
 
         # Check if username is empty
         if [[ -z "$username" ]]; then
@@ -130,8 +131,10 @@ userinfo_collection() {
 
     # Password
     while true; do
-        PASSWORD1=$(gum input --password --placeholder "Enter password...")
-        PASSWORD2=$(gum input --password --placeholder "Re-enter password...")
+        echo -e "${CYAN}Enter your password:${NC}"
+        PASSWORD1=$(gum input --password --placeholder "Password...")
+        echo -e "${CYAN}Re-enter your password:${NC}"
+        PASSWORD2=$(gum input --password --placeholder "Confirm password...")
 
         if [[ "$PASSWORD1" == "$PASSWORD2" ]]; then
             break
@@ -143,7 +146,8 @@ userinfo_collection() {
 
     # Hostname
     while true; do
-        name_of_machine=$(gum input --placeholder "Enter machine name...")
+        echo -e "${CYAN}Enter machine name (hostname):${NC}"
+        name_of_machine=$(gum input --placeholder "e.g., archlinux, mycomputer, workstation")
 
         if [[ -n "$name_of_machine" ]] && [[ ${#name_of_machine} -le 63 ]]; then
             break
@@ -175,8 +179,10 @@ filesystem_selection() {
 # Set LUKS password
 set_luks_password() {
     while true; do
-        password1=$(gum input --password --placeholder "Enter LUKS encryption password...")
-        password2=$(gum input --password --placeholder "Re-enter LUKS password...")
+        echo -e "${CYAN}Enter LUKS encryption password:${NC}"
+        password1=$(gum input --password --placeholder "Strong password for disk encryption...")
+        echo -e "${CYAN}Re-enter LUKS encryption password:${NC}"
+        password2=$(gum input --password --placeholder "Confirm encryption password...")
 
         if [[ "$password1" == "$password2" ]]; then
             export LUKS_PASSWORD="$password1"
@@ -196,7 +202,8 @@ timezone_selection() {
     if gum confirm "Is this timezone correct: ${time_zone}?"; then
         export TIMEZONE=$time_zone
     else
-        new_timezone=$(gum input --placeholder "Enter your timezone (e.g. Europe/London)...")
+        echo -e "${CYAN}Enter your timezone:${NC}"
+        new_timezone=$(gum input --placeholder "e.g., Europe/London, America/New_York, Asia/Tokyo")
         export TIMEZONE=$new_timezone
     fi
     echo -e "${GREEN}Timezone set to: ${TIMEZONE}${NC}"
