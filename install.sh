@@ -14,9 +14,13 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Script directory
+# Repository and installation directories
+ARCHER_HOME="${ARCHER_HOME:-$HOME/.local/share/archer}"
+REPO_URL="https://github.com/Edior-DB/archer.git"
+
+# Script directory - could be the cloned repo or standalone script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="$SCRIPT_DIR/install"
+INSTALL_DIR="$ARCHER_HOME/install"
 
 # Logo
 show_logo() {
@@ -52,7 +56,7 @@ check_internet() {
     if ! ping -c 1 8.8.8.8 &> /dev/null; then
         echo -e "${RED}No internet connection detected.${NC}"
         echo -e "${YELLOW}Please ensure you have an active internet connection.${NC}"
-        echo -e "${YELLOW}You can use the WiFi setup script: ./install/network/wifi-setup.sh${NC}"
+        echo -e "${YELLOW}You can use the WiFi setup script after repository setup${NC}"
         exit 1
     fi
     echo -e "${GREEN}Internet connection: OK${NC}"
@@ -92,6 +96,48 @@ ensure_git() {
     fi
 }
 
+# Setup Archer repository and environment
+setup_archer_repo() {
+    echo -e "${BLUE}Setting up Archer repository...${NC}"
+
+    # Always remove existing directory for clean clone
+    if [[ -d "$ARCHER_HOME" ]]; then
+        echo -e "${YELLOW}Removing existing repository for clean clone...${NC}"
+        rm -rf "$ARCHER_HOME"
+    fi
+
+    # Create parent directory if it doesn't exist
+    mkdir -p "$(dirname "$ARCHER_HOME")"
+
+    # Clone repository
+    echo -e "${CYAN}Cloning Archer repository to $ARCHER_HOME...${NC}"
+    git clone "$REPO_URL" "$ARCHER_HOME" || {
+        echo -e "${RED}Failed to clone repository!${NC}"
+        echo -e "${YELLOW}Please check your internet connection and try again.${NC}"
+        exit 1
+    }
+
+    # Set up environment variable in ~/.bashrc
+    local bashrc="$HOME/.bashrc"
+    if ! grep -q "ARCHER_HOME" "$bashrc" 2>/dev/null; then
+        echo -e "${CYAN}Adding ARCHER_HOME to ~/.bashrc...${NC}"
+        echo "" >> "$bashrc"
+        echo "# Archer - Arch Linux Transformation Suite" >> "$bashrc"
+        echo "export ARCHER_HOME=\"$ARCHER_HOME\"" >> "$bashrc"
+        echo "export PATH=\"\$ARCHER_HOME/bin:\$PATH\"" >> "$bashrc"
+
+        echo -e "${GREEN}✓ Environment variables added to ~/.bashrc${NC}"
+        echo -e "${YELLOW}Note: Run 'source ~/.bashrc' or restart your shell to load the environment${NC}"
+    else
+        echo -e "${CYAN}ARCHER_HOME already configured in ~/.bashrc${NC}"
+    fi
+
+    # Make scripts executable
+    find "$ARCHER_HOME" -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Archer repository setup completed${NC}"
+}
+
 # System optimization functions (inspired by Chris Titus Tech's LinUtil)
 # Source: https://github.com/ChrisTitusTech/linutil
 setup_system_optimizations() {
@@ -105,7 +151,7 @@ setup_system_optimizations() {
 setup_archer_command() {
     echo -e "${BLUE}Setting up Archer post-installation tool...${NC}"
 
-    local archer_script="$SCRIPT_DIR/bin/archer.sh"
+    local archer_script="$ARCHER_HOME/bin/archer.sh"
     local target_dir="/usr/local/bin"
     local target_file="$target_dir/archer"
 
@@ -130,7 +176,8 @@ EOF
         echo -e "${CYAN}Usage: archer [--gaming|--development|--multimedia]${NC}"
         echo -e "${CYAN}Or simply: archer (for interactive menu)${NC}"
     else
-        echo -e "${YELLOW}Warning: archer.sh not found, skipping PATH setup${NC}"
+        echo -e "${YELLOW}Warning: archer.sh not found at $archer_script${NC}"
+        echo -e "${YELLOW}Repository may not be properly set up${NC}"
     fi
 }
 
@@ -225,7 +272,7 @@ install_base_profile() {
 
 # Launch archer post-installation tool
 launch_archer() {
-    local archer_script="$SCRIPT_DIR/bin/archer.sh"
+    local archer_script="$ARCHER_HOME/bin/archer.sh"
 
     if [[ -f "$archer_script" ]]; then
         echo -e "${BLUE}Launching Archer post-installation tool...${NC}"
@@ -234,6 +281,7 @@ launch_archer() {
     else
         echo -e "${RED}Archer post-installation tool not found!${NC}"
         echo -e "${YELLOW}Expected location: $archer_script${NC}"
+        echo -e "${YELLOW}Please ensure the repository is properly set up${NC}"
     fi
 }
 
@@ -289,8 +337,11 @@ handle_args() {
             echo "  --archer               Launch post-installation tool"
             echo "  --help, -h             Show this help"
             echo ""
+            echo "This script will automatically clone the Archer repository to:"
+            echo "  \$HOME/.local/share/archer"
+            echo ""
             echo "Run without arguments for interactive mode."
-            echo "After base installation, use 'archer' command for additional software."
+            echo "After setup, use 'archer' command for additional software."
             exit 0
             ;;
     esac
@@ -319,6 +370,7 @@ main() {
 
     update_system
     ensure_git
+    setup_archer_repo
 
     # Interactive menu
     while true; do
