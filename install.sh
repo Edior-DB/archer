@@ -147,12 +147,39 @@ run_arch_install() {
 
     if curl -fsSL "$github_url" -o "$temp_file" && chmod +x "$temp_file"; then
         echo -e "${GREEN}Successfully downloaded ($(wc -c < "$temp_file") bytes)${NC}"
-        echo -e "${CYAN}Starting installation...${NC}"
-        "$temp_file"
-        echo -e "${GREEN}Installation script completed!${NC}"
+        echo ""
+        echo -e "${CYAN}Starting Arch Linux installation...${NC}"
+        echo -e "${YELLOW}The installer will guide you through:${NC}"
+        echo -e "${YELLOW} • User account creation${NC}"
+        echo -e "${YELLOW} • Disk partitioning${NC}"
+        echo -e "${YELLOW} • System installation${NC}"
+        echo ""
+
+        # Run the installation script with proper terminal access
+        echo -e "${CYAN}Launching interactive installer...${NC}"
+        echo -e "${YELLOW}You will be prompted to enter:${NC}"
+        echo -e "${YELLOW} • Username (lowercase, alphanumeric, _, -)${NC}"
+        echo -e "${YELLOW} • Password${NC}"
+        echo -e "${YELLOW} • Hostname${NC}"
+        echo ""
+        echo -e "${CYAN}Press Enter to continue...${NC}"
+        read -r
+
+        # Execute with proper terminal handling - redirect stdin/stdout
+        bash "$temp_file" < /dev/tty > /dev/tty 2>&1
+        install_result=$?
+
+        echo ""
+        if [ $install_result -eq 0 ]; then
+            echo -e "${GREEN}Installation script completed successfully!${NC}"
+        else
+            echo -e "${RED}Installation script encountered an error (exit code: $install_result).${NC}"
+            echo -e "${YELLOW}Check the output above for details.${NC}"
+        fi
     else
         echo -e "${RED}Failed to fetch arch-server-setup.sh from GitHub${NC}"
         echo -e "${YELLOW}Please check your internet connection${NC}"
+        echo -e "${YELLOW}URL: $github_url${NC}"
     fi
 
     echo ""
