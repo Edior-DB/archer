@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Arch Linux Server Installation Script
+# Original script by Chris Titus Tech (https://github.com/ChrisTitusTech/linutil)
+# Modified and adapted for Archer - Arch Linux Home PC Transformation Suite
+# Source: https://github.com/ChrisTitusTech/linutil/blob/main/src/commands/system-setup/arch-server-setup.sh
+
 # Redirect stdout and stderr to archsetup.txt and still output to console
 exec > >(tee -i archsetup.txt)
 exec 2>&1
