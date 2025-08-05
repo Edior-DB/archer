@@ -165,14 +165,18 @@ run_arch_install() {
         echo -e "${CYAN}Press Enter to continue...${NC}"
         read -r
 
-        # Execute with proper terminal handling - redirect stdin/stdout
-        bash "$temp_file" < /dev/tty > /dev/tty 2>&1
-        install_result=$?
-
+        # Clear screen and execute the installation script directly
+        clear
+        echo -e "${CYAN}Starting arch-server-setup.sh...${NC}"
         echo ""
-        if [ $install_result -eq 0 ]; then
+
+        # Execute directly - no redirection
+        if "$temp_file"; then
+            echo ""
             echo -e "${GREEN}Installation script completed successfully!${NC}"
         else
+            install_result=$?
+            echo ""
             echo -e "${RED}Installation script encountered an error (exit code: $install_result).${NC}"
             echo -e "${YELLOW}Check the output above for details.${NC}"
         fi
