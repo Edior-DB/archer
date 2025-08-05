@@ -19,14 +19,6 @@ get_user_confirmation() {
     local prompt="$1"
     local default="${2:-N}"
 
-    # Try to install gum if not available and we're on Arch
-    if ! command -v gum >/dev/null 2>&1 && [[ "$TEST_MODE" != "true" ]]; then
-        if command -v pacman >/dev/null 2>&1; then
-            echo -e "${CYAN}Installing gum for better user experience...${NC}"
-            pacman -Sy --noconfirm gum >/dev/null 2>&1 || true
-        fi
-    fi
-
     if command -v gum >/dev/null 2>&1; then
         # Use gum for better UX
         if gum confirm "$prompt"; then
@@ -40,6 +32,34 @@ get_user_confirmation() {
         echo -n "> "
         read -r response
         echo "${response:-$default}"
+    fi
+}
+
+# Enhanced menu selection using gum if available
+get_menu_selection() {
+    local title="$1"
+    shift
+    local options=("$@")
+
+    if command -v gum >/dev/null 2>&1; then
+        # Use gum for better menu UX
+        gum choose --header="$title" "${options[@]}"
+    else
+        # Fallback to traditional menu
+        echo -e "${CYAN}$title${NC}"
+        for i in "${!options[@]}"; do
+            echo "  $((i+1))) ${options[$i]}"
+        done
+        echo ""
+        echo -n "Select an option: "
+        read -r choice
+
+        # Convert number to option text
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -gt 0 ] && [ "$choice" -le "${#options[@]}" ]; then
+            echo "${options[$((choice-1))]}"
+        else
+            echo "Invalid"
+        fi
     fi
 }
 
@@ -142,10 +162,19 @@ run_arch_install() {
 # Placeholder for other options
 show_placeholder() {
     local option_name="$1"
-    echo -e "${YELLOW}$option_name${NC}"
-    echo -e "${CYAN}This feature will be available in a future update${NC}"
-    echo ""
-    read -p "Press Enter to continue..."
+
+    if command -v gum >/dev/null 2>&1; then
+        gum style --foreground="#ffff00" --bold "$option_name"
+        gum style --foreground="#00ffff" "This feature will be available in a future update"
+        echo ""
+        gum style --foreground="#ffffff" "Press Enter to continue..."
+        read -r
+    else
+        echo -e "${YELLOW}$option_name${NC}"
+        echo -e "${CYAN}This feature will be available in a future update${NC}"
+        echo ""
+        read -p "Press Enter to continue..."
+    fi
 }
 
 # Main function
@@ -174,6 +203,23 @@ main() {
             exit 1
         fi
         echo -e "${GREEN}Internet connection: OK${NC}"
+
+        # Install required packages on any Arch system
+        if command -v pacman >/dev/null 2>&1; then
+            echo -e "${CYAN}Ensuring required packages are installed...${NC}"
+            if ! command -v gum >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
+                echo -e "${YELLOW}Installing git and gum for better user experience...${NC}"
+                if pacman -Sy --noconfirm git gum >/dev/null 2>&1; then
+                    echo -e "${GREEN}Required packages installed successfully${NC}"
+                else
+                    echo -e "${YELLOW}Warning: Could not install some packages, falling back to basic prompts${NC}"
+                    # At least try to install git which is essential
+                    pacman -Sy --noconfirm git >/dev/null 2>&1 || true
+                fi
+            else
+                echo -e "${GREEN}Required packages already installed${NC}"
+            fi
+        fi
     fi
 
     # Main interactive loop
@@ -208,8 +254,29 @@ main() {
             # Normal mode - show full menu
             show_menu
 
-            echo -n "Select an option [0-9]: "
-            read -r choice
+            if command -v gum >/dev/null 2>&1; then
+                # Use gum for menu selection
+                options=(
+                    "1) Fresh Arch Linux Installation"
+                    "2) Post-Installation Setup (Essential packages, AUR)"
+                    "3) GPU Drivers Installation"
+                    "4) Desktop Environment Installation"
+                    "5) WiFi Setup (if needed)"
+                    "6) Complete Base System (1+2+3+4+5)"
+                    "7) Gaming Ready System (Base + Gaming optimizations)"
+                    "8) Developer Workstation (Base + Dev tools)"
+                    "9) Launch Archer Post-Installation Tool"
+                    "0) Exit"
+                )
+
+                selection=$(gum choose --header="Select an option:" "${options[@]}")
+                choice="${selection:0:1}"  # Extract number from selection
+            else
+                # Fallback to traditional input
+                echo -n "Select an option [0-9]: "
+                read -r choice
+            fi
+
             echo ""
 
             # Process choice
@@ -243,8 +310,13 @@ main() {
                     exit 0
                     ;;
                 *)
-                    echo -e "${RED}Invalid option. Please try again.${NC}"
-                    sleep 1
+                    if command -v gum >/dev/null 2>&1; then
+                        gum style --foreground="#ff0000" "Invalid selection. Please try again."
+                        sleep 1
+                    else
+                        echo -e "${RED}Invalid option. Please try again.${NC}"
+                        sleep 1
+                    fi
                     ;;
             esac
         fi
