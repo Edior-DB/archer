@@ -163,47 +163,48 @@ fetch_script_from_github() {
     fi
 }
 
-# Setup repository for installed systems
-setup_archer_repo() {
-    echo -e "${BLUE}Setting up Archer repository...${NC}"
+    # Setup repository for installed systems
+    setup_archer_repo() {
+        echo -e "${BLUE}Setting up Archer repository...${NC}"
 
-    # Always remove existing directory for clean clone
-    if [[ -d "$ARCHER_HOME" ]]; then
-        echo -e "${YELLOW}Removing existing repository for clean clone...${NC}"
-        rm -rf "$ARCHER_HOME"
-    fi
+        # Always remove existing directory for clean clone
+        if [[ -d "$ARCHER_HOME" ]]; then
+            echo -e "${YELLOW}Removing existing repository for clean clone...${NC}"
+            rm -rf "$ARCHER_HOME"
+        fi
 
-    # Create parent directory if it doesn't exist
-    mkdir -p "$(dirname "$ARCHER_HOME")"
+        # Create parent directory if it doesn't exist
+        mkdir -p "$(dirname "$ARCHER_HOME")"
 
-    # Clone repository
-    echo -e "${CYAN}Cloning Archer repository to $ARCHER_HOME...${NC}"
-    git clone "$REPO_URL" "$ARCHER_HOME" || {
-        echo -e "${RED}Failed to clone repository!${NC}"
-        echo -e "${YELLOW}Please check your internet connection and try again.${NC}"
-        exit 1
+        # Clone repository
+        echo -e "${CYAN}Cloning Archer repository to $ARCHER_HOME...${NC}"
+        if ! git clone "$REPO_URL" "$ARCHER_HOME"; then
+            echo -e "${RED}Failed to clone repository!${NC}"
+            echo -e "${YELLOW}Please check your internet connection and try again.${NC}"
+            echo -e "${YELLOW}Continuing without repository setup...${NC}"
+            return 1
+        fi
+
+        # Set up environment variable in ~/.bashrc
+        local bashrc="$HOME/.bashrc"
+        if ! grep -q "ARCHER_HOME" "$bashrc" 2>/dev/null; then
+            echo -e "${CYAN}Adding ARCHER_HOME to ~/.bashrc...${NC}"
+            echo "" >> "$bashrc"
+            echo "# Archer - Arch Linux Transformation Suite" >> "$bashrc"
+            echo "export ARCHER_HOME=\"$ARCHER_HOME\"" >> "$bashrc"
+            echo "export PATH=\"\$ARCHER_HOME/bin:\$PATH\"" >> "$bashrc"
+
+            echo -e "${GREEN}✓ Environment variables added to ~/.bashrc${NC}"
+            echo -e "${YELLOW}Note: Run 'source ~/.bashrc' or restart your shell to load the environment${NC}"
+        else
+            echo -e "${CYAN}ARCHER_HOME already configured in ~/.bashrc${NC}"
+        fi
+
+        # Make scripts executable
+        find "$ARCHER_HOME" -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
+
+        echo -e "${GREEN}✓ Archer repository setup completed${NC}"
     }
-
-    # Set up environment variable in ~/.bashrc
-    local bashrc="$HOME/.bashrc"
-    if ! grep -q "ARCHER_HOME" "$bashrc" 2>/dev/null; then
-        echo -e "${CYAN}Adding ARCHER_HOME to ~/.bashrc...${NC}"
-        echo "" >> "$bashrc"
-        echo "# Archer - Arch Linux Transformation Suite" >> "$bashrc"
-        echo "export ARCHER_HOME=\"$ARCHER_HOME\"" >> "$bashrc"
-        echo "export PATH=\"\$ARCHER_HOME/bin:\$PATH\"" >> "$bashrc"
-
-        echo -e "${GREEN}✓ Environment variables added to ~/.bashrc${NC}"
-        echo -e "${YELLOW}Note: Run 'source ~/.bashrc' or restart your shell to load the environment${NC}"
-    else
-        echo -e "${CYAN}ARCHER_HOME already configured in ~/.bashrc${NC}"
-    fi
-
-    # Make scripts executable
-    find "$ARCHER_HOME" -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
-
-    echo -e "${GREEN}✓ Archer repository setup completed${NC}"
-}
 
 # System optimization functions (inspired by Chris Titus Tech's LinUtil)
 # Source: https://github.com/ChrisTitusTech/linutil
@@ -557,7 +558,10 @@ main() {
     # Setup repository on installed systems
     if ! grep -q "archiso" /proc/cmdline 2>/dev/null; then
         setup_archer_repo
-    fi    # Interactive menu
+    fi
+
+    # Interactive menu
+    echo -e "${CYAN}Starting interactive menu...${NC}"
     while true; do
         show_menu
 
@@ -567,6 +571,8 @@ main() {
         else
             read -p "Select an option [0-9]: " choice
         fi
+
+        echo -e "${CYAN}Processing choice: $choice${NC}"
 
         case $choice in
             1)
