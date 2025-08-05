@@ -337,9 +337,20 @@ run_script() {
         local github_url="$REPO_RAW_URL/install/system/arch-server-setup.sh"
         local temp_file="/tmp/arch-server-setup.sh"
 
+        echo -e "${YELLOW}DEBUG: Fetching from URL: $github_url${NC}"
         if curl -fsSL "$github_url" -o "$temp_file"; then
             chmod +x "$temp_file"
             actual_script_path="$temp_file"
+            
+            # Debug: Show what we fetched
+            echo -e "${YELLOW}DEBUG: File size: $(wc -c < "$temp_file") bytes${NC}"
+            echo -e "${YELLOW}DEBUG: First 10 lines of fetched script:${NC}"
+            head -10 "$temp_file" | sed 's/^/  /'
+            echo -e "${YELLOW}DEBUG: Last 5 lines of fetched script:${NC}"
+            tail -5 "$temp_file" | sed 's/^/  /'
+            echo -e "${YELLOW}DEBUG: Script is executable: $(test -x "$temp_file" && echo "YES" || echo "NO")${NC}"
+            
+            read -p "Press Enter to continue with execution..."
         else
             echo -e "${RED}Failed to fetch arch-server-setup.sh from GitHub${NC}"
             echo -e "${YELLOW}Please check your internet connection${NC}"
@@ -371,10 +382,9 @@ run_script() {
 
         # Special handling for arch-server-setup.sh completion
         if [[ "$script_name" == "arch-server-setup.sh" ]]; then
-            set -x  # Enable tracing for arch-server-setup.sh
+            echo -e "${CYAN}About to execute: $actual_script_path${NC}"
             "$actual_script_path"
             local exit_code=$?
-            set +x  # Disable tracing after arch-server-setup.sh
 
             if [[ $exit_code -eq 0 ]]; then
                 echo -e "${GREEN}$script_name completed successfully!${NC}"
