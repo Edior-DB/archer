@@ -3,8 +3,8 @@
 # Archer - Arch Linux Home PC Transformation Suite
 # Main installer script
 
-#set -e
-set -x  # Enable tracing to see what's happening
+set -e
+
 
 # Color codes
 RED='\033[0;31m'
@@ -371,8 +371,10 @@ run_script() {
 
         # Special handling for arch-server-setup.sh completion
         if [[ "$script_name" == "arch-server-setup.sh" ]]; then
+            set -x  # Enable tracing for arch-server-setup.sh
             "$actual_script_path"
             local exit_code=$?
+            set +x  # Disable tracing after arch-server-setup.sh
 
             if [[ $exit_code -eq 0 ]]; then
                 echo -e "${GREEN}$script_name completed successfully!${NC}"
