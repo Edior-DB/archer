@@ -58,17 +58,37 @@ check_internet() {
     echo -e "${GREEN}Internet connection: OK${NC}"
 }
 
-# Update system
+# Update system (only if not in Live ISO)
 update_system() {
-    echo -e "${BLUE}Updating system packages...${NC}"
-    sudo pacman -Syu --noconfirm
+    # Check if we're running from Live ISO
+    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        echo -e "${YELLOW}Running from Live ISO - skipping system update${NC}"
+        echo -e "${CYAN}System update will be performed after installation${NC}"
+        return 0
+    fi
+
+    # Only update if we're on an installed system
+    if [[ -f /etc/arch-release ]] && [[ ! -f /run/archiso/bootmnt ]]; then
+        echo -e "${BLUE}Updating system packages...${NC}"
+        sudo pacman -Syu --noconfirm
+    else
+        echo -e "${YELLOW}System update skipped - not on installed Arch system${NC}"
+    fi
 }
 
 # Install git if not present
 ensure_git() {
     if ! command -v git &> /dev/null; then
         echo -e "${YELLOW}Installing git...${NC}"
-        sudo pacman -S --noconfirm git
+
+        # Use different approach for Live ISO vs installed system
+        if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+            # Live ISO - install without confirmation and update sync
+            pacman -Sy git --noconfirm
+        else
+            # Installed system - use sudo
+            sudo pacman -S --noconfirm git
+        fi
     fi
 }
 
@@ -286,6 +306,17 @@ main() {
     # Initial checks
     check_arch
     check_internet
+
+    # Show environment info
+    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        echo -e "${CYAN}Environment: Running from Live ISO${NC}"
+        echo -e "${YELLOW}Ready for fresh Arch Linux installation${NC}"
+    else
+        echo -e "${CYAN}Environment: Running from installed Arch system${NC}"
+        echo -e "${YELLOW}Ready for post-installation configuration${NC}"
+    fi
+    echo ""
+
     update_system
     ensure_git
 

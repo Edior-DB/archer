@@ -93,7 +93,15 @@ download_git() {
     # Install git if not available
     if ! command -v git &>/dev/null; then
         echo -e "${YELLOW}Installing git...${NC}"
-        pacman -Sy git --noconfirm
+
+        # Check if we're in Live ISO
+        if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+            # Live ISO - use pacman directly with sync
+            pacman -Sy git --noconfirm
+        else
+            # Installed system - use sudo
+            sudo pacman -S git --noconfirm
+        fi
     fi
 
     local temp_dir="/tmp/archer_$(date +%s)"

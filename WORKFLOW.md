@@ -18,6 +18,12 @@ The main `install.sh` script focuses on essential system setup that may require 
 - ✅ Desktop environment installation
 - ✅ WiFi setup (if needed)
 
+### Live ISO Optimizations
+- **No System Updates**: Skips `pacman -Syu` when running from Live ISO (read-only environment)
+- **Direct Package Installation**: Uses `pacman` directly instead of `sudo pacman` in Live ISO
+- **Environment Detection**: Automatically detects Live ISO vs installed system
+- **Proper Git Installation**: Handles git installation correctly for Live ISO environment
+
 ### Virtualization Support
 The GPU driver installer now detects virtualization environments:
 - **VirtIO/QEMU/KVM**: Installs qemu-guest-agent, spice-vdagent, xf86-video-qxl
