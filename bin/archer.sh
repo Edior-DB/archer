@@ -355,8 +355,8 @@ main() {
             )
 
             selection=$(select_option "${options[@]}")
-            choice="${selection:0:2}"  # Extract number from selection
-            choice="${choice// /}"     # Remove any spaces
+            # Extract number from selection like "10) AUR Helper Setup" -> "10"
+            choice=$(echo "$selection" | cut -d')' -f1)
         else
             # Fallback to traditional input
             echo -n "Select an option [0-14]: "

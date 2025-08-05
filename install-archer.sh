@@ -12,7 +12,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-ARCHER_DIR="$HOME/archer"
+ARCHER_DIR="$HOME/.local/share/archer"
 REPO_URL="https://github.com/Edior-DB/archer.git"
 
 # Logo
@@ -105,6 +105,9 @@ install_essentials() {
 # Setup Archer repository
 setup_archer_repo() {
     echo -e "${CYAN}Setting up Archer repository...${NC}"
+
+    # Create .local/share directory if it doesn't exist
+    mkdir -p "$(dirname "$ARCHER_DIR")"
 
     # Remove existing archer directory if it exists
     if [[ -d "$ARCHER_DIR" ]]; then
