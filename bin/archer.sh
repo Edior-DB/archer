@@ -33,7 +33,19 @@ wait_for_input() {
 # Enhanced selection function using gum
 select_option() {
     local options=("$@")
-    gum choose "${options[@]}"
+
+    # Check if we're in a proper interactive terminal
+    if [[ -t 0 ]] && [[ -t 1 ]]; then
+        gum choose "${options[@]}"
+    else
+        # Fallback for non-interactive mode (testing, piped input, etc.)
+        echo "Non-interactive mode detected. Available options:"
+        for i in "${!options[@]}"; do
+            echo "$((i+1))) ${options[$i]}"
+        done
+        echo "Please run in an interactive terminal for full functionality."
+        return 1
+    fi
 }
 
 # Logo
@@ -168,6 +180,8 @@ show_menu() {
     echo ""
     echo -e "${CYAN}===============================================${NC}"
     echo -e "${YELLOW}Perfect for customizing your fresh Arch installation!${NC}"
+    echo ""
+    echo -e "${BLUE}Use arrow keys (↑↓) to navigate, Enter to select${NC}"
 }
 
 # Execute script safely
@@ -374,7 +388,21 @@ main() {
             # Extract number from selection like "10) AUR Helper Setup" -> "10"
             choice=$(echo "$selection" | cut -d')' -f1)
         else
-            selection_error=true
+            # Fallback: if gum fails, provide traditional input
+            echo -e "${YELLOW}Interactive selection not available. Please enter your choice:${NC}"
+            echo -n "Select an option [0-14]: "
+
+            # Clear input buffer first
+            while read -r -t 0.01; do true; done 2>/dev/null || true
+
+            if read -r choice 2>/dev/null; then
+                # Validate input is numeric
+                if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+                    selection_error=true
+                fi
+            else
+                selection_error=true
+            fi
         fi
 
         # Handle selection errors
