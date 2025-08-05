@@ -3,7 +3,8 @@
 # Archer - Arch Linux Home PC Transformation Suite
 # Main installer script
 
-set -e
+#set -e
+set -x  # Enable tracing to see what's happening
 
 # Color codes
 RED='\033[0;31m'
@@ -52,15 +53,29 @@ EOF
 
 # Check if Arch Linux or Live ISO
 check_arch() {
+    # Skip check if in test mode
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${YELLOW}TEST MODE: Skipping Arch Linux detection${NC}"
+        echo -e "${CYAN}Running on $(lsb_release -d 2>/dev/null | cut -f2 || echo "Unknown system")${NC}"
+        return 0
+    fi
+
     if [[ ! -f /etc/arch-release ]] && [[ ! -f /etc/hostname ]] || ! grep -q "archiso" /proc/cmdline 2>/dev/null && [[ ! -f /etc/arch-release ]]; then
         echo -e "${RED}This script is designed for Arch Linux only.${NC}"
         echo -e "${YELLOW}Run from Arch Linux Live ISO for fresh installation, or from installed Arch Linux system.${NC}"
+        echo -e "${CYAN}For testing on other systems, use: $0 --test${NC}"
         exit 1
     fi
 }
 
 # Check internet connection
 check_internet() {
+    # Skip in test mode
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${CYAN}TEST MODE: Skipping internet check${NC}"
+        return 0
+    fi
+
     echo -e "${BLUE}Checking internet connection...${NC}"
     if ! ping -c 1 8.8.8.8 &> /dev/null; then
         echo -e "${RED}No internet connection detected.${NC}"
@@ -73,6 +88,12 @@ check_internet() {
 
 # Update system (only if not in Live ISO)
 update_system() {
+    # Skip in test mode
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${CYAN}TEST MODE: Skipping system update${NC}"
+        return 0
+    fi
+
     # Check if we're running from Live ISO
     if grep -q "archiso" /proc/cmdline 2>/dev/null; then
         echo -e "${YELLOW}Running from Live ISO - skipping system update${NC}"
@@ -91,6 +112,13 @@ update_system() {
 
 # Install git if not present
 ensure_git() {
+    # Skip package installation in test mode
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${CYAN}TEST MODE: Skipping package installation${NC}"
+        echo -e "${YELLOW}Would check and install: git, curl${NC}"
+        return 0
+    fi
+
     local packages_to_install=()
 
     if ! command -v git &> /dev/null; then
@@ -285,6 +313,15 @@ run_script() {
     local script_name="$(basename "$script_path")"
     local actual_script_path="$script_path"
 
+    # In test mode, just show what would be executed
+    if [[ "$TEST_MODE" == "true" ]]; then
+        echo -e "${CYAN}TEST MODE: Would execute $script_name${NC}"
+        echo -e "${YELLOW}Script path: $script_path${NC}"
+        echo -e "${YELLOW}In real execution, this would run the actual installation script${NC}"
+        read -p "Press Enter to continue..."
+        return 0
+    fi
+
     # Security check: On Live ISO (root), only allow arch-server-setup.sh
     if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
         if [[ "$script_name" != "arch-server-setup.sh" ]]; then
@@ -424,6 +461,13 @@ launch_archer() {
 # Handle command line arguments
 handle_args() {
     case "$1" in
+        "--test")
+            export TEST_MODE="true"
+            echo -e "${CYAN}TEST MODE ENABLED${NC}"
+            echo -e "${YELLOW}Script will run in test mode - no actual system changes will be made${NC}"
+            sleep 2
+            return 0
+            ;;
         "--install")
             run_script "$INSTALL_DIR/system/arch-server-setup.sh"
             exit 0
@@ -471,6 +515,9 @@ handle_args() {
             echo ""
             echo "Post-Installation:"
             echo "  --archer               Launch post-installation tool"
+            echo ""
+            echo "Testing:"
+            echo "  --test                 Run in test mode (bypass Arch Linux checks)"
             echo "  --help, -h             Show this help"
             echo ""
             echo "Run without arguments for interactive mode."
