@@ -33,19 +33,7 @@ wait_for_input() {
 # Enhanced selection function using gum
 select_option() {
     local options=("$@")
-
-    # Check if we're in a proper interactive terminal
-    if [[ -t 0 ]] && [[ -t 1 ]]; then
-        gum choose "${options[@]}"
-    else
-        # Fallback for non-interactive mode (testing, piped input, etc.)
-        echo "Non-interactive mode detected. Available options:"
-        for i in "${!options[@]}"; do
-            echo "$((i+1))) ${options[$i]}"
-        done
-        echo "Please run in an interactive terminal for full functionality."
-        return 1
-    fi
+    gum choose "${options[@]}"
 }
 
 # Logo
@@ -388,21 +376,7 @@ main() {
             # Extract number from selection like "10) AUR Helper Setup" -> "10"
             choice=$(echo "$selection" | cut -d')' -f1)
         else
-            # Fallback: if gum fails, provide traditional input
-            echo -e "${YELLOW}Interactive selection not available. Please enter your choice:${NC}"
-            echo -n "Select an option [0-14]: "
-
-            # Clear input buffer first
-            while read -r -t 0.01; do true; done 2>/dev/null || true
-
-            if read -r choice 2>/dev/null; then
-                # Validate input is numeric
-                if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-                    selection_error=true
-                fi
-            else
-                selection_error=true
-            fi
+            selection_error=true
         fi
 
         # Handle selection errors
