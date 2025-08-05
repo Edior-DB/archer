@@ -33,12 +33,21 @@ wait_for_input() {
 # Enhanced selection function using gum
 select_option() {
     local options=("$@")
-    gum choose "${options[@]}"
+
+    # Ensure we have proper terminal setup for gum
+    if [[ ! -t 0 ]] || [[ ! -t 1 ]]; then
+        echo "Error: Interactive terminal required for menu selection." >&2
+        return 1
+    fi
+
+    # Use gum choose with error handling
+    gum choose "${options[@]}" < /dev/tty
 }
 
 # Logo
 show_logo() {
-    clear
+    # Use printf instead of clear to avoid terminal issues
+    printf '\033[2J\033[H'  # Clear screen and move cursor to top
     echo -e "${BLUE}"
     cat << "EOF"
  █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
@@ -371,12 +380,19 @@ main() {
             "0) Exit"
         )
 
-        # Handle gum selection with error checking
+        # Handle gum selection with fallback
         if selection=$(select_option "${options[@]}" 2>/dev/null); then
             # Extract number from selection like "10) AUR Helper Setup" -> "10"
             choice=$(echo "$selection" | cut -d')' -f1)
         else
-            selection_error=true
+            # Fallback to traditional input when gum fails
+            echo -e "${YELLOW}Please enter your choice manually:${NC}"
+            read -p "Select an option [0-14]: " choice 2>/dev/null || selection_error=true
+
+            # Validate input is numeric and in range
+            if ! [[ "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -gt 14 ]]; then
+                selection_error=true
+            fi
         fi
 
         # Handle selection errors
