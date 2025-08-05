@@ -16,7 +16,20 @@ NC='\033[0m' # No Color
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="$SCRIPT_DIR/install"
+
+# Repository configuration
+REPO_URL="https://github.com/Edior-DB/archer.git"
+REPO_RAW_URL="https://raw.githubusercontent.com/Edior-DB/archer/master"
+ARCHER_HOME="$HOME/.local/share/archer"
+
+# Set installation directory based on environment
+if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+    # Live ISO - use script directory
+    INSTALL_DIR="$SCRIPT_DIR/install"
+else
+    # Installed system - use cloned repository
+    INSTALL_DIR="$ARCHER_HOME/install"
+fi
 
 # Logo
 show_logo() {
@@ -78,18 +91,89 @@ update_system() {
 
 # Install git if not present
 ensure_git() {
+    local packages_to_install=()
+
     if ! command -v git &> /dev/null; then
-        echo -e "${YELLOW}Installing git...${NC}"
+        packages_to_install+=("git")
+    fi
+
+    if ! command -v curl &> /dev/null; then
+        packages_to_install+=("curl")
+    fi
+
+    if [[ ${#packages_to_install[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}Installing required packages: ${packages_to_install[*]}${NC}"
 
         # Use different approach for Live ISO vs installed system
         if grep -q "archiso" /proc/cmdline 2>/dev/null; then
             # Live ISO - install without confirmation and update sync
-            pacman -Sy git --noconfirm
+            pacman -Sy "${packages_to_install[@]}" --noconfirm
         else
             # Installed system - use sudo
-            sudo pacman -S --noconfirm git
+            sudo pacman -S --noconfirm "${packages_to_install[@]}"
         fi
     fi
+}
+
+# Fetch script from GitHub for Live ISO
+fetch_script_from_github() {
+    local script_path="$1"
+    local temp_file="/tmp/$(basename "$script_path")"
+
+    echo -e "${CYAN}Fetching script from GitHub: $script_path${NC}"
+
+    # Convert install/ path to raw GitHub URL
+    local github_url="$REPO_RAW_URL/$script_path"
+
+    if curl -fsSL "$github_url" -o "$temp_file"; then
+        chmod +x "$temp_file"
+        echo "$temp_file"
+    else
+        echo -e "${RED}Failed to fetch script from GitHub${NC}"
+        return 1
+    fi
+}
+
+# Setup repository for installed systems
+setup_archer_repo() {
+    echo -e "${BLUE}Setting up Archer repository...${NC}"
+
+    # Always remove existing directory for clean clone
+    if [[ -d "$ARCHER_HOME" ]]; then
+        echo -e "${YELLOW}Removing existing repository for clean clone...${NC}"
+        rm -rf "$ARCHER_HOME"
+    fi
+
+    # Create parent directory if it doesn't exist
+    mkdir -p "$(dirname "$ARCHER_HOME")"
+
+    # Clone repository
+    echo -e "${CYAN}Cloning Archer repository to $ARCHER_HOME...${NC}"
+    git clone "$REPO_URL" "$ARCHER_HOME" || {
+        echo -e "${RED}Failed to clone repository!${NC}"
+        echo -e "${YELLOW}Please check your internet connection and try again.${NC}"
+        exit 1
+    }
+
+    # Set up environment variable in ~/.bashrc
+    local bashrc="$HOME/.bashrc"
+    if ! grep -q "ARCHER_HOME" "$bashrc" 2>/dev/null; then
+        echo -e "${CYAN}Adding ARCHER_HOME to ~/.bashrc...${NC}"
+        echo "" >> "$bashrc"
+        echo "# Archer - Arch Linux Transformation Suite" >> "$bashrc"
+        echo "export ARCHER_HOME=\"$ARCHER_HOME\"" >> "$bashrc"
+        echo "export PATH=\"\$ARCHER_HOME/bin:\$PATH\"" >> "$bashrc"
+
+        echo -e "${GREEN}✓ Environment variables added to ~/.bashrc${NC}"
+        echo -e "${YELLOW}Note: Run 'source ~/.bashrc' or restart your shell to load the environment${NC}"
+    else
+        echo -e "${CYAN}ARCHER_HOME already configured in ~/.bashrc${NC}"
+    fi
+
+    # Make scripts executable
+    find "$ARCHER_HOME" -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Archer repository setup completed${NC}"
 }
 
 # System optimization functions (inspired by Chris Titus Tech's LinUtil)
@@ -105,7 +189,15 @@ setup_system_optimizations() {
 setup_archer_command() {
     echo -e "${BLUE}Setting up Archer post-installation tool...${NC}"
 
-    local archer_script="$SCRIPT_DIR/bin/archer.sh"
+    # Use different paths based on environment
+    local archer_script
+    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        echo -e "${YELLOW}Skipping archer command setup on Live ISO${NC}"
+        return 0
+    else
+        archer_script="$ARCHER_HOME/bin/archer.sh"
+    fi
+
     local target_dir="/usr/local/bin"
     local target_file="$target_dir/archer"
 
@@ -130,7 +222,8 @@ EOF
         echo -e "${CYAN}Usage: archer [--gaming|--development|--multimedia]${NC}"
         echo -e "${CYAN}Or simply: archer (for interactive menu)${NC}"
     else
-        echo -e "${YELLOW}Warning: archer.sh not found, skipping PATH setup${NC}"
+        echo -e "${YELLOW}Warning: archer.sh not found at $archer_script${NC}"
+        echo -e "${YELLOW}Repository may not be properly set up${NC}"
     fi
 }
 
@@ -142,38 +235,123 @@ show_menu() {
     echo -e "${CYAN}        Arch Linux Fresh Installation        ${NC}"
     echo -e "${CYAN}===============================================${NC}"
     echo ""
-    echo -e "${GREEN}Core Installation (Run from Live ISO):${NC}"
-    echo "  1) Fresh Arch Linux Installation"
-    echo "  2) Post-Installation Setup (Essential packages, AUR)"
-    echo "  3) GPU Drivers Installation"
-    echo "  4) Desktop Environment Installation"
-    echo "  5) WiFi Setup (if needed)"
-    echo ""
-    echo -e "${YELLOW}Quick Installation Profiles:${NC}"
-    echo "  6) Complete Base System (1+2+3+4+5)"
-    echo "  7) Gaming Ready System (Base + Gaming optimizations)"
-    echo "  8) Developer Workstation (Base + Dev tools)"
-    echo ""
-    echo -e "${CYAN}Post-Installation Management:${NC}"
-    echo "  9) Launch Archer Post-Installation Tool"
-    echo ""
-    echo " 0) Exit"
+
+    # Check if running as root on Live ISO
+    if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+        echo -e "${RED}Running as ROOT on Live ISO${NC}"
+        echo -e "${YELLOW}Security restriction: Only base system installation allowed${NC}"
+        echo ""
+        echo -e "${GREEN}Available Options:${NC}"
+        echo "  1) Fresh Arch Linux Installation (arch-server-setup.sh)"
+        echo ""
+        echo -e "${CYAN}After installation:${NC}"
+        echo -e "${CYAN} • Reboot and login as your new user${NC}"
+        echo -e "${CYAN} • Run this installer again for additional setup${NC}"
+        echo ""
+        echo " 0) Exit"
+    else
+        echo -e "${GREEN}Core Installation (Run from Live ISO):${NC}"
+        echo "  1) Fresh Arch Linux Installation"
+        echo "  2) Post-Installation Setup (Essential packages, AUR)"
+        echo "  3) GPU Drivers Installation"
+        echo "  4) Desktop Environment Installation"
+        echo "  5) WiFi Setup (if needed)"
+        echo ""
+        echo -e "${YELLOW}Quick Installation Profiles:${NC}"
+        echo "  6) Complete Base System (1+2+3+4+5)"
+        echo "  7) Gaming Ready System (Base + Gaming optimizations)"
+        echo "  8) Developer Workstation (Base + Dev tools)"
+        echo ""
+        echo -e "${CYAN}Post-Installation Management:${NC}"
+        echo "  9) Launch Archer Post-Installation Tool"
+        echo ""
+        echo " 0) Exit"
+    fi
+
     echo ""
     echo -e "${CYAN}===============================================${NC}"
-    echo -e "${YELLOW}Note: After base installation, use 'archer' command${NC}"
-    echo -e "${YELLOW}for additional software and customizations.${NC}"
+
+    if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+        echo -e "${YELLOW}Note: Additional features available after user login${NC}"
+    else
+        echo -e "${YELLOW}Note: After base installation, use 'archer' command${NC}"
+        echo -e "${YELLOW}for additional software and customizations.${NC}"
+    fi
 }
 
 # Execute script safely
 run_script() {
     local script_path="$1"
     local script_name="$(basename "$script_path")"
+    local actual_script_path="$script_path"
 
-    if [[ -f "$script_path" ]]; then
+    # Security check: On Live ISO (root), only allow arch-server-setup.sh
+    if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+        if [[ "$script_name" != "arch-server-setup.sh" ]]; then
+            echo -e "${RED}Security restriction: Running as root on Live ISO${NC}"
+            echo -e "${YELLOW}Only 'arch-server-setup.sh' can be executed as root${NC}"
+            echo -e "${CYAN}After base installation, login as your new user to continue${NC}"
+            read -p "Press Enter to continue..."
+            return 1
+        fi
+
+        # Fetch arch-server-setup.sh from GitHub for Live ISO
+        echo -e "${CYAN}Fetching arch-server-setup.sh from GitHub...${NC}"
+        local github_url="$REPO_RAW_URL/install/system/arch-server-setup.sh"
+        local temp_file="/tmp/arch-server-setup.sh"
+
+        if curl -fsSL "$github_url" -o "$temp_file"; then
+            chmod +x "$temp_file"
+            actual_script_path="$temp_file"
+        else
+            echo -e "${RED}Failed to fetch arch-server-setup.sh from GitHub${NC}"
+            echo -e "${YELLOW}Please check your internet connection${NC}"
+            read -p "Press Enter to continue..."
+            return 1
+        fi
+    else
+        # Installed system or non-root - use existing logic
+        if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+            # Live ISO - fetch script from GitHub
+            if [[ ! -f "$script_path" ]]; then
+                # Convert full path to relative path from repository root
+                local relative_path="${script_path#$SCRIPT_DIR/}"
+                actual_script_path=$(fetch_script_from_github "$relative_path")
+
+                if [[ $? -ne 0 ]] || [[ ! -f "$actual_script_path" ]]; then
+                    echo -e "${RED}Failed to fetch script: $script_name${NC}"
+                    echo -e "${YELLOW}This feature requires internet connection${NC}"
+                    read -p "Press Enter to continue..."
+                    return 1
+                fi
+            fi
+        fi
+    fi
+
+    if [[ -f "$actual_script_path" ]]; then
         echo -e "${BLUE}Running $script_name...${NC}"
-        chmod +x "$script_path"
-        "$script_path"
-        echo -e "${GREEN}$script_name completed successfully!${NC}"
+        chmod +x "$actual_script_path"
+
+        # Special handling for arch-server-setup.sh completion
+        if [[ "$script_name" == "arch-server-setup.sh" ]]; then
+            "$actual_script_path"
+            local exit_code=$?
+
+            if [[ $exit_code -eq 0 ]]; then
+                echo -e "${GREEN}$script_name completed successfully!${NC}"
+                echo -e "${CYAN}=== IMPORTANT: Next Steps ===${NC}"
+                echo -e "${YELLOW}1. Reboot your system: reboot${NC}"
+                echo -e "${YELLOW}2. Login as your newly created user${NC}"
+                echo -e "${YELLOW}3. Run this installer again as your user for additional setup${NC}"
+                echo -e "${CYAN}================================${NC}"
+            else
+                echo -e "${RED}$script_name failed with exit code $exit_code${NC}"
+            fi
+        else
+            "$actual_script_path"
+            echo -e "${GREEN}$script_name completed successfully!${NC}"
+        fi
+
         read -p "Press Enter to continue..."
     else
         echo -e "${RED}Script not found: $script_path${NC}"
@@ -225,7 +403,13 @@ install_base_profile() {
 
 # Launch archer post-installation tool
 launch_archer() {
-    local archer_script="$SCRIPT_DIR/bin/archer.sh"
+    # Use different paths based on environment
+    local archer_script
+    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        archer_script="$SCRIPT_DIR/bin/archer.sh"
+    else
+        archer_script="$ARCHER_HOME/bin/archer.sh"
+    fi
 
     if [[ -f "$archer_script" ]]; then
         echo -e "${BLUE}Launching Archer post-installation tool...${NC}"
@@ -320,24 +504,107 @@ main() {
     update_system
     ensure_git
 
+    # Setup repository on installed systems
+    if ! grep -q "archiso" /proc/cmdline 2>/dev/null; then
+        setup_archer_repo
+    fi
+
     # Interactive menu
     while true; do
         show_menu
-        read -p "Select an option [0-9]: " choice
+
+        # Adjust prompt based on environment
+        if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+            read -p "Select an option [0-1]: " choice
+        else
+            read -p "Select an option [0-9]: " choice
+        fi
 
         case $choice in
-            1) run_script "$INSTALL_DIR/system/arch-server-setup.sh" ;;
-            2)
-                run_script "$INSTALL_DIR/system/post-install.sh"
-                setup_archer_command
+            1)
+                run_script "$INSTALL_DIR/system/arch-server-setup.sh"
                 ;;
-            3) run_script "$INSTALL_DIR/system/gpu-drivers.sh" ;;
-            4) run_script "$INSTALL_DIR/desktop/de-installer.sh" ;;
-            5) run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
-            6) install_base_profile "base" ;;
-            7) install_base_profile "gaming" ;;
-            8) install_base_profile "developer" ;;
-            9) launch_archer ;;
+            2)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    run_script "$INSTALL_DIR/system/post-install.sh"
+                    setup_archer_command
+                fi
+                ;;
+            3)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    run_script "$INSTALL_DIR/system/gpu-drivers.sh"
+                fi
+                ;;
+            4)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    run_script "$INSTALL_DIR/desktop/de-installer.sh"
+                fi
+                ;;
+            5)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    run_script "$INSTALL_DIR/network/wifi-setup.sh"
+                fi
+                ;;
+            6)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    install_base_profile "base"
+                fi
+                ;;
+            7)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    install_base_profile "gaming"
+                fi
+                ;;
+            8)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    install_base_profile "developer"
+                fi
+                ;;
+            9)
+                # Block if running as root on Live ISO
+                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+                    echo -e "${RED}Option not available as root on Live ISO${NC}"
+                    echo -e "${YELLOW}Please complete base installation first${NC}"
+                    read -p "Press Enter to continue..."
+                else
+                    launch_archer
+                fi
+                ;;
             0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
                 exit 0
