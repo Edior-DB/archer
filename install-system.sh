@@ -288,8 +288,8 @@ run_installation() {
     echo -e "${CYAN}========== Starting Installation ===========${NC}"
 
     # Set up mirrors and basic packages
-    #echo -e "${CYAN}Setting up mirrors for optimal download${NC}"
-    #iso=$(curl -4 ifconfig.io/country_code 2>/dev/null || echo "US")
+    echo -e "${CYAN}Setting up mirrors for optimal download${NC}"
+    iso=$(curl -4 ifconfig.io/country_code 2>/dev/null || echo "US")
     timedatectl set-ntp true
     pacman -Sy --noconfirm
     pacman -S --noconfirm archlinux-keyring
@@ -349,7 +349,9 @@ run_installation() {
                 exit 1
             fi
         fi
-    done    # Format disk
+    done
+
+    # Format disk
     echo -e "${CYAN}Formatting Disk${NC}"
     umount -A --recursive /mnt 2>/dev/null || true
 
@@ -528,7 +530,9 @@ while [ \$retry_count -lt \$max_retries ]; do
             break
         fi
     fi
-donesystemctl enable NetworkManager
+done
+
+systemctl enable NetworkManager
 
 # Install essential packages with retry logic
 echo -e "${CYAN}Installing essential packages${NC}"
@@ -557,7 +561,9 @@ while [ \$retry_count -lt \$max_retries ]; do
             break
         fi
     fi
-done# Optimize compilation
+done
+
+# Optimize compilation
 nc=\$(grep -c ^"cpu cores" /proc/cpuinfo || echo "2")
 TOTAL_MEM=\$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')
 if [[ \$TOTAL_MEM -gt 8000000 ]]; then
