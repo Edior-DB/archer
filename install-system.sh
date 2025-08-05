@@ -292,11 +292,24 @@ run_installation() {
     pacman -S --noconfirm --needed reflector rsync grub
     cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 
-    echo -e "${CYAN}Setting up $iso mirrors for faster downloads${NC}"
-    reflector -a 48 -c "$iso" --score 5 -f 5 -l 20 --sort rate --save /etc/pacman.d/mirrorlist || {
-        echo -e "${YELLOW}Mirror setup failed, using backup${NC}"
-        cp /etc/pacman.d/mirrorlist.backup /etc/pacman.d/mirrorlist
-    }
+    # Ask user if they want to use local mirrors
+    echo -e "${CYAN}Detected country: $iso${NC}"
+    if gum confirm "Use $iso mirrors for faster downloads? (Choose 'No' to keep default mirrors)"; then
+        echo -e "${CYAN}Setting up $iso mirrors for faster downloads${NC}"
+        if ! reflector -a 48 -c "$iso" --score 5 -f 5 -l 20 --sort rate --save /etc/pacman.d/mirrorlist; then
+            echo -e "${YELLOW}$iso mirrors failed, trying worldwide mirrors...${NC}"
+            if ! reflector -a 48 --score 5 -f 5 -l 20 --sort rate --save /etc/pacman.d/mirrorlist; then
+                echo -e "${YELLOW}All mirror setups failed, using backup mirrors${NC}"
+                cp /etc/pacman.d/mirrorlist.backup /etc/pacman.d/mirrorlist
+            else
+                echo -e "${GREEN}Successfully configured worldwide mirrors${NC}"
+            fi
+        else
+            echo -e "${GREEN}Successfully configured $iso mirrors${NC}"
+        fi
+    else
+        echo -e "${CYAN}Using default mirrors${NC}"
+    fi
 
     # Install prerequisites
     [ ! -d "/mnt" ] && mkdir /mnt
