@@ -78,8 +78,22 @@ interactive_mode() {
         # Live ISO - use pacman directly
         pacman -Sy --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
     elif [[ -f /etc/arch-release ]]; then
-        # Installed Arch - use sudo
-        sudo pacman -S --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
+        # Installed Arch - ensure extra repository is enabled and update
+        echo -e "${CYAN}Ensuring extra repository is enabled...${NC}"
+
+        # Enable extra repository if not already enabled
+        if ! grep -q "^\[extra\]" /etc/pacman.conf; then
+            echo -e "${YELLOW}Enabling extra repository...${NC}"
+            sudo sed -i '/^\[core\]/a\\n[extra]\nInclude = /etc/pacman.d/mirrorlist' /etc/pacman.conf
+        fi
+
+        # Update package database
+        echo -e "${CYAN}Updating package database...${NC}"
+        sudo pacman -Sy --noconfirm
+
+        # Install gum from extra repository
+        echo -e "${CYAN}Installing gum...${NC}"
+        sudo pacman -S --noconfirm gum
     fi
     echo ""
 
