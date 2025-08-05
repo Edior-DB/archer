@@ -267,20 +267,33 @@ install_aur_helper() {
 create_archer_command() {
     echo -e "${CYAN}Creating archer command...${NC}"
 
-    # Add to bashrc if not already present
-    if ! grep -q "alias archer=" "$HOME/.bashrc" 2>/dev/null; then
+    # Create ~/.local/bin directory if it doesn't exist
+    mkdir -p "$HOME/.local/bin"
+
+    # Create symbolic link in user's local bin
+    ln -sf "$ARCHER_DIR/bin/archer.sh" "$HOME/.local/bin/archer"
+    echo -e "${GREEN}Archer command linked to ~/.local/bin/archer${NC}"
+
+    # Add ~/.local/bin to PATH in bashrc if not already present
+    if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc" 2>/dev/null; then
         echo "" >> "$HOME/.bashrc"
-        echo "# Archer command alias" >> "$HOME/.bashrc"
-        echo "alias archer='$ARCHER_DIR/bin/archer.sh'" >> "$HOME/.bashrc"
-        echo -e "${GREEN}Archer command alias added to ~/.bashrc${NC}"
-    else
-        echo -e "${YELLOW}Archer command alias already exists${NC}"
+        echo "# Add ~/.local/bin to PATH" >> "$HOME/.bashrc"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        echo -e "${GREEN}~/.local/bin added to PATH in ~/.bashrc${NC}"
     fi
 
-    # Create symbolic link in user's local bin if it exists
-    if [[ -d "$HOME/.local/bin" ]]; then
-        ln -sf "$ARCHER_DIR/bin/archer.sh" "$HOME/.local/bin/archer" 2>/dev/null
-        echo -e "${GREEN}Archer command linked to ~/.local/bin/archer${NC}"
+    # Also add archer alias as backup
+    if ! grep -q "alias archer=" "$HOME/.bashrc" 2>/dev/null; then
+        echo "" >> "$HOME/.bashrc"
+        echo "# Archer command alias (backup)" >> "$HOME/.bashrc"
+        echo "alias archer='$ARCHER_DIR/bin/archer.sh'" >> "$HOME/.bashrc"
+        echo -e "${GREEN}Archer command alias added to ~/.bashrc${NC}"
+    fi
+
+    # Add to current session PATH if not already there
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        export PATH="$HOME/.local/bin:$PATH"
+        echo -e "${GREEN}~/.local/bin added to current session PATH${NC}"
     fi
 }
 
@@ -329,11 +342,11 @@ run_setup() {
     echo -e "${GREEN}========================================${NC}"
     echo ""
     echo -e "${CYAN}Next steps:${NC}"
-    echo -e "${CYAN} 1. Reload your shell: source ~/.bashrc${NC}"
+    echo -e "${CYAN} 1. The 'archer' command is now available in your current session${NC}"
     echo -e "${CYAN} 2. Run the main menu: archer${NC}"
-    echo -e "${CYAN} 3. Or directly: $ARCHER_DIR/bin/archer.sh${NC}"
+    echo -e "${CYAN} 3. For new terminal sessions, ~/.local/bin is now in your PATH${NC}"
     echo ""
-    echo -e "${YELLOW}The 'archer' command is now available for additional setup options.${NC}"
+    echo -e "${YELLOW}The 'archer' command provides additional setup options and system management.${NC}"
 
     # Ask if user wants to run archer now
     if confirm_action "Do you want to run Archer now?"; then
