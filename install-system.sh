@@ -465,7 +465,9 @@ run_installation() {
                 exit 1
             fi
         fi
-    done    echo "keyserver hkp://keyserver.ubuntu.com" >> /mnt/etc/pacman.d/gnupg/gpg.conf
+    done
+
+    echo "keyserver hkp://keyserver.ubuntu.com" >> /mnt/etc/pacman.d/gnupg/gpg.conf
     cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 
     # Generate fstab
