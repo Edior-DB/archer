@@ -29,11 +29,34 @@ show_logo() {
     Arch Linux Home PC Transformation Suite
 LOGOEOF
     echo -e "${NC}"
-    
+
     # Show test mode if enabled
     if [[ "$TEST_MODE" == "true" ]]; then
         echo -e "${YELLOW}TEST MODE - Running on $(lsb_release -d 2>/dev/null | cut -f2 || echo "Non-Arch system")${NC}"
     fi
+}
+
+# Show Live ISO installation prompt
+show_livecd_prompt() {
+    show_logo
+    echo -e "${CYAN}===============================================${NC}"
+    echo -e "${CYAN}        Arch Linux Fresh Installation        ${NC}"
+    echo -e "${CYAN}===============================================${NC}"
+    echo ""
+    echo -e "${RED}Running as ROOT on Live ISO${NC}"
+    echo -e "${YELLOW}Ready to install Arch Linux to your system${NC}"
+    echo ""
+    echo -e "${GREEN}This will:${NC}"
+    echo -e "${GREEN} • Download and run arch-server-setup.sh${NC}"
+    echo -e "${GREEN} • Guide you through disk partitioning${NC}"
+    echo -e "${GREEN} • Install base Arch Linux system${NC}"
+    echo -e "${GREEN} • Create user account${NC}"
+    echo ""
+    echo -e "${CYAN}After installation:${NC}"
+    echo -e "${CYAN} • Reboot and login as your new user${NC}"
+    echo -e "${CYAN} • Run this installer again for additional setup${NC}"
+    echo ""
+    echo -e "${CYAN}===============================================${NC}"
 }
 
 # Show main menu
@@ -44,47 +67,27 @@ show_menu() {
     echo -e "${CYAN}===============================================${NC}"
     echo ""
 
-    # Check if running as root on Live ISO
-    if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-        echo -e "${RED}Running as ROOT on Live ISO${NC}"
-        echo -e "${YELLOW}Security restriction: Only base system installation allowed${NC}"
-        echo ""
-        echo -e "${GREEN}Available Options:${NC}"
-        echo "  1) Fresh Arch Linux Installation (arch-server-setup.sh)"
-        echo ""
-        echo -e "${CYAN}After installation:${NC}"
-        echo -e "${CYAN} • Reboot and login as your new user${NC}"
-        echo -e "${CYAN} • Run this installer again for additional setup${NC}"
-        echo ""
-        echo " 0) Exit"
-    else
-        echo -e "${GREEN}Core Installation (Run from Live ISO):${NC}"
-        echo "  1) Fresh Arch Linux Installation"
-        echo "  2) Post-Installation Setup (Essential packages, AUR)"
-        echo "  3) GPU Drivers Installation"
-        echo "  4) Desktop Environment Installation"
-        echo "  5) WiFi Setup (if needed)"
-        echo ""
-        echo -e "${YELLOW}Quick Installation Profiles:${NC}"
-        echo "  6) Complete Base System (1+2+3+4+5)"
-        echo "  7) Gaming Ready System (Base + Gaming optimizations)"
-        echo "  8) Developer Workstation (Base + Dev tools)"
-        echo ""
-        echo -e "${CYAN}Post-Installation Management:${NC}"
-        echo "  9) Launch Archer Post-Installation Tool"
-        echo ""
-        echo " 0) Exit"
-    fi
+    echo -e "${GREEN}Core Installation (Run from Live ISO):${NC}"
+    echo "  1) Fresh Arch Linux Installation"
+    echo "  2) Post-Installation Setup (Essential packages, AUR)"
+    echo "  3) GPU Drivers Installation"
+    echo "  4) Desktop Environment Installation"
+    echo "  5) WiFi Setup (if needed)"
+    echo ""
+    echo -e "${YELLOW}Quick Installation Profiles:${NC}"
+    echo "  6) Complete Base System (1+2+3+4+5)"
+    echo "  7) Gaming Ready System (Base + Gaming optimizations)"
+    echo "  8) Developer Workstation (Base + Dev tools)"
+    echo ""
+    echo -e "${CYAN}Post-Installation Management:${NC}"
+    echo "  9) Launch Archer Post-Installation Tool"
+    echo ""
+    echo " 0) Exit"
 
     echo ""
     echo -e "${CYAN}===============================================${NC}"
-
-    if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-        echo -e "${YELLOW}Note: Additional features available after user login${NC}"
-    else
-        echo -e "${YELLOW}Note: After base installation, use 'archer' command${NC}"
-        echo -e "${YELLOW}for additional software and customizations.${NC}"
-    fi
+    echo -e "${YELLOW}Note: After base installation, use 'archer' command${NC}"
+    echo -e "${YELLOW}for additional software and customizations.${NC}"
 }
 
 # Download and run arch-server-setup.sh
@@ -92,7 +95,7 @@ run_arch_install() {
     echo -e "${CYAN}Fetching arch-server-setup.sh from GitHub...${NC}"
     local github_url="$REPO_RAW_URL/install/system/arch-server-setup.sh"
     local temp_file="/tmp/arch-server-setup.sh"
-    
+
     if curl -fsSL "$github_url" -o "$temp_file" && chmod +x "$temp_file"; then
         echo -e "${GREEN}Successfully downloaded ($(wc -c < "$temp_file") bytes)${NC}"
         echo -e "${CYAN}Starting installation...${NC}"
@@ -102,7 +105,7 @@ run_arch_install() {
         echo -e "${RED}Failed to fetch arch-server-setup.sh from GitHub${NC}"
         echo -e "${YELLOW}Please check your internet connection${NC}"
     fi
-    
+
     echo ""
     read -p "Press Enter to continue..."
 }
@@ -146,85 +149,74 @@ main() {
 
     # Main interactive loop
     while true; do
-        show_menu
-        
-        # Get user input
+        # Check if running as root on Live ISO
         if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-            echo -n "Select an option [0-1]: "
-        else
-            echo -n "Select an option [0-9]: "
-        fi
-        
-        read -r choice
-        echo ""
-        
-        # Process choice
-        case "$choice" in
-            1)
-                if [[ "$TEST_MODE" == "true" ]]; then
-                    echo -e "${CYAN}TEST MODE: Would execute Fresh Arch Linux Installation${NC}"
-                    read -p "Press Enter to continue..."
-                elif grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
+            # Live ISO mode - direct installation prompt
+            show_livecd_prompt
+            echo ""
+            echo -e "${YELLOW}Do you want to proceed with Arch Linux installation? (y/N)${NC}"
+            read -r -p "> " confirm
+
+            case "${confirm,,}" in
+                y|yes)
                     run_arch_install
-                else
-                    echo -e "${YELLOW}Fresh Arch Linux Installation should be run from Live ISO as root${NC}"
-                    read -p "Press Enter to continue..."
-                fi
-                ;;
-            2)
-                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-                    echo -e "${RED}Option not available as root on Live ISO${NC}"
-                    echo -e "${YELLOW}Please complete base installation first${NC}"
-                    read -p "Press Enter to continue..."
-                else
+                    # After installation, exit the script
+                    echo -e "${GREEN}Installation completed. Please reboot your system.${NC}"
+                    exit 0
+                    ;;
+                n|no|"")
+                    echo -e "${CYAN}Installation cancelled. Exiting...${NC}"
+                    exit 0
+                    ;;
+                *)
+                    echo -e "${RED}Please answer 'y' for yes or 'n' for no.${NC}"
+                    sleep 2
+                    ;;
+            esac
+        else
+            # Normal mode - show full menu
+            show_menu
+
+            echo -n "Select an option [0-9]: "
+            read -r choice
+            echo ""
+
+            # Process choice
+            case "$choice" in
+                1)
+                    if [[ "$TEST_MODE" == "true" ]]; then
+                        echo -e "${CYAN}TEST MODE: Would execute Fresh Arch Linux Installation${NC}"
+                        read -p "Press Enter to continue..."
+                    else
+                        echo -e "${YELLOW}Fresh Arch Linux Installation should be run from Live ISO as root${NC}"
+                        read -p "Press Enter to continue..."
+                    fi
+                    ;;
+                2)
                     show_placeholder "Post-Installation Setup"
-                fi
-                ;;
-            3)
-                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-                    echo -e "${RED}Option not available as root on Live ISO${NC}"
-                    echo -e "${YELLOW}Please complete base installation first${NC}"
-                    read -p "Press Enter to continue..."
-                else
+                    ;;
+                3)
                     show_placeholder "GPU Drivers Installation"
-                fi
-                ;;
-            4)
-                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-                    echo -e "${RED}Option not available as root on Live ISO${NC}"
-                    echo -e "${YELLOW}Please complete base installation first${NC}"
-                    read -p "Press Enter to continue..."
-                else
+                    ;;
+                4)
                     show_placeholder "Desktop Environment Installation"
-                fi
-                ;;
-            5)
-                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-                    echo -e "${RED}Option not available as root on Live ISO${NC}"
-                    echo -e "${YELLOW}Please complete base installation first${NC}"
-                    read -p "Press Enter to continue..."
-                else
+                    ;;
+                5)
                     show_placeholder "WiFi Setup"
-                fi
-                ;;
-            6|7|8|9)
-                if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]] && [[ "$TEST_MODE" != "true" ]]; then
-                    echo -e "${RED}Option not available as root on Live ISO${NC}"
-                    echo -e "${YELLOW}Please complete base installation first${NC}"
-                    read -p "Press Enter to continue..."
-                else
+                    ;;
+                6|7|8|9)
                     show_placeholder "Installation Profile"
-                fi
-                ;;
-            0)
-                echo -e "${GREEN}Thank you for using Archer!${NC}"
-                exit 0
-                ;;
-            *)
-                echo -e "${RED}Invalid option. Please try again.${NC}"
-                sleep 1
-                ;;
-        esac
+                    ;;
+                0)
+                    echo -e "${GREEN}Thank you for using Archer!${NC}"
+                    exit 0
+                    ;;
+                *)
+                    echo -e "${RED}Invalid option. Please try again.${NC}"
+                    sleep 1
+                    ;;
+            esac
+        fi
     done
 }
 
