@@ -229,15 +229,38 @@ run_script() {
                 ;;
         esac
 
-        # Run with sudo if needed
+        # Run script with proper error handling
+        local exit_code=0
         if [[ $EUID -ne 0 ]]; then
+            # Reset terminal state and run script
+            reset 2>/dev/null || true
+            set +e  # Temporarily disable exit on error
             "$script_path"
+            exit_code=$?
+            set -e  # Re-enable exit on error
         else
             echo -e "${YELLOW}Warning: Running as root. Consider running as regular user.${NC}"
+            reset 2>/dev/null || true
+            set +e
             "$script_path"
+            exit_code=$?
+            set -e
         fi
 
-        echo -e "${GREEN}$script_name completed successfully!${NC}"
+        # Clean up terminal state
+        stty sane 2>/dev/null || true
+        reset 2>/dev/null || true
+
+        # Clear any leftover input
+        while read -r -t 0.1; do true; done 2>/dev/null || true
+
+        if [[ $exit_code -eq 0 ]]; then
+            echo -e "${GREEN}$script_name completed successfully!${NC}"
+        else
+            echo -e "${YELLOW}$script_name exited with code $exit_code${NC}"
+            echo -e "${YELLOW}You can try running it again or check for any error messages above.${NC}"
+        fi
+
         wait_for_input
     else
         echo -e "${RED}Script not found: $script_path${NC}"
@@ -250,10 +273,7 @@ run_script() {
 install_profile() {
     local profile="$1"
 
-    echo -e "${YELLOW}This may require multiple reboots. Continue? (y/N)${NC}"
-    read -r confirm
-
-    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    if ! confirm_action "This may require multiple reboots. Continue with profile installation?"; then
         return 0
     fi
 
@@ -342,7 +362,13 @@ main() {
 
     # Interactive menu
     while true; do
+        # Ensure clean terminal state before showing menu
+        stty sane 2>/dev/null || true
+
         show_menu
+
+        local choice=""
+        local selection_error=false
 
         if command -v gum >/dev/null 2>&1; then
             # Use gum for menu selection
@@ -364,13 +390,39 @@ main() {
                 "0) Exit"
             )
 
-            selection=$(select_option "${options[@]}")
-            # Extract number from selection like "10) AUR Helper Setup" -> "10"
-            choice=$(echo "$selection" | cut -d')' -f1)
+            # Handle gum selection with error checking
+            if selection=$(select_option "${options[@]}" 2>/dev/null); then
+                # Extract number from selection like "10) AUR Helper Setup" -> "10"
+                choice=$(echo "$selection" | cut -d')' -f1)
+            else
+                selection_error=true
+            fi
         else
-            # Fallback to traditional input
+            # Fallback to traditional input with better error handling
             echo -n "Select an option [0-14]: "
-            read -r choice
+
+            # Clear input buffer first
+            while read -r -t 0.01; do true; done 2>/dev/null || true
+
+            if read -r choice 2>/dev/null; then
+                # Validate input is numeric
+                if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+                    selection_error=true
+                fi
+            else
+                selection_error=true
+            fi
+        fi
+
+        # Handle selection errors
+        if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
+            if command -v gum >/dev/null 2>&1; then
+                gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
+            else
+                echo -e "${RED}Invalid selection or input error. Please try again.${NC}"
+            fi
+            sleep 2
+            continue
         fi
 
         echo ""
