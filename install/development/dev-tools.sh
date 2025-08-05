@@ -38,34 +38,34 @@ select_languages() {
     echo "9. All of the above"
     echo "0. Skip language installation"
     echo ""
-    
+
     read -p "Enter your choice (1-9, or multiple separated by spaces): " lang_choice
-    
+
     # Install selected languages
     if [[ "$lang_choice" == *"1"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_python
     fi
-    
+
     if [[ "$lang_choice" == *"2"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_nodejs
     fi
-    
+
     if [[ "$lang_choice" == *"3"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_rust
     fi
-    
+
     if [[ "$lang_choice" == *"4"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_go
     fi
-    
+
     if [[ "$lang_choice" == *"5"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_java
     fi
-    
+
     if [[ "$lang_choice" == *"7"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_php
     fi
-    
+
     if [[ "$lang_choice" == *"8"* ]] || [[ "$lang_choice" == "9" ]]; then
         install_ruby
     fi
@@ -74,7 +74,7 @@ select_languages() {
 # Python installation
 install_python() {
     echo -e "${BLUE}Installing Python development environment...${NC}"
-    
+
     packages=(
         "python"
         "python-pip"
@@ -84,89 +84,89 @@ install_python() {
         "ipython"
         "jupyter-notebook"
     )
-    
+
     for package in "${packages[@]}"; do
         sudo pacman -S --noconfirm "$package" || echo -e "${YELLOW}$package not available in repos${NC}"
     done
-    
+
     # Popular Python packages
     echo -e "${YELLOW}Installing popular Python packages...${NC}"
     pip install --user --upgrade pip setuptools wheel
     pip install --user requests numpy pandas matplotlib flask django fastapi
-    
+
     echo -e "${GREEN}Python environment installed!${NC}"
 }
 
 # Node.js installation
 install_nodejs() {
     echo -e "${BLUE}Installing Node.js development environment...${NC}"
-    
+
     sudo pacman -S --noconfirm nodejs npm yarn
-    
+
     # Global npm packages
     echo -e "${YELLOW}Installing useful global npm packages...${NC}"
     npm install -g @angular/cli create-react-app vue-cli typescript ts-node nodemon eslint prettier
-    
+
     echo -e "${GREEN}Node.js environment installed!${NC}"
 }
 
 # Rust installation
 install_rust() {
     echo -e "${BLUE}Installing Rust development environment...${NC}"
-    
+
     sudo pacman -S --noconfirm rustup
     rustup install stable
     rustup default stable
     rustup component add rust-src rust-analyzer clippy rustfmt
-    
+
     echo -e "${GREEN}Rust environment installed!${NC}"
 }
 
 # Go installation
 install_go() {
     echo -e "${BLUE}Installing Go development environment...${NC}"
-    
+
     sudo pacman -S --noconfirm go
-    
+
     # Set up Go environment
     echo 'export GOPATH=$HOME/go' >> ~/.bashrc
     echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
-    
+
     echo -e "${GREEN}Go environment installed!${NC}"
 }
 
 # Java installation
 install_java() {
     echo -e "${BLUE}Installing Java development environment...${NC}"
-    
+
     sudo pacman -S --noconfirm jdk-openjdk openjdk-doc gradle maven
-    
+
     echo -e "${GREEN}Java environment installed!${NC}"
 }
 
 # PHP installation
 install_php() {
     echo -e "${BLUE}Installing PHP development environment...${NC}"
-    
+
     sudo pacman -S --noconfirm php php-apache composer
-    
+
     echo -e "${GREEN}PHP environment installed!${NC}"
 }
 
 # Ruby installation
 install_ruby() {
     echo -e "${BLUE}Installing Ruby development environment...${NC}"
-    
+
     sudo pacman -S --noconfirm ruby rubygems
     gem install bundler rails
-    
+
     echo -e "${GREEN}Ruby environment installed!${NC}"
 }
 
 # Development tools
 install_dev_tools() {
     echo -e "${BLUE}Installing development tools...${NC}"
-    
+
     # Version control and tools
     dev_packages=(
         "git"
@@ -174,7 +174,7 @@ install_dev_tools() {
         "github-cli"
         "tig"
         "diff-so-fancy"
-        
+
         # Build tools
         "cmake"
         "ninja"
@@ -182,19 +182,19 @@ install_dev_tools() {
         "autoconf"
         "automake"
         "libtool"
-        
+
         # Databases
         "sqlite"
         "postgresql"
         "mariadb"
         "redis"
-        
+
         # Network tools
         "curl"
         "wget"
         "httpie"
         "postman-bin"
-        
+
         # Text processing
         "jq"
         "yq"
@@ -202,17 +202,17 @@ install_dev_tools() {
         "fd"
         "bat"
         "exa"
-        
+
         # Monitoring
         "htop"
         "btop"
         "glances"
-        
+
         # Terminal multiplexer
         "tmux"
         "screen"
     )
-    
+
     for package in "${dev_packages[@]}"; do
         if pacman -Si "$package" &> /dev/null; then
             sudo pacman -S --noconfirm "$package"
@@ -225,7 +225,7 @@ install_dev_tools() {
 # Database setup
 setup_databases() {
     echo -e "${BLUE}Setting up databases...${NC}"
-    
+
     read -p "Initialize PostgreSQL? (y/N): " init_postgres
     if [[ "$init_postgres" =~ ^[Yy]$ ]]; then
         sudo -u postgres initdb -D /var/lib/postgres/data
@@ -233,7 +233,7 @@ setup_databases() {
         sudo systemctl start postgresql
         echo -e "${GREEN}PostgreSQL initialized and started${NC}"
     fi
-    
+
     read -p "Initialize MariaDB? (y/N): " init_mariadb
     if [[ "$init_mariadb" =~ ^[Yy]$ ]]; then
         sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
@@ -242,7 +242,7 @@ setup_databases() {
         echo -e "${GREEN}MariaDB initialized and started${NC}"
         echo -e "${YELLOW}Run 'sudo mysql_secure_installation' to secure MariaDB${NC}"
     fi
-    
+
     read -p "Enable Redis? (y/N): " enable_redis
     if [[ "$enable_redis" =~ ^[Yy]$ ]]; then
         sudo systemctl enable redis
@@ -254,14 +254,14 @@ setup_databases() {
 # IDE and editors (additional to the main editors script)
 install_dev_editors() {
     echo -e "${BLUE}Installing additional development editors...${NC}"
-    
+
     editors=(
         "neovim"
         "emacs"
         "sublime-text-4"
         "jetbrains-toolbox"
     )
-    
+
     for editor in "${editors[@]}"; do
         read -p "Install $editor? (y/N): " install_editor
         if [[ "$install_editor" =~ ^[Yy]$ ]]; then
@@ -277,17 +277,17 @@ install_dev_editors() {
 # Git configuration
 configure_git() {
     echo -e "${BLUE}Configuring Git...${NC}"
-    
+
     read -p "Enter your Git username: " git_username
     read -p "Enter your Git email: " git_email
-    
+
     if [[ -n "$git_username" && -n "$git_email" ]]; then
         git config --global user.name "$git_username"
         git config --global user.email "$git_email"
         git config --global init.defaultBranch main
         git config --global core.editor nano
         git config --global pull.rebase false
-        
+
         echo -e "${GREEN}Git configured successfully!${NC}"
     else
         echo -e "${YELLOW}Skipping Git configuration${NC}"
@@ -298,30 +298,30 @@ configure_git() {
 main() {
     echo -e "${YELLOW}This script will install development tools and programming languages.${NC}"
     read -p "Continue? (y/N): " continue_install
-    
+
     if [[ ! "$continue_install" =~ ^[Yy]$ ]]; then
         echo -e "${YELLOW}Installation cancelled.${NC}"
         exit 0
     fi
-    
+
     # Update system first
     sudo pacman -Syu --noconfirm
-    
+
     # Install development tools
     install_dev_tools
-    
+
     # Select and install programming languages
     select_languages
-    
+
     # Configure Git
     configure_git
-    
+
     # Setup databases
     setup_databases
-    
+
     # Install additional editors
     install_dev_editors
-    
+
     echo -e "${GREEN}
 =========================================================================
                     Development Environment Setup Complete!
@@ -344,7 +344,7 @@ Next steps:
 - Consider running the editors installation script
 
 ${NC}"
-    
+
     read -p "Press Enter to continue..."
 }
 

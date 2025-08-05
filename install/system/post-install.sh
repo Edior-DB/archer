@@ -42,39 +42,39 @@ essential_packages=(
     "zip"
     "tar"
     "rsync"
-    
+
     # Network tools
     "networkmanager"
     "network-manager-applet"
     "wireless_tools"
     "wpa_supplicant"
     "openssh"
-    
+
     # Audio
     "pipewire"
     "pipewire-alsa"
     "pipewire-pulse"
     "pipewire-jack"
     "wireplumber"
-    
+
     # Fonts
     "ttf-dejavu"
     "ttf-liberation"
     "noto-fonts"
     "noto-fonts-emoji"
-    
+
     # Archive tools
     "p7zip"
     "unrar"
-    
+
     # System monitoring
     "lm_sensors"
     "smartmontools"
-    
+
     # File systems
     "ntfs-3g"
     "exfat-utils"
-    
+
     # Development basics
     "gcc"
     "make"

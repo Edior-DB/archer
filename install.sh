@@ -22,13 +22,13 @@ INSTALL_DIR="$SCRIPT_DIR/install"
 show_logo() {
     echo -e "${BLUE}"
     cat << "EOF"
- █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗ 
+ █████╗ ██████╗  ██████╗██╗  ██╗███████╗██████╗
 ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝██╔══██╗
 ███████║██████╔╝██║     ███████║█████╗  ██████╔╝
 ██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  ██╔══██╗
 ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
 ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
-                                                  
+
     Arch Linux Home PC Transformation Suite
 EOF
     echo -e "${NC}"
@@ -80,7 +80,7 @@ ensure_git() {
 # Download LinUtil
 setup_linutil() {
     local linutil_dir="$HOME/.local/share/linutil"
-    
+
     if [[ ! -d "$linutil_dir" ]]; then
         echo -e "${BLUE}Setting up LinUtil integration...${NC}"
         mkdir -p "$HOME/.local/share"
@@ -91,7 +91,7 @@ setup_linutil() {
         git pull
         cd "$SCRIPT_DIR"
     fi
-    
+
     # Make LinUtil accessible
     if [[ ! -f "$HOME/.local/bin/linutil" ]]; then
         mkdir -p "$HOME/.local/bin"
@@ -101,7 +101,7 @@ cd "$HOME/.local/share/linutil"
 ./run.sh "$@"
 EOF
         chmod +x "$HOME/.local/bin/linutil"
-        
+
         # Add to PATH if not already there
         if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
@@ -126,20 +126,20 @@ show_menu() {
     echo "  4) Desktop Applications"
     echo "  5) Themes & Customization"
     echo ""
-    echo -e "${GREEN}Development Environment:${NC}"
-    echo "  6) Development Tools & Languages"
-    echo "  7) Code Editors & IDEs"
-    echo "  8) Container Tools (Docker, Podman)"
+    echo -e "${GREEN}Gaming & Multimedia:${NC}"
+    echo "  6) Gaming Setup (Steam, Lutris, Drivers)"
+    echo "  7) Media Applications (VLC, OBS, etc.)"
+    echo "  8) Audio/Video Codecs"
     echo ""
     echo -e "${GREEN}Terminal & Shell:${NC}"
     echo "  9) Terminal Setup (Zsh, Oh-My-Zsh)"
     echo " 10) Terminal Applications"
     echo " 11) Dotfiles Management"
     echo ""
-    echo -e "${GREEN}Multimedia & Gaming:${NC}"
-    echo " 12) Media Applications"
-    echo " 13) Gaming Setup"
-    echo " 14) Audio/Video Codecs"
+    echo -e "${GREEN}Development Environment:${NC}"
+    echo " 12) Development Tools & Languages"
+    echo " 13) Code Editors & IDEs"
+    echo " 14) Container Tools (Docker, Podman)"
     echo ""
     echo -e "${GREEN}Security & Privacy:${NC}"
     echo " 15) Security Tools"
@@ -153,9 +153,9 @@ show_menu() {
     echo ""
     echo -e "${YELLOW}Quick Options:${NC}"
     echo " 21) Full Installation (Everything)"
-    echo " 22) Developer Workstation Profile"
-    echo " 23) Gaming Rig Profile"
-    echo " 24) Multimedia Center Profile"
+    echo " 22) Gaming Rig Profile (Recommended for Home PC)"
+    echo " 23) Multimedia Center Profile"
+    echo " 24) Developer Workstation Profile"
     echo ""
     echo " 0) Exit"
     echo ""
@@ -166,7 +166,7 @@ show_menu() {
 run_script() {
     local script_path="$1"
     local script_name="$(basename "$script_path")"
-    
+
     if [[ -f "$script_path" ]]; then
         echo -e "${BLUE}Running $script_name...${NC}"
         chmod +x "$script_path"
@@ -185,26 +185,28 @@ full_installation() {
     echo -e "${BLUE}Starting full installation...${NC}"
     echo -e "${YELLOW}This will install everything. Continue? (y/N)${NC}"
     read -r confirm
-    
+
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         local scripts=(
             "$INSTALL_DIR/system/post-install.sh"
             "$INSTALL_DIR/system/system-tweaks.sh"
             "$INSTALL_DIR/desktop/de-installer.sh"
             "$INSTALL_DIR/desktop/applications.sh"
+            "$INSTALL_DIR/multimedia/gaming.sh"
+            "$INSTALL_DIR/multimedia/media-apps.sh"
+            "$INSTALL_DIR/multimedia/codecs.sh"
             "$INSTALL_DIR/terminal/shell-setup.sh"
             "$INSTALL_DIR/development/dev-tools.sh"
-            "$INSTALL_DIR/multimedia/media-apps.sh"
             "$INSTALL_DIR/security/firewall.sh"
             "$INSTALL_DIR/extras/flatpak.sh"
         )
-        
+
         for script in "${scripts[@]}"; do
             if [[ -f "$script" ]]; then
                 run_script "$script"
             fi
         done
-        
+
         echo -e "${GREEN}Full installation completed!${NC}"
     fi
 }
@@ -212,7 +214,7 @@ full_installation() {
 # Profile installations
 install_profile() {
     local profile="$1"
-    
+
     case "$profile" in
         "developer")
             echo -e "${BLUE}Installing Developer Workstation Profile...${NC}"
@@ -291,7 +293,7 @@ main() {
     if [[ $# -gt 0 ]]; then
         handle_args "$@"
     fi
-    
+
     # Initial checks
     check_root
     check_arch
@@ -299,33 +301,33 @@ main() {
     update_system
     ensure_git
     setup_linutil
-    
+
     # Interactive menu
     while true; do
         show_menu
         read -p "Select an option [0-24]: " choice
-        
+
         case $choice in
             1) run_script "$INSTALL_DIR/system/post-install.sh" ;;
             2) run_script "$INSTALL_DIR/system/system-tweaks.sh" ;;
             3) run_script "$INSTALL_DIR/desktop/de-installer.sh" ;;
             4) run_script "$INSTALL_DIR/desktop/applications.sh" ;;
             5) run_script "$INSTALL_DIR/desktop/themes.sh" ;;
-            6) run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
-            7) run_script "$INSTALL_DIR/development/editors.sh" ;;
-            8) run_script "$INSTALL_DIR/development/containers.sh" ;;
+            6) run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
+            7) run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
+            8) run_script "$INSTALL_DIR/multimedia/codecs.sh" ;;
             9) run_script "$INSTALL_DIR/terminal/shell-setup.sh" ;;
             10) run_script "$INSTALL_DIR/terminal/terminal-apps.sh" ;;
             11) run_script "$INSTALL_DIR/terminal/dotfiles.sh" ;;
-            12) run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
-            13) run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
-            14) run_script "$INSTALL_DIR/multimedia/codecs.sh" ;;
+            12) run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
+            13) run_script "$INSTALL_DIR/development/editors.sh" ;;
+            14) run_script "$INSTALL_DIR/development/containers.sh" ;;
             15) run_script "$INSTALL_DIR/security/firewall.sh" ;;
             16) run_script "$INSTALL_DIR/security/privacy.sh" ;;
             17) run_script "$INSTALL_DIR/security/backup.sh" ;;
             18) run_script "$INSTALL_DIR/extras/flatpak.sh" ;;
             19) run_script "$INSTALL_DIR/extras/personal-tweaks.sh" ;;
-            20) 
+            20)
                 echo -e "${BLUE}Opening LinUtil...${NC}"
                 if command -v linutil &> /dev/null; then
                     linutil
@@ -335,12 +337,12 @@ main() {
                 fi
                 ;;
             21) full_installation ;;
-            22) install_profile "developer" ;;
-            23) install_profile "gaming" ;;
-            24) install_profile "multimedia" ;;
-            0) 
+            22) install_profile "gaming" ;;
+            23) install_profile "multimedia" ;;
+            24) install_profile "developer" ;;
+            0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
-                exit 0 
+                exit 0
                 ;;
             *)
                 echo -e "${RED}Invalid option. Please try again.${NC}"
