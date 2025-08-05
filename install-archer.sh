@@ -32,6 +32,21 @@ LOGOEOF
     echo -e "${NC}"
 }
 
+# Confirm function with fallback
+confirm_action() {
+    local message="$1"
+    if command -v gum >/dev/null 2>&1; then
+        gum confirm "$message"
+    else
+        echo -n "$message (y/N): "
+        read -r response
+        case "$response" in
+            [yY]|[yY][eE][sS]) return 0 ;;
+            *) return 1 ;;
+        esac
+    fi
+}
+
 # Check if running from Live ISO
 check_environment() {
     if grep -q "archiso" /proc/cmdline 2>/dev/null; then
@@ -80,8 +95,9 @@ install_essentials() {
     echo -e "${YELLOW}Updating system packages...${NC}"
     sudo pacman -Syu --noconfirm
 
-    # Install git if not present
+    # Install git and gum if not present
     sudo pacman -S --noconfirm git
+    sudo pacman -S --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Warning: gum not available in repositories${NC}"
 
     echo -e "${GREEN}Essential packages installed${NC}"
 }
@@ -142,6 +158,7 @@ install_development_base() {
         "zip"
         "rsync"
         "neofetch"
+        "gum"
 
         # Network tools
         "openssh"
@@ -316,7 +333,7 @@ run_setup() {
     echo -e "${YELLOW}The 'archer' command is now available for additional setup options.${NC}"
 
     # Ask if user wants to run archer now
-    if gum confirm "Do you want to run Archer now?"; then
+    if confirm_action "Do you want to run Archer now?"; then
         exec "$ARCHER_DIR/bin/archer.sh"
     fi
 }
