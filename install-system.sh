@@ -360,8 +360,10 @@ run_installation() {
     sgdisk -n 2::+1GiB --typecode=2:ef00 --change-name=2:'EFIBOOT' "${DISK}"
     sgdisk -n 3::-0 --typecode=3:8300 --change-name=3:'ROOT' "${DISK}"
 
+    # Set bootable flag for BIOS systems and ensure BIOS boot partition is properly configured
     if [[ ! -d "/sys/firmware/efi" ]]; then
-        sgdisk -A 1:set:2 "${DISK}"
+        sgdisk -A 1:set:2 "${DISK}"  # Set BIOS boot partition as bootable
+        sgdisk -A 2:set:2 "${DISK}"  # Set EFI partition as bootable for compatibility
     fi
     partprobe "${DISK}"
 
@@ -474,16 +476,7 @@ run_installation() {
     genfstab -U /mnt >> /mnt/etc/fstab
     echo -e "${GREEN}Generated /etc/fstab${NC}"
 
-    # Detect firmware type and install GRUB for BIOS systems
-    if [[ ! -d "/sys/firmware/efi" ]]; then
-        echo -e "${CYAN}BIOS system detected - Installing GRUB BIOS Bootloader${NC}"
-        if ! grub-install --boot-directory=/mnt/boot "${DISK}"; then
-            echo -e "${RED}ERROR: GRUB BIOS installation failed!${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${CYAN}UEFI system detected - GRUB will be installed from chroot${NC}"
-    fi
+    # Note: GRUB installation will be handled from chroot for both BIOS and UEFI systems
 
     # Check for low memory and add swap if needed
     TOTAL_MEM=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')
@@ -731,28 +724,52 @@ if [[ -d "/sys/firmware/efi" ]]; then
     fi
     echo -e "${GREEN}GRUB UEFI installation successful${NC}"
 else
-    echo -e "${CYAN}BIOS system - GRUB already installed${NC}"
+    echo -e "${CYAN}Installing GRUB for BIOS system${NC}"
+    if ! grub-install --target=i386-pc "${DISK}"; then
+        echo -e "${RED}ERROR: GRUB BIOS installation failed!${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}GRUB BIOS installation successful${NC}"
 fi
 
 # Configure GRUB
 if [[ "${FS}" == "luks" ]]; then
     sed -i "s%GRUB_CMDLINE_LINUX_DEFAULT=\"%GRUB_CMDLINE_LINUX_DEFAULT=\"cryptdevice=UUID=${ENCRYPTED_PARTITION_UUID}:ROOT root=/dev/mapper/ROOT %g" /etc/default/grub
 fi
+
+# Add VM-friendly GRUB configuration
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="[^"]*/& splash /' /etc/default/grub
+sed -i 's/^#GRUB_TERMINAL=console/GRUB_TERMINAL=console/' /etc/default/grub
+sed -i 's/^#GRUB_GFXMODE=640x480/GRUB_GFXMODE=1024x768/' /etc/default/grub
+
+# Ensure GRUB timeout is reasonable for VMs
+sed -i 's/^GRUB_TIMEOUT=5/GRUB_TIMEOUT=10/' /etc/default/grub
 
 # Enable os-prober for detecting other operating systems
 sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
 
 # Generate GRUB configuration
+echo -e "${CYAN}Generating GRUB configuration...${NC}"
 grub-mkconfig -o /boot/grub/grub.cfg
 
-# Verify GRUB configuration
+# Verify GRUB configuration and installation
 if [[ ! -f /boot/grub/grub.cfg ]]; then
     echo -e "${RED}ERROR: GRUB configuration not generated!${NC}"
     exit 1
 fi
 
+# Additional verification for BIOS systems
+if [[ ! -d "/sys/firmware/efi" ]]; then
+    if [[ ! -f /boot/grub/i386-pc/core.img ]]; then
+        echo -e "${YELLOW}Warning: GRUB BIOS core image not found, attempting recovery...${NC}"
+        grub-install --target=i386-pc --recheck "${DISK}"
+        grub-mkconfig -o /boot/grub/grub.cfg
+    fi
+fi
+
 echo -e "${GREEN}GRUB installation and configuration completed${NC}"
+echo -e "${CYAN}GRUB configuration summary:${NC}"
+grep -E "(menuentry|linux|initrd)" /boot/grub/grub.cfg | head -10
 
 # Enable essential services
 systemctl enable ntpd.service
