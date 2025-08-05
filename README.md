@@ -1,23 +1,47 @@
 # Archer - Arch Linux Home PC Transformation Suite
 
-Transform your vanilla Arch Linux server installation into a fully-featured home PC and developer workstation.
+Transform your vanilla Arch Linux from Live ISO into a fully-featured home PC with gaming, development, and multimedia capabilities.
 
 ## 🎯 Project Overview
 
-**Archer** is a collection of scripts designed to transform a minimal Arch Linux server installation into a complete home PC setup with development tools, desktop environment, and personal customizations. This project is inspired by Chris Titus' LinUtil and extends it with additional Arch-specific optimizations and personal workflow enhancements.
+**Archer** is a comprehensive installation suite that takes you from Arch Linux Live ISO to a complete home PC setup. The installation is split into two phases:
+
+1. **Base Installation** (`install.sh`): Core system setup from Live ISO - handles OS installation, GPU drivers, desktop environment, and WiFi
+2. **Post-Installation** (`archer` command): Additional software, customizations, and specialized setups
+
+This design handles reboots gracefully and provides a better user experience.
 
 ## 🚀 Quick Start
 
-### Option 1: Automated Installation
+### Phase 1: Base Installation (Run from Live ISO)
+
+Download and run the main installer:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install.sh | bash
 ```
 
-### Option 2: Manual Installation
+Or clone and run manually:
 ```bash
 git clone https://github.com/Edior-DB/archer.git
 cd archer
-sudo ./install.sh
+./install.sh
+```
+
+**Quick Installation Profiles:**
+```bash
+./install.sh --gaming     # Gaming-ready system
+./install.sh --developer  # Developer workstation
+./install.sh --base       # Minimal desktop system
+```
+
+### Phase 2: Post-Installation (After Reboot)
+
+After base installation and reboot, use the `archer` command:
+```bash
+archer                    # Interactive menu
+archer --gaming          # Complete gaming setup
+archer --development     # Complete dev environment
+archer --multimedia      # Complete multimedia setup
 ```
 
 ## 📁 Project Structure

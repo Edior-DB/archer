@@ -81,6 +81,124 @@ detect_gpus() {
     echo ""
 }
 
+# Check for virtualization environment
+check_virtualization() {
+    echo -e "${BLUE}Checking for virtualization environment...${NC}"
+
+    local virt_detected=false
+    local virt_type=""
+
+    # Check for common virtualization indicators
+    if lspci | grep -qi "virtio\|vmware\|virtualbox\|qemu\|bochs"; then
+        virt_detected=true
+
+        if lspci | grep -qi "virtio"; then
+            virt_type="VirtIO (QEMU/KVM)"
+        elif lspci | grep -qi "vmware"; then
+            virt_type="VMware"
+        elif lspci | grep -qi "virtualbox"; then
+            virt_type="VirtualBox"
+        fi
+    fi
+
+    # Check systemd-detect-virt if available
+    if command -v systemd-detect-virt &> /dev/null; then
+        local detected_virt=$(systemd-detect-virt 2>/dev/null || echo "none")
+        if [[ "$detected_virt" != "none" ]]; then
+            virt_detected=true
+            virt_type="$detected_virt"
+        fi
+    fi
+
+    # Check DMI information
+    if [[ -r /sys/class/dmi/id/product_name ]]; then
+        local product_name=$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo "")
+        if echo "$product_name" | grep -qi "virtual\|vmware\|qemu\|kvm\|virtualbox"; then
+            virt_detected=true
+            if [[ -z "$virt_type" ]]; then
+                virt_type="$product_name"
+            fi
+        fi
+    fi
+
+    if [[ "$virt_detected" == true ]]; then
+        echo -e "${YELLOW}⚠ Virtualization detected: $virt_type${NC}"
+        echo -e "${CYAN}Recommended virtualization enhancements:${NC}"
+
+        case "$virt_type" in
+            *"virtio"*|*"qemu"*|*"kvm"*)
+                echo "  • qemu-guest-agent - Better host-guest communication"
+                echo "  • spice-vdagent - Enhanced display and clipboard integration"
+                echo "  • xf86-video-qxl - Optimized graphics driver for SPICE"
+                ;;
+            *"vmware"*)
+                echo "  • open-vm-tools - VMware guest utilities"
+                echo "  • xf86-input-vmmouse - Enhanced mouse integration"
+                echo "  • xf86-video-vmware - VMware graphics driver"
+                ;;
+            *"virtualbox"*)
+                echo "  • virtualbox-guest-utils - VirtualBox guest additions"
+                echo "  • virtualbox-guest-modules-arch - Kernel modules for VBox"
+                ;;
+        esac
+
+        echo ""
+        echo -e "${YELLOW}Would you like to install virtualization enhancements? (y/N)${NC}"
+        read -r install_virt
+
+        if [[ "$install_virt" =~ ^[Yy]$ ]]; then
+            install_virtualization_tools "$virt_type"
+        fi
+
+        return 0  # Return success to indicate virtualization detected
+    else
+        echo -e "${GREEN}✓ Running on physical hardware${NC}"
+        return 1  # Return failure to indicate no virtualization
+    fi
+}
+
+# Install virtualization tools
+install_virtualization_tools() {
+    local virt_type="$1"
+
+    echo -e "${BLUE}Installing virtualization enhancements...${NC}"
+
+    case "$virt_type" in
+        *"virtio"*|*"qemu"*|*"kvm"*)
+            sudo pacman -S --noconfirm qemu-guest-agent spice-vdagent
+            # Enable guest agent
+            sudo systemctl enable qemu-guest-agent
+            sudo systemctl start qemu-guest-agent
+
+            # Install QXL driver if X11 is available
+            if command -v X &> /dev/null; then
+                sudo pacman -S --noconfirm xf86-video-qxl
+            fi
+            ;;
+        *"vmware"*)
+            sudo pacman -S --noconfirm open-vm-tools
+            sudo systemctl enable vmtoolsd
+            sudo systemctl start vmtoolsd
+
+            # Install VMware-specific drivers
+            if command -v X &> /dev/null; then
+                sudo pacman -S --noconfirm xf86-input-vmmouse xf86-video-vmware
+            fi
+            ;;
+        *"virtualbox"*)
+            sudo pacman -S --noconfirm virtualbox-guest-utils
+            sudo systemctl enable vboxservice
+            sudo systemctl start vboxservice
+
+            # Load VirtualBox modules
+            sudo modprobe vboxguest vboxsf vboxvideo
+            ;;
+    esac
+
+    echo -e "${GREEN}✓ Virtualization tools installed${NC}"
+    echo -e "${YELLOW}Note: You may need to reboot for full functionality${NC}"
+}
+
 # Get detailed NVIDIA GPU information
 get_nvidia_details() {
     local gpu_line="$1"
@@ -394,6 +512,13 @@ main() {
 
     # Detect hardware
     detect_gpus
+
+    # Check for virtualization and handle accordingly
+    if check_virtualization; then
+        echo -e "${CYAN}Virtualization detected - GPU driver installation may differ${NC}"
+        echo -e "${YELLOW}Note: Virtual GPUs may not require dedicated drivers${NC}"
+        echo ""
+    fi
 
     # Analyze each GPU type
     if [[ "$NVIDIA_DETECTED" == true ]]; then

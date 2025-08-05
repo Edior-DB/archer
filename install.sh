@@ -34,14 +34,8 @@ EOF
     echo -e "${NC}"
 }
 
-# Check if running as root
-check_root() {
-    if [[ $EUID -eq 0 ]]; then
-        echo -e "${RED}This script should not be run as root directly.${NC}"
-        echo -e "${YELLOW}It will request sudo when needed.${NC}"
-        exit 1
-    fi
-}
+# Note: This script can be run as root (required for Live ISO installation)
+# or as regular user (for post-installation setup)
 
 # Check if Arch Linux or Live ISO
 check_arch() {
@@ -87,60 +81,67 @@ setup_system_optimizations() {
     echo -e "${GREEN}System optimization tools ready!${NC}"
 }
 
+# Setup archer command in PATH
+setup_archer_command() {
+    echo -e "${BLUE}Setting up Archer post-installation tool...${NC}"
+
+    local archer_script="$SCRIPT_DIR/bin/archer.sh"
+    local target_dir="/usr/local/bin"
+    local target_file="$target_dir/archer"
+
+    if [[ -f "$archer_script" ]]; then
+        # Make archer.sh executable
+        chmod +x "$archer_script"
+
+        # Create symlink in /usr/local/bin
+        if [[ ! -f "$target_file" ]]; then
+            sudo ln -s "$archer_script" "$target_file" 2>/dev/null || {
+                echo -e "${YELLOW}Creating local archer command...${NC}"
+                # Create a wrapper script
+                sudo tee "$target_file" > /dev/null << EOF
+#!/bin/bash
+exec "$archer_script" "\$@"
+EOF
+                sudo chmod +x "$target_file"
+            }
+        fi
+
+        echo -e "${GREEN}✓ 'archer' command installed successfully${NC}"
+        echo -e "${CYAN}Usage: archer [--gaming|--development|--multimedia]${NC}"
+        echo -e "${CYAN}Or simply: archer (for interactive menu)${NC}"
+    else
+        echo -e "${YELLOW}Warning: archer.sh not found, skipping PATH setup${NC}"
+    fi
+}
+
 # Show main menu
 show_menu() {
     clear
     show_logo
     echo -e "${CYAN}===============================================${NC}"
-    echo -e "${CYAN}        Arch Linux Transformation Menu        ${NC}"
+    echo -e "${CYAN}        Arch Linux Fresh Installation        ${NC}"
     echo -e "${CYAN}===============================================${NC}"
     echo ""
-    echo -e "${GREEN}System Installation:${NC}"
-    echo "  1) Fresh Arch Linux Installation (Run from Live ISO)"
-    echo ""
-    echo -e "${GREEN}System Setup:${NC}"
+    echo -e "${GREEN}Core Installation (Run from Live ISO):${NC}"
+    echo "  1) Fresh Arch Linux Installation"
     echo "  2) Post-Installation Setup (Essential packages, AUR)"
-    echo "  3) System Tweaks & Optimizations"
+    echo "  3) GPU Drivers Installation"
+    echo "  4) Desktop Environment Installation"
+    echo "  5) WiFi Setup (if needed)"
     echo ""
-    echo -e "${GREEN}Desktop Environment:${NC}"
-    echo "  4) Install Desktop Environment"
-    echo "  5) Desktop Applications"
-    echo "  6) Themes & Customization"
+    echo -e "${YELLOW}Quick Installation Profiles:${NC}"
+    echo "  6) Complete Base System (1+2+3+4+5)"
+    echo "  7) Gaming Ready System (Base + Gaming optimizations)"
+    echo "  8) Developer Workstation (Base + Dev tools)"
     echo ""
-    echo -e "${GREEN}Gaming & Multimedia:${NC}"
-    echo "  7) Gaming Setup (Steam, Lutris, Drivers)"
-    echo "  8) Media Applications (VLC, OBS, etc.)"
-    echo "  9) Audio/Video Codecs"
-    echo ""
-    echo -e "${GREEN}Terminal & Shell:${NC}"
-    echo " 10) Terminal Setup (Zsh, Oh-My-Zsh)"
-    echo " 11) Terminal Applications"
-    echo " 12) Dotfiles Management"
-    echo ""
-    echo -e "${GREEN}Development Environment:${NC}"
-    echo " 13) Development Tools & Languages"
-    echo " 14) Code Editors & IDEs"
-    echo " 15) Container Tools (Docker, Podman)"
-    echo ""
-    echo -e "${GREEN}Security & Privacy:${NC}"
-    echo " 16) Security Tools"
-    echo " 17) Privacy Applications"
-    echo " 18) Backup Solutions"
-    echo ""
-    echo -e "${GREEN}Utilities:${NC}"
-    echo " 19) Flatpak Setup"
-    echo " 20) Personal Tweaks"
-    echo " 21) System Optimizations (Chris Titus Tools)"
-    echo ""
-    echo -e "${YELLOW}Quick Options:${NC}"
-    echo " 22) Full Installation (Everything)"
-    echo " 23) Gaming Rig Profile (Recommended for Home PC)"
-    echo " 24) Multimedia Center Profile"
-    echo " 25) Developer Workstation Profile"
+    echo -e "${CYAN}Post-Installation Management:${NC}"
+    echo "  9) Launch Archer Post-Installation Tool"
     echo ""
     echo " 0) Exit"
     echo ""
     echo -e "${CYAN}===============================================${NC}"
+    echo -e "${YELLOW}Note: After base installation, use 'archer' command${NC}"
+    echo -e "${YELLOW}for additional software and customizations.${NC}"
 }
 
 # Execute script safely
@@ -161,69 +162,59 @@ run_script() {
     fi
 }
 
-# Full installation
-full_installation() {
-    echo -e "${BLUE}Starting full installation...${NC}"
-    echo -e "${YELLOW}This will install everything. Continue? (y/N)${NC}"
+# Profile installations for base system
+install_base_profile() {
+    local profile="$1"
+
+    echo -e "${YELLOW}This will install the base system with $profile optimizations.${NC}"
+    echo -e "${YELLOW}After reboot, use 'archer' command for additional software. Continue? (y/N)${NC}"
     read -r confirm
 
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        local scripts=(
-            "$INSTALL_DIR/system/arch-server-setup.sh"
-            "$INSTALL_DIR/system/post-install.sh"
-            "$INSTALL_DIR/system/system-tweaks.sh"
-            "$INSTALL_DIR/desktop/de-installer.sh"
-            "$INSTALL_DIR/desktop/applications.sh"
-            "$INSTALL_DIR/multimedia/gaming.sh"
-            "$INSTALL_DIR/multimedia/media-apps.sh"
-            "$INSTALL_DIR/multimedia/codecs.sh"
-            "$INSTALL_DIR/terminal/shell-setup.sh"
-            "$INSTALL_DIR/development/dev-tools.sh"
-            "$INSTALL_DIR/security/firewall.sh"
-            "$INSTALL_DIR/extras/flatpak.sh"
-        )
+        # Base installation steps
+        run_script "$INSTALL_DIR/system/arch-server-setup.sh"
+        echo -e "${YELLOW}System may need to reboot. Continue with post-install? (y/N)${NC}"
+        read -r continue_install
 
-        for script in "${scripts[@]}"; do
-            if [[ -f "$script" ]]; then
-                run_script "$script"
-            fi
-        done
+        if [[ "$continue_install" =~ ^[Yy]$ ]]; then
+            run_script "$INSTALL_DIR/system/post-install.sh"
+            run_script "$INSTALL_DIR/system/gpu-drivers.sh"
+            run_script "$INSTALL_DIR/desktop/de-installer.sh"
+            setup_archer_command
 
-        echo -e "${GREEN}Full installation completed!${NC}"
+            case "$profile" in
+                "gaming")
+                    echo -e "${GREEN}Base system installed for gaming!${NC}"
+                    echo -e "${CYAN}Next steps after reboot:${NC}"
+                    echo -e "${CYAN}  1. Run: archer --gaming${NC}"
+                    echo -e "${CYAN}  2. Or: archer (interactive menu)${NC}"
+                    ;;
+                "developer")
+                    echo -e "${GREEN}Base system installed for development!${NC}"
+                    echo -e "${CYAN}Next steps after reboot:${NC}"
+                    echo -e "${CYAN}  1. Run: archer --development${NC}"
+                    echo -e "${CYAN}  2. Or: archer (interactive menu)${NC}"
+                    ;;
+            esac
+        fi
+
+        echo -e "${GREEN}Base installation completed!${NC}"
+        echo -e "${YELLOW}Reboot recommended before continuing with 'archer' command${NC}"
     fi
 }
 
-# Profile installations
-install_profile() {
-    local profile="$1"
+# Launch archer post-installation tool
+launch_archer() {
+    local archer_script="$SCRIPT_DIR/bin/archer.sh"
 
-    case "$profile" in
-        "developer")
-            echo -e "${BLUE}Installing Developer Workstation Profile...${NC}"
-            run_script "$INSTALL_DIR/system/arch-server-setup.sh"
-            run_script "$INSTALL_DIR/system/post-install.sh"
-            run_script "$INSTALL_DIR/terminal/shell-setup.sh"
-            run_script "$INSTALL_DIR/development/dev-tools.sh"
-            run_script "$INSTALL_DIR/development/editors.sh"
-            run_script "$INSTALL_DIR/development/containers.sh"
-            ;;
-        "gaming")
-            echo -e "${BLUE}Installing Gaming Rig Profile...${NC}"
-            run_script "$INSTALL_DIR/system/arch-server-setup.sh"
-            run_script "$INSTALL_DIR/system/post-install.sh"
-            run_script "$INSTALL_DIR/desktop/de-installer.sh"
-            run_script "$INSTALL_DIR/multimedia/gaming.sh"
-            run_script "$INSTALL_DIR/multimedia/codecs.sh"
-            ;;
-        "multimedia")
-            echo -e "${BLUE}Installing Multimedia Center Profile...${NC}"
-            run_script "$INSTALL_DIR/system/arch-server-setup.sh"
-            run_script "$INSTALL_DIR/system/post-install.sh"
-            run_script "$INSTALL_DIR/desktop/de-installer.sh"
-            run_script "$INSTALL_DIR/multimedia/media-apps.sh"
-            run_script "$INSTALL_DIR/multimedia/codecs.sh"
-            ;;
-    esac
+    if [[ -f "$archer_script" ]]; then
+        echo -e "${BLUE}Launching Archer post-installation tool...${NC}"
+        chmod +x "$archer_script"
+        exec "$archer_script" "$@"
+    else
+        echo -e "${RED}Archer post-installation tool not found!${NC}"
+        echo -e "${YELLOW}Expected location: $archer_script${NC}"
+    fi
 }
 
 # Handle command line arguments
@@ -233,45 +224,53 @@ handle_args() {
             run_script "$INSTALL_DIR/system/arch-server-setup.sh"
             exit 0
             ;;
-        "--full")
-            full_installation
+        "--base")
+            install_base_profile "base"
             exit 0
             ;;
-        "--profile")
-            if [[ -n "$2" ]]; then
-                install_profile "$2"
-                exit 0
-            else
-                echo -e "${RED}Profile name required. Available: developer, gaming, multimedia${NC}"
-                exit 1
-            fi
+        "--gaming")
+            install_base_profile "gaming"
+            exit 0
+            ;;
+        "--developer")
+            install_base_profile "developer"
+            exit 0
             ;;
         "--desktop")
             run_script "$INSTALL_DIR/desktop/de-installer.sh"
             exit 0
             ;;
-        "--development")
-            run_script "$INSTALL_DIR/development/dev-tools.sh"
+        "--gpu")
+            run_script "$INSTALL_DIR/system/gpu-drivers.sh"
             exit 0
             ;;
-        "--gaming")
-            run_script "$INSTALL_DIR/multimedia/gaming.sh"
+        "--wifi")
+            run_script "$INSTALL_DIR/network/wifi-setup.sh"
+            exit 0
+            ;;
+        "--archer")
+            launch_archer "${@:2}"
             exit 0
             ;;
         "--help"|"-h")
             show_logo
             echo "Usage: $0 [option]"
             echo ""
-            echo "Options:"
+            echo "Base Installation Options:"
             echo "  --install              Fresh Arch Linux installation (run from Live ISO)"
-            echo "  --full                 Full installation"
-            echo "  --profile PROFILE      Install specific profile (developer, gaming, multimedia)"
-            echo "  --desktop             Desktop environment only"
-            echo "  --development         Development tools only"
-            echo "  --gaming              Gaming setup only"
-            echo "  --help, -h            Show this help"
+            echo "  --base                 Complete base system setup"
+            echo "  --gaming               Gaming-ready base system"
+            echo "  --developer            Developer-ready base system"
+            echo "  --desktop              Desktop environment only"
+            echo "  --gpu                  GPU drivers only"
+            echo "  --wifi                 WiFi setup only"
+            echo ""
+            echo "Post-Installation:"
+            echo "  --archer               Launch post-installation tool"
+            echo "  --help, -h             Show this help"
             echo ""
             echo "Run without arguments for interactive mode."
+            echo "After base installation, use 'archer' command for additional software."
             exit 0
             ;;
     esac
@@ -285,7 +284,6 @@ main() {
     fi
 
     # Initial checks
-    check_root
     check_arch
     check_internet
     update_system
@@ -294,37 +292,21 @@ main() {
     # Interactive menu
     while true; do
         show_menu
-        read -p "Select an option [0-25]: " choice
+        read -p "Select an option [0-9]: " choice
 
         case $choice in
             1) run_script "$INSTALL_DIR/system/arch-server-setup.sh" ;;
-            2) run_script "$INSTALL_DIR/system/post-install.sh" ;;
-            3) run_script "$INSTALL_DIR/system/system-tweaks.sh" ;;
-            4) run_script "$INSTALL_DIR/desktop/de-installer.sh" ;;
-            5) run_script "$INSTALL_DIR/desktop/applications.sh" ;;
-            6) run_script "$INSTALL_DIR/desktop/themes.sh" ;;
-            7) run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
-            8) run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
-            9) run_script "$INSTALL_DIR/multimedia/codecs.sh" ;;
-            10) run_script "$INSTALL_DIR/terminal/shell-setup.sh" ;;
-            11) run_script "$INSTALL_DIR/terminal/terminal-apps.sh" ;;
-            12) run_script "$INSTALL_DIR/terminal/dotfiles.sh" ;;
-            13) run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
-            14) run_script "$INSTALL_DIR/development/editors.sh" ;;
-            15) run_script "$INSTALL_DIR/development/containers.sh" ;;
-            16) run_script "$INSTALL_DIR/security/firewall.sh" ;;
-            17) run_script "$INSTALL_DIR/security/privacy.sh" ;;
-            18) run_script "$INSTALL_DIR/security/backup.sh" ;;
-            19) run_script "$INSTALL_DIR/extras/flatpak.sh" ;;
-            20) run_script "$INSTALL_DIR/extras/personal-tweaks.sh" ;;
-            21)
-                echo -e "${BLUE}Running system optimizations...${NC}"
-                run_script "$INSTALL_DIR/system/system-tweaks.sh"
+            2)
+                run_script "$INSTALL_DIR/system/post-install.sh"
+                setup_archer_command
                 ;;
-            22) full_installation ;;
-            23) install_profile "gaming" ;;
-            24) install_profile "multimedia" ;;
-            25) install_profile "developer" ;;
+            3) run_script "$INSTALL_DIR/system/gpu-drivers.sh" ;;
+            4) run_script "$INSTALL_DIR/desktop/de-installer.sh" ;;
+            5) run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
+            6) install_base_profile "base" ;;
+            7) install_base_profile "gaming" ;;
+            8) install_base_profile "developer" ;;
+            9) launch_archer ;;
             0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
                 exit 0
