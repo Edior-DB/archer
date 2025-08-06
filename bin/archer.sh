@@ -511,6 +511,124 @@ switch_theme() {
     echo -e "${YELLOW}Please log out and back in to see all changes.${NC}"
 }
 
+# Show current theme information
+show_theme_info() {
+    local current_theme=$(detect_current_theme)
+
+    echo -e "${BLUE}Current Desktop Theme Information${NC}"
+    echo -e "${CYAN}===============================================${NC}"
+
+    case "$current_theme" in
+        "cupertini")
+            echo -e "${GREEN}Active Theme: Cupertini (macOS-like)${NC}"
+            echo -e "${YELLOW}Description: macOS-inspired KDE Plasma desktop${NC}"
+            echo -e "${CYAN}Features:${NC}"
+            echo "  • McMojave theme with macOS styling"
+            echo "  • SF Pro Display fonts"
+            echo "  • McMojave circle icons"
+            echo "  • Dock-style bottom panel + top menu bar"
+            echo "  • macOS-like window behavior and effects"
+            ;;
+        "redmondi")
+            echo -e "${GREEN}Active Theme: Redmondi (Windows-like)${NC}"
+            echo -e "${YELLOW}Description: Windows-inspired KDE Plasma desktop${NC}"
+            echo -e "${CYAN}Features:${NC}"
+            echo "  • Breeze theme with Windows-like layout"
+            echo "  • Liberation Sans fonts"
+            echo "  • Windows 10 icons"
+            echo "  • Traditional taskbar layout"
+            echo "  • Windows-like window behavior"
+            ;;
+        "unknown")
+            echo -e "${YELLOW}Active Theme: Unknown or Default${NC}"
+            echo -e "${CYAN}No specific Archer theme detected.${NC}"
+            echo -e "${YELLOW}Available themes:${NC}"
+            echo "  • Cupertini (macOS-like) - Run: archer --cupertini"
+            echo "  • Redmondi (Windows-like) - Run: archer --redmondi"
+            ;;
+    esac
+
+    echo ""
+    echo -e "${CYAN}Commands:${NC}"
+    echo "  archer --switch-theme    # Switch between themes"
+    echo "  archer --theme-status    # Show detailed installation status"
+}
+
+# Show detailed theme installation status
+show_theme_status() {
+    echo -e "${BLUE}Theme Installation Status${NC}"
+    echo -e "${CYAN}===============================================${NC}"
+
+    # Check Cupertini
+    echo -e "${YELLOW}Cupertini (macOS-like):${NC}"
+    local cupertini_status=$(check_theme_installed "cupertini")
+    case "$cupertini_status" in
+        "installed")
+            echo -e "  ${GREEN}✓ Fully installed and ready${NC}"
+            # Check individual components
+            if pacman -Q plasma6-theme-mcmojave-git &>/dev/null; then
+                echo -e "  ${GREEN}✓ McMojave theme${NC}"
+            fi
+            if pacman -Q mcmojave-cursors &>/dev/null; then
+                echo -e "  ${GREEN}✓ McMojave cursors${NC}"
+            fi
+            if pacman -Q mcmojave-circle-icon-theme-git &>/dev/null; then
+                echo -e "  ${GREEN}✓ McMojave circle icons${NC}"
+            fi
+            if pacman -Q otf-apple-fonts &>/dev/null; then
+                echo -e "  ${GREEN}✓ Apple fonts (SF Pro)${NC}"
+            fi
+            ;;
+        "plasma_missing")
+            echo -e "  ${RED}✗ KDE Plasma not installed${NC}"
+            ;;
+        "theme_missing")
+            echo -e "  ${YELLOW}⚠ Partially installed or missing components${NC}"
+            echo -e "    Run: archer --cupertini (to install/complete)"
+            ;;
+    esac
+
+    echo ""
+
+    # Check Redmondi
+    echo -e "${YELLOW}Redmondi (Windows-like):${NC}"
+    local redmondi_status=$(check_theme_installed "redmondi")
+    case "$redmondi_status" in
+        "installed")
+            echo -e "  ${GREEN}✓ Fully installed and ready${NC}"
+            # Check individual components
+            if pacman -Q ttf-liberation &>/dev/null; then
+                echo -e "  ${GREEN}✓ Liberation fonts${NC}"
+            fi
+            if pacman -Q windows10-icon-theme &>/dev/null; then
+                echo -e "  ${GREEN}✓ Windows 10 icons${NC}"
+            fi
+            ;;
+        "plasma_missing")
+            echo -e "  ${RED}✗ KDE Plasma not installed${NC}"
+            ;;
+        "theme_missing")
+            echo -e "  ${YELLOW}⚠ Partially installed or missing components${NC}"
+            echo -e "    Run: archer --redmondi (to install/complete)"
+            ;;
+    esac
+
+    echo ""
+    echo -e "${CYAN}Current Active Theme:${NC}"
+    local current=$(detect_current_theme)
+    case "$current" in
+        "cupertini")
+            echo -e "  ${GREEN}Cupertini (macOS-like) is active${NC}"
+            ;;
+        "redmondi")
+            echo -e "  ${GREEN}Redmondi (Windows-like) is active${NC}"
+            ;;
+        "unknown")
+            echo -e "  ${YELLOW}No specific theme detected (default/unknown)${NC}"
+            ;;
+    esac
+}
+
 # Handle command line arguments
 handle_args() {
     case "$1" in
@@ -551,6 +669,14 @@ handle_args() {
             SKIP_CHECKS=true
             return 0
             ;;
+        "--theme-info"|"--current-theme")
+            show_theme_info
+            exit 0
+            ;;
+        "--theme-status")
+            show_theme_status
+            exit 0
+            ;;
         "--help"|"-h")
             show_logo
             echo "Usage: archer [option]"
@@ -563,6 +689,9 @@ handle_args() {
             echo "  --switch-theme        Auto-detect and switch between themes"
             echo "  --cupertini           Switch to Cupertini (macOS-like)"
             echo "  --redmondi            Switch to Redmondi (Windows-like)"
+            echo "  --theme-info          Show current theme information"
+            echo "  --current-theme       Show current theme (alias for --theme-info)"
+            echo "  --theme-status        Show detailed theme installation status"
             echo ""
             echo "Software Profiles:"
             echo "  --gaming              Complete gaming setup"
