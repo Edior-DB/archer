@@ -371,6 +371,7 @@ main() {
             "12) Complete Gaming Workstation"
             "13) Complete Development Environment"
             "14) Complete Multimedia Setup"
+            "U) Update Archer (Refresh Repo)"
             "0) Exit"
         )
 
@@ -379,19 +380,15 @@ main() {
         if selection=$(select_option "${options[@]}" 2>/dev/null) && [[ -n "$selection" ]]; then
             choice=$(echo "$selection" | cut -d')' -f1)
         else
-            echo -n "Select an option [0-14]: "
-            if read -r choice 2>/dev/null; then
-                if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-                    selection_error=true
-                fi
-            else
+            # Fallback: use gum input for manual entry
+            choice=$(gum input --placeholder "Select an option [0-14/U]: " --width=20)
+            if ! [[ "$choice" =~ ^([0-9]+|[Uu])$ ]]; then
                 selection_error=true
             fi
         fi
 
         if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
             gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
-            echo -e "${RED}Invalid selection or input error. Please try again.${NC}"
             sleep 2
             continue
         fi
@@ -412,6 +409,11 @@ main() {
             12) install_profile "gaming" ;;
             13) install_profile "development" ;;
             14) install_profile "multimedia" ;;
+            U|u)
+                echo -e "${BLUE}Updating Archer repo...${NC}"
+                git -C "$(dirname \"$SCRIPT_DIR\")" pull && gum style --foreground="#00ff00" "Archer repo updated!" || gum style --foreground="#ff0000" "Failed to update Archer repo."
+                wait_for_input "Press Enter to return to menu..."
+                ;;
             0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
                 exit 0
