@@ -195,7 +195,7 @@ install_themes() {
         "mcmojave-kde-theme-git"
         "mcmojave-cursors"
         "tela-icon-theme-bin"
-        "kvantum-theme-mojave"
+        "kvantum-theme-libadwaita-git"
         "plasma5-wallpapers-dynamic"
         "sddm-sugar-candy-git"
     )
