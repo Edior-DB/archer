@@ -31,6 +31,10 @@ check_kde_installed() {
 install_windows_themes() {
     echo -e "${BLUE}Installing Windows-like themes and fonts...${NC}"
 
+    # Install Windows-compatible fonts from official repos
+    echo -e "${YELLOW}Installing Windows-compatible fonts...${NC}"
+    sudo pacman -S --noconfirm --needed ttf-liberation ttf-dejavu
+
     # Install AUR helper if not present
     if ! command -v yay &> /dev/null && ! command -v paru &> /dev/null; then
         echo -e "${YELLOW}Installing yay for AUR packages...${NC}"
@@ -47,13 +51,9 @@ install_windows_themes() {
         aur_helper="paru"
     fi
 
-    # Install Windows fonts from AUR
-    echo -e "${YELLOW}Installing Windows fonts...${NC}"
-    $aur_helper -S --noconfirm --needed ttf-ms-win10 || echo -e "${YELLOW}Could not install Windows fonts, skipping...${NC}"
-
     # Install Windows icon theme from AUR
     echo -e "${YELLOW}Installing Windows 10 icon theme...${NC}"
-    $aur_helper -S --noconfirm --needed windows-10-icon-theme || echo -e "${YELLOW}Could not install Windows 10 icons, using Breeze...${NC}"
+    $aur_helper -S --noconfirm --needed windows10-icon-theme || echo -e "${YELLOW}Could not install Windows 10 icons, using Breeze...${NC}"
 
     echo -e "${GREEN}Windows-like themes installed!${NC}"
 }
@@ -121,11 +121,11 @@ configure_kde_redmond() {
     # Set global theme, icons, fonts, and panel layout for Windows-like look
     kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "Breeze"
     kwriteconfig5 --file plasmarc --group Theme --key name "Breeze"
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme "Windows-10-Dark"
-    kwriteconfig5 --file kdeglobals --group General --key font "Segoe UI,11,-1,5,50,0,0,0,0,0"
-    kwriteconfig5 --file kdeglobals --group General --key menuFont "Segoe UI,11,-1,5,50,0,0,0,0,0"
-    kwriteconfig5 --file kdeglobals --group General --key toolBarFont "Segoe UI,10,-1,5,50,0,0,0,0,0"
-    kwriteconfig5 --file kdeglobals --group WM --key activeFont "Segoe UI,11,-1,5,75,0,0,0,0,0"
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme "Windows10"
+    kwriteconfig5 --file kdeglobals --group General --key font "Liberation Sans,11,-1,5,50,0,0,0,0,0"
+    kwriteconfig5 --file kdeglobals --group General --key menuFont "Liberation Sans,11,-1,5,50,0,0,0,0,0"
+    kwriteconfig5 --file kdeglobals --group General --key toolBarFont "Liberation Sans,10,-1,5,50,0,0,0,0,0"
+    kwriteconfig5 --file kdeglobals --group WM --key activeFont "Liberation Sans,11,-1,5,75,0,0,0,0,0"
     # Panel: Windows-like taskbar
     qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
         var allPanels = desktops()[0].panels;
