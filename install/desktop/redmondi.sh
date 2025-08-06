@@ -202,9 +202,17 @@ install_gnome_extensions() {
 install_themes() {
     echo -e "${BLUE}Installing Windows-like themes...${NC}"
 
-    # Install theme packages
+
+    # Install arc-gtk-theme from AUR
+    local aur_helper="yay"
+    if command -v paru &> /dev/null; then
+        aur_helper="paru"
+    fi
+    echo -e "${YELLOW}Installing arc-gtk-theme from AUR...${NC}"
+    $aur_helper -S --noconfirm --needed arc-gtk-theme || echo -e "${YELLOW}Could not install arc-gtk-theme, skipping...${NC}"
+
+    # Install other theme packages from pacman
     local theme_packages=(
-        "arc-gtk-theme"
         "papirus-icon-theme"
         "ttf-dejavu"
         "ttf-liberation"
@@ -212,7 +220,6 @@ install_themes() {
         "noto-fonts"
         "noto-fonts-emoji"
     )
-
     for package in "${theme_packages[@]}"; do
         echo -e "${YELLOW}Installing $package...${NC}"
         sudo pacman -S --noconfirm --needed "$package"
