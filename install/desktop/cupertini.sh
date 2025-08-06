@@ -329,6 +329,21 @@ main() {
     echo -e "${BLUE}Updating system...${NC}"
     sudo pacman -Syu --noconfirm
 
+
+    # Check if GDM is enabled and offer to switch to SDDM
+    if systemctl is-enabled gdm &>/dev/null; then
+        echo -e "${YELLOW}GDM (GNOME Display Manager) is currently enabled.${NC}"
+        echo -e "${YELLOW}KDE Plasma uses SDDM for the best experience.${NC}"
+        if confirm_action "Switch login manager from GDM to SDDM?"; then
+            echo -e "${BLUE}Disabling GDM and enabling SDDM...${NC}"
+            sudo systemctl disable gdm
+            sudo systemctl enable sddm
+            echo -e "${GREEN}SDDM is now the active login manager.${NC}"
+        else
+            echo -e "${YELLOW}GDM will remain enabled. You may switch manually later.${NC}"
+        fi
+    fi
+
     # Install components
     install_kde
     install_essential_apps
