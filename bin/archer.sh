@@ -33,9 +33,7 @@ wait_for_input() {
 # Enhanced selection function using gum
 select_option() {
     local options=("$@")
-
-    # Ensure proper terminal environment for gum
-    TERM="${TERM:-xterm}" gum choose "${options[@]}"
+    gum choose "${options[@]}"
 }
 
 # Logo
@@ -183,64 +181,10 @@ run_script() {
     if [[ -f "$script_path" ]]; then
         echo -e "${BLUE}Running $script_name...${NC}"
         chmod +x "$script_path"
-
-        # Special handling for hardware-related scripts
-        case "$script_name" in
-            "gpu-drivers.sh")
-                echo -e "${CYAN}Hardware Detection: Checking for GPU changes...${NC}"
-                echo -e "${YELLOW}This will re-detect your GPU hardware and update drivers accordingly.${NC}"
-                echo -e "${YELLOW}Perfect for hardware upgrades or driver issues.${NC}"
-                if ! confirm_action "Continue with GPU driver detection and installation?"; then
-                    echo -e "${YELLOW}GPU driver installation cancelled.${NC}"
-                    return 0
-                fi
-                ;;
-            "wifi-setup.sh")
-                echo -e "${CYAN}Network Setup: Configuring WiFi connections...${NC}"
-                echo -e "${YELLOW}This will help you set up new WiFi connections or fix network issues.${NC}"
-                if ! confirm_action "Continue with WiFi setup?"; then
-                    echo -e "${YELLOW}WiFi setup cancelled.${NC}"
-                    return 0
-                fi
-                ;;
-        esac
-
-        # Run script with proper error handling
-        local exit_code=0
-        if [[ $EUID -ne 0 ]]; then
-            # Reset terminal state and run script
-            reset 2>/dev/null || true
-            set +e  # Temporarily disable exit on error
-            "$script_path"
-            exit_code=$?
-            set -e  # Re-enable exit on error
-        else
-            echo -e "${YELLOW}Warning: Running as root. Consider running as regular user.${NC}"
-            reset 2>/dev/null || true
-            set +e
-            "$script_path"
-            exit_code=$?
-            set -e
-        fi
-
-        # Clean up terminal state
-        stty sane 2>/dev/null || true
-        reset 2>/dev/null || true
-
-        # Clear any leftover input
-        while read -r -t 0.1; do true; done 2>/dev/null || true
-
-        if [[ $exit_code -eq 0 ]]; then
-            echo -e "${GREEN}$script_name completed successfully!${NC}"
-        else
-            echo -e "${YELLOW}$script_name exited with code $exit_code${NC}"
-            echo -e "${YELLOW}You can try running it again or check for any error messages above.${NC}"
-        fi
-
+        "$script_path"
         wait_for_input
     else
         echo -e "${RED}Script not found: $script_path${NC}"
-        echo -e "${YELLOW}This feature is coming soon!${NC}"
         wait_for_input
     fi
 }
