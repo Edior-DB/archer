@@ -7,7 +7,7 @@ set -e
 
 # Check if KDE Plasma is installed
 check_kde_installed() {
-    if ! pacman -Q plasma &>/dev/null; then
+    if ! pacman -Q plasma-desktop &>/dev/null; then
         echo -e "${RED}KDE Plasma is not installed on this system.${NC}"
         echo -e "${YELLOW}Please re-run the main install.sh script to install KDE Plasma.${NC}"
         exit 1
