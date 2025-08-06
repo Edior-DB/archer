@@ -173,7 +173,7 @@ install_themes() {
         "latte-dock"
         "mcmojave-kde-theme-git"
         "mcmojave-cursors"
-        "tela-icon-theme"
+        "tela-icon-theme-bin"
         "kvantum-theme-mojave"
         "plasma5-wallpapers-dynamic"
         "sddm-sugar-candy-git"
@@ -296,8 +296,8 @@ EOF
 install_codecs() {
     echo -e "${BLUE}Installing multimedia codecs...${NC}"
 
+
     local codecs=(
-        "phonon-qt5-gstreamer"
         "gstreamer"
         "gst-plugins-base"
         "gst-plugins-good"
@@ -311,6 +311,10 @@ install_codecs() {
         echo -e "${YELLOW}Installing $codec...${NC}"
         sudo pacman -S --noconfirm --needed "$codec"
     done
+
+    # Install phonon-qt5-gstreamer from AUR
+    echo -e "${YELLOW}Installing phonon-qt5-gstreamer from AUR...${NC}"
+    $aur_helper -S --noconfirm --needed phonon-qt5-gstreamer || echo -e "${YELLOW}Could not install phonon-qt5-gstreamer, skipping...${NC}"
 
     echo -e "${GREEN}Multimedia codecs installed!${NC}"
 }
