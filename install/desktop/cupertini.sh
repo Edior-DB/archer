@@ -192,7 +192,6 @@ install_themes() {
 
     # Install macOS-like themes from AUR
     local aur_themes=(
-        "latte-dock"
         "mcmojave-kde-theme-git"
         "mcmojave-cursors"
         "tela-icon-theme-bin"
@@ -244,8 +243,8 @@ configure_kde() {
     kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0"
 
-    # Panel configuration (macOS-like: bottom dock + top panel)
-    echo -e "${YELLOW}Configuring panels (dock and top panel)...${NC}"
+    # Panel configuration (macOS-like: bottom dock-style panel)
+    echo -e "${YELLOW}Configuring macOS-like dock panel...${NC}"
     qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
         // Remove all existing panels
         var allPanels = desktops()[0].panels;
@@ -253,27 +252,46 @@ configure_kde() {
             allPanels[i].remove();
         }
 
-        // Bottom dock panel
+        // Create bottom dock-style panel
         var dock = new Panel;
         dock.location = "bottom";
-        dock.height = 56;
+        dock.height = 60;
         dock.alignment = "center";
+        dock.lengthMode = "fit";
+        dock.hiding = "none";
+        dock.floating = true;
+
+        // Add widgets to dock
         dock.addWidget("org.kde.plasma.kickoff");
         dock.addWidget("org.kde.plasma.icontasks");
+        dock.addWidget("org.kde.plasma.marginsseparator");
         dock.addWidget("org.kde.plasma.systemtray");
         dock.addWidget("org.kde.plasma.digitalclock");
 
-        // Top panel
+        // Configure icon tasks for dock-like behavior
+        var iconTasks = dock.widgetById("org.kde.plasma.icontasks");
+        if (iconTasks) {
+            iconTasks.currentConfigGroup = ["General"];
+            iconTasks.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop");
+            iconTasks.writeConfig("showOnlyCurrentDesktop", false);
+            iconTasks.writeConfig("groupingStrategy", 0);
+            iconTasks.writeConfig("indicateAudioStreams", true);
+        }
+
+        // Create top panel for global menu (optional)
         var topPanel = new Panel;
         topPanel.location = "top";
-        topPanel.height = 32;
-        topPanel.alignment = "center";
-        // Add global menu and start widgets (if available)
-        topPanel.addWidget("org.kde.plasma.appmenu"); // Global menu
-        topPanel.addWidget("org.kde.plasma.kickoff"); // Start menu (optional)
-        topPanel.addWidget("org.kde.plasma.showdesktop"); // Show desktop (optional)
+        topPanel.height = 28;
+        topPanel.alignment = "stretch";
+        topPanel.hiding = "none";
+
+        // Add minimal widgets to top panel
+        topPanel.addWidget("org.kde.plasma.appmenu");
+        topPanel.addWidget("org.kde.plasma.panelspacer");
+        topPanel.addWidget("org.kde.plasma.systemmonitor");
+        topPanel.addWidget("org.kde.plasma.showdesktop");
     '
-    echo -e "${GREEN}Panels configured: dock and top panel!${NC}"
+    echo -e "${GREEN}Panels configured: macOS-like dock panel!${NC}"
 
     # Desktop effects (for smooth animations like macOS)
     echo -e "${YELLOW}Configuring desktop effects...${NC}"
@@ -415,9 +433,9 @@ EOF
 =========================================================================
 
 🍎 macOS-like Desktop Environment Installed:
-- KDE Plasma with macOS-like layout
+- KDE Plasma 6 with macOS-like layout
 - McMojave theme with macOS styling
-- Latte Dock for macOS-like dock experience
+- Native Plasma dock-style panel (floating, centered)
 - Tela icon theme (macOS-inspired)
 - macOS-like cursors and fonts
 - Essential macOS-like applications
@@ -427,7 +445,7 @@ EOF
 2. The desktop will auto-configure on first login
 3. Customize further using System Settings
 4. Install office suite: ./office-tools/office-suite.sh
-5. Use Latte Dock for the authentic macOS dock experience
+5. Adjust panel settings in System Settings > Workspace > Panels if needed
 
 🎉 Welcome to your macOS-like Arch Linux desktop!
 
