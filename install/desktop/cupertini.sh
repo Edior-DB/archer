@@ -16,7 +16,14 @@ check_kde_installed() {
     # Check if kwriteconfig5 is available
     if ! command -v kwriteconfig5 &> /dev/null; then
         echo -e "${YELLOW}Installing KDE configuration tools...${NC}"
-        sudo pacman -S --noconfirm --needed kde-cli-tools
+        sudo pacman -S --noconfirm --needed kconfig5
+
+        # Check again after installation
+        if ! command -v kwriteconfig5 &> /dev/null; then
+            echo -e "${RED}kwriteconfig5 still not found after installing kconfig5${NC}"
+            echo -e "${RED}This is required for KDE theme configuration${NC}"
+            exit 1
+        fi
     fi
 }
 
