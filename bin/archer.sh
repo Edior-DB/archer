@@ -33,7 +33,7 @@ wait_for_input() {
 # Enhanced selection function using gum
 select_option() {
     local options=("$@")
-    gum choose "${options[@]}"
+    gum choose --cursor.foreground="#00ffff" --header="\nUse arrow keys to navigate, Enter to select:\n" "${options[@]}"
 }
 
 # Logo
