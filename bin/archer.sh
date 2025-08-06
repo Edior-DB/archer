@@ -33,15 +33,7 @@ wait_for_input() {
 # Enhanced selection function using gum
 select_option() {
     local options=("$@")
-    gum choose \
-        --cursor.foreground="#00ffff" \
-        --selected.background="#0033ff" \
-        --selected.foreground="#ffffff" \
-        --item.foreground="#00ffff" \
-        --header="\nUse arrow keys to navigate, Enter to select:\n" \
-        --border="rounded" \
-        --width=60 \
-        "${options[@]}"
+    gum choose "${options[@]}"
 }
 
 # Logo
@@ -108,22 +100,6 @@ check_sudo() {
         echo -e "${CYAN}  su -c 'usermod -aG wheel \$USER'${NC}"
         echo -e "${CYAN}  Then logout and login again${NC}"
         exit 1
-    fi
-
-    # Test sudo access (non-interactive first)
-    if sudo -n true 2>/dev/null; then
-        echo -e "${GREEN}✓ Sudo access confirmed (cached)${NC}"
-    else
-        echo -e "${YELLOW}Sudo access verification required...${NC}"
-        echo -e "${CYAN}Please enter your password when prompted:${NC}"
-        if timeout 30 sudo -v 2>/dev/null; then
-            echo -e "${GREEN}✓ Sudo access granted${NC}"
-        else
-            echo -e "${YELLOW}Sudo verification timed out or failed${NC}"
-            echo -e "${YELLOW}Some features may require manual sudo password entry${NC}"
-            echo -e "${YELLOW}Continuing with limited functionality...${NC}"
-            # Don't exit here, just warn and continue
-        fi
     fi
 }
 
@@ -598,6 +574,7 @@ main() {
         choice=""
         if selection=$(select_option "${options[@]}" 2>/dev/null) && [[ -n "$selection" ]]; then
             choice=$(echo "$selection" | cut -d')' -f1)
+            echo -e "${GREEN}Your selection: ${selection}${NC}"
         else
             # Fallback: use gum input for manual entry
             choice=$(gum input --placeholder "Select an option [0-15]: " --width=20)
