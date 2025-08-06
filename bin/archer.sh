@@ -275,7 +275,7 @@ detect_current_theme() {
         fi
 
         # Check for Windows-like theme indicators (Redmondi)
-        if kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null | grep -q "Windows-10"; then
+        if kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null | grep -q "Windows10"; then
             echo "redmondi"
             return 0
         fi
@@ -301,8 +301,14 @@ check_theme_installed() {
     case "$theme" in
         "cupertini")
             # Check for KDE Plasma and McMojave theme components
-            if ! pacman -Q plasma &>/dev/null; then
+            if ! pacman -Q plasma-desktop &>/dev/null; then
                 echo "plasma_missing"
+                return 1
+            fi
+
+            # Check if kwriteconfig5 is available
+            if ! command -v kwriteconfig5 &> /dev/null; then
+                echo "theme_missing"
                 return 1
             fi
 
@@ -317,13 +323,32 @@ check_theme_installed() {
             ;;
         "redmondi")
             # Check for KDE Plasma
-            if ! pacman -Q plasma &>/dev/null; then
+            if ! pacman -Q plasma-desktop &>/dev/null; then
                 echo "plasma_missing"
                 return 1
             fi
 
-            # Check for Windows-like components (icon theme)
-            if ! pacman -Q windows-10-dark-icon-theme &>/dev/null && ! pacman -Q windows-10-icons-git &>/dev/null; then
+            # Check if kwriteconfig5 is available
+            if ! command -v kwriteconfig5 &> /dev/null; then
+                echo "theme_missing"
+                return 1
+            fi
+
+            # Check for Windows-like components (fonts and icon theme)
+            local has_fonts=false
+            local has_icons=false
+
+            # Check for fonts (Liberation or DejaVu are sufficient)
+            if pacman -Q ttf-liberation &>/dev/null || pacman -Q ttf-dejavu &>/dev/null; then
+                has_fonts=true
+            fi
+
+            # Check for icon theme (corrected package name)
+            if pacman -Q windows10-icon-theme &>/dev/null; then
+                has_icons=true
+            fi
+
+            if [[ "$has_fonts" == false ]] || [[ "$has_icons" == false ]]; then
                 echo "theme_missing"
                 return 1
             fi
@@ -441,7 +466,7 @@ switch_theme() {
             echo "  • Reset KDE settings to avoid conflicts"
             echo "  • Install Windows-like themes and components"
             echo "  • Configure single bottom taskbar layout"
-            echo "  • Set Segoe UI fonts and Windows-10-Dark icons"
+            echo "  • Set Liberation Sans fonts and Windows10 icons"
             ;;
     esac
     echo ""
