@@ -78,8 +78,9 @@ install_themes() {
 
     # Install macOS-like themes from AUR
     local aur_themes=(
-        "mcmojave-kde-theme-git" "mcmojave-cursors" "tela-icon-theme-bin"
+        "plasma6-theme-mcmojave-git" "mcmojave-cursors" "mcmojave-circle-icon-theme-git"
         "kvantum-theme-libadwaita-git" "plasma5-wallpapers-dynamic" "sddm-sugar-candy-git"
+        "ttf-sf-pro-display"
     )
 
     install_aur_packages "${aur_themes[@]}"
@@ -109,7 +110,7 @@ configure_kde() {
 
     # Icons
     echo -e "${YELLOW}Setting icon theme...${NC}"
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme "Tela"
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle"
 
     # Cursors
     echo -e "${YELLOW}Setting cursor theme...${NC}"
@@ -121,6 +122,15 @@ configure_kde() {
     kwriteconfig5 --file kdeglobals --group General --key menuFont "SF Pro Display,11,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0"
+
+    # Fallback to Roboto if SF Pro Display is not available
+    if ! fc-list | grep -i "SF Pro Display" > /dev/null; then
+        echo -e "${YELLOW}SF Pro Display not found, using Roboto as fallback...${NC}"
+        kwriteconfig5 --file kdeglobals --group General --key font "Roboto,11,-1,5,50,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group General --key menuFont "Roboto,11,-1,5,50,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group General --key toolBarFont "Roboto,10,-1,5,50,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group WM --key activeFont "Roboto,11,-1,5,75,0,0,0,0,0"
+    fi
 
     # Panel configuration (macOS-like: bottom dock-style panel)
     echo -e "${YELLOW}Configuring macOS-like dock panel...${NC}"
