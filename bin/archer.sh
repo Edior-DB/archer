@@ -390,11 +390,8 @@ main() {
         fi
 
         if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
-            if command -v gum >/dev/null 2>&1; then
-                gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
-            else
-                echo -e "${RED}Invalid selection or input error. Please try again.${NC}"
-            fi
+            gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
+            echo -e "${RED}Invalid selection or input error. Please try again.${NC}"
             sleep 2
             continue
         fi
