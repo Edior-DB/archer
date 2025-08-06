@@ -189,9 +189,9 @@ install_virtualization_tools() {
             sudo systemctl enable qemu-guest-agent
             sudo systemctl start qemu-guest-agent
 
-            # Install QXL driver if X11 is available
+            # Install VirtIO and QXL drivers if X11 is available
             if command -v X &> /dev/null; then
-                sudo pacman -S --noconfirm xf86-video-qxl
+                sudo pacman -S --noconfirm xf86-video-virtio xf86-video-qxl
             fi
             ;;
         *"vmware"*)
