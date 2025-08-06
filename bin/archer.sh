@@ -181,7 +181,41 @@ run_script() {
     if [[ -f "$script_path" ]]; then
         echo -e "${BLUE}Running $script_name...${NC}"
         chmod +x "$script_path"
+<<<<<<< HEAD
         "$script_path"
+=======
+
+        # Special handling for hardware-related scripts
+        case "$script_name" in
+            "gpu-drivers.sh")
+                echo -e "${CYAN}Hardware Detection: Checking for GPU changes...${NC}"
+                echo -e "${YELLOW}This will re-detect your GPU hardware and update drivers accordingly.${NC}"
+                echo -e "${YELLOW}Perfect for hardware upgrades or driver issues.${NC}"
+                if ! confirm_action "Continue with GPU driver detection and installation?"; then
+                    echo -e "${YELLOW}GPU driver installation cancelled.${NC}"
+                    return 0
+                fi
+                ;;
+            "wifi-setup.sh")
+                echo -e "${CYAN}Network Setup: Configuring WiFi connections...${NC}"
+                echo -e "${YELLOW}This will help you set up new WiFi connections or fix network issues.${NC}"
+                if ! confirm_action "Continue with WiFi setup?"; then
+                    echo -e "${YELLOW}WiFi setup cancelled.${NC}"
+                    return 0
+                fi
+                ;;
+        esac
+
+        # Run with sudo if needed
+        if [[ $EUID -ne 0 ]]; then
+            "$script_path"
+        else
+            echo -e "${YELLOW}Warning: Running as root. Consider running as regular user.${NC}"
+            "$script_path"
+        fi
+
+        echo -e "${GREEN}$script_name completed successfully!${NC}"
+>>>>>>> parent of 9aa6cd8 (fix: prevent archer.sh menu from becoming unusable after script failures)
         wait_for_input
     else
         echo -e "${RED}Script not found: $script_path${NC}"
@@ -193,7 +227,10 @@ run_script() {
 install_profile() {
     local profile="$1"
 
-    if ! confirm_action "This may require multiple reboots. Continue with profile installation?"; then
+    echo -e "${YELLOW}This may require multiple reboots. Continue? (y/N)${NC}"
+    read -r confirm
+
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         return 0
     fi
 
@@ -291,11 +328,9 @@ main() {
 
     # Interactive menu
     while true; do
-        # Ensure clean terminal state before showing menu
-        stty sane 2>/dev/null || true
-
         show_menu
 
+<<<<<<< HEAD
         local choice=""
         local selection_error=false
 
@@ -339,6 +374,35 @@ main() {
             gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
             sleep 2
             continue
+=======
+        if command -v gum >/dev/null 2>&1; then
+            # Use gum for menu selection
+            options=(
+                "1) GPU Drivers Installation"
+                "2) WiFi Setup & Network Configuration"
+                "3) KDE Plasma (macOS-like)"
+                "4) GNOME (Windows-like)"
+                "5) Development Tools & Languages"
+                "6) Code Editors & IDEs"
+                "7) Gaming Setup (Steam, Lutris, Wine)"
+                "8) Multimedia Applications"
+                "9) Office Suite Installation"
+                "10) AUR Helper Setup"
+                "11) System Utilities"
+                "12) Complete Gaming Workstation"
+                "13) Complete Development Environment"
+                "14) Complete Multimedia Setup"
+                "0) Exit"
+            )
+
+            selection=$(select_option "${options[@]}")
+            # Extract number from selection like "10) AUR Helper Setup" -> "10"
+            choice=$(echo "$selection" | cut -d')' -f1)
+        else
+            # Fallback to traditional input
+            echo -n "Select an option [0-14]: "
+            read -r choice
+>>>>>>> parent of 9aa6cd8 (fix: prevent archer.sh menu from becoming unusable after script failures)
         fi
 
         echo ""
