@@ -150,20 +150,60 @@ configure_kde() {
         echo -e "${YELLOW}Configuring panels for X11 session...${NC}"
     fi
 
-    # Use plasma-interactiveconsole or direct config files for better reliability
+    # Use qdbus to configure panels more reliably
+    if command -v qdbus &> /dev/null; then
+        echo -e "${YELLOW}Using qdbus to configure panels...${NC}"
+        # Remove existing panels
+        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+            var allPanels = panels();
+            for (var i = 0; i < allPanels.length; ++i) {
+                allPanels[i].remove();
+            }
+        ' 2>/dev/null || true
+
+        sleep 2
+
+        # Create macOS-like dock panel
+        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+            var panel = new Panel;
+            panel.location = "bottom";
+            panel.height = 56;
+            panel.lengthMode = Panel.FitContent;
+            panel.maximumLength = 1200;
+            panel.minimumLength = 400;
+            panel.alignment = "center";
+
+            // Add dock-style launcher (Icons-only Task Manager)
+            var taskManager = panel.addWidget("org.kde.plasma.icontasks");
+            taskManager.currentConfigGroup = ["General"];
+            taskManager.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop");
+            taskManager.writeConfig("showOnlyCurrentDesktop", false);
+            taskManager.writeConfig("groupingStrategy", 0);
+            taskManager.writeConfig("iconSpacing", 1);
+            taskManager.writeConfig("maxStripes", 1);
+
+            // Optional: Add system tray (minimized)
+            var systray = panel.addWidget("org.kde.plasma.systemtray");
+            systray.currentConfigGroup = ["General"];
+            systray.writeConfig("scaleIconsToFit", true);
+        ' 2>/dev/null || echo "qdbus panel configuration failed, using fallback"
+    fi
+
+    # Fallback: Use direct config file modification for better macOS-like dock
     python3 << 'EOF'
 import os
 import configparser
+import time
 
-# Create/modify panel configuration
+# Create/modify panel configuration for macOS-like dock
 config_dir = os.path.expanduser("~/.config")
 plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
 
 # Ensure config directory exists
 os.makedirs(config_dir, exist_ok=True)
 
-# Create basic panel configuration
-panel_config = """[ActionPlugins][0]
+# Create macOS-like dock configuration
+dock_config = """[ActionPlugins][0]
 RightButton;NoModifier=org.kde.contextmenu
 
 [ActionPlugins][1]
@@ -178,24 +218,38 @@ location=4
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][1][Applets][1]
-immutability=1
-plugin=org.kde.plasma.kickoff
-
 [Containments][1][Applets][2]
 immutability=1
 plugin=org.kde.plasma.icontasks
 
-[Containments][1][Applets][3]
-immutability=1
-plugin=org.kde.plasma.systemtray
+[Containments][1][Applets][2][Configuration]
+PreloadWeight=100
 
-[Containments][1][Applets][4]
-immutability=1
-plugin=org.kde.plasma.digitalclock
+[Containments][1][Applets][2][Configuration][General]
+groupingStrategy=0
+iconSpacing=1
+launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop
+maxStripes=1
+showOnlyCurrentDesktop=false
 
 [Containments][1][General]
-AppletOrder=1;2;3;4
+AppletOrder=2
+
+[Containments][1][ConfigDialog]
+DialogHeight=84
+DialogWidth=1920
+
+[Containments][1][Configuration]
+PreloadWeight=100
+
+[Containments][1][Configuration][General]
+alignment=132
+iconSize=48
+lengthMode=1
+maxLength=1200
+minLength=400
+panelSize=56
+panelVisibility=0
 
 [ScreenMapping]
 itemsOnDisabledScreens=
@@ -203,12 +257,12 @@ screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
 """
 
 with open(plasma_config, 'w') as f:
-    f.write(panel_config)
+    f.write(dock_config)
 
-print("Panel configuration written")
+print("macOS-like dock configuration written")
 EOF
 
-    echo -e "${GREEN}Panels configured: macOS-like dock panel!${NC}"
+    echo -e "${GREEN}macOS-like dock configured!${NC}"
 
     # Desktop effects (for smooth animations like macOS)
     echo -e "${YELLOW}Configuring desktop effects...${NC}"
