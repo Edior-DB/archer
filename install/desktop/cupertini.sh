@@ -83,7 +83,7 @@ install_essential_apps() {
         "kate"
         "kwrite"
 
-        # System utilities
+        # System utilitie
         "systemsettings"
         "kcalc"
         "spectacle"
@@ -222,27 +222,36 @@ configure_kde() {
     kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0"
 
-    # Panel configuration (make it look like macOS dock)
-    echo -e "${YELLOW}Configuring panel...${NC}"
+    # Panel configuration (macOS-like: bottom dock + top panel)
+    echo -e "${YELLOW}Configuring panels (dock and top panel)...${NC}"
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+        // Remove all existing panels
+        var allPanels = desktops()[0].panels;
+        for (var i = 0; i < allPanels.length; ++i) {
+            allPanels[i].remove();
+        }
 
-    # Remove default panel and create dock-like panel
-    kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 1 --key location "4"
-    kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 1 --key panelSize "56"
-    kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 1 --key alignment "132"
+        // Bottom dock panel
+        var dock = new Panel;
+        dock.location = "bottom";
+        dock.height = 56;
+        dock.alignment = "center";
+        dock.addWidget("org.kde.plasma.kickoff");
+        dock.addWidget("org.kde.plasma.icontasks");
+        dock.addWidget("org.kde.plasma.systemtray");
+        dock.addWidget("org.kde.plasma.digitalclock");
 
-    # Latte Dock configuration (if installed)
-    if command -v latte-dock &> /dev/null; then
-        echo -e "${YELLOW}Configuring Latte Dock...${NC}"
-        # Start Latte Dock
-        latte-dock --replace &
-        sleep 2
-
-        # Configure Latte Dock for macOS-like appearance
-        kwriteconfig5 --file "$HOME/.config/lattedockrc" --group PlasmaViews --group 1 --key alignment "132"
-        kwriteconfig5 --file "$HOME/.config/lattedockrc" --group PlasmaViews --group 1 --key location "4"
-        kwriteconfig5 --file "$HOME/.config/lattedockrc" --group PlasmaViews --group 1 --key panelSize "56"
-        kwriteconfig5 --file "$HOME/.config/lattedockrc" --group PlasmaViews --group 1 --key zoomLevel "16"
-    fi
+        // Top panel
+        var topPanel = new Panel;
+        topPanel.location = "top";
+        topPanel.height = 32;
+        topPanel.alignment = "center";
+        // Add global menu and start widgets (if available)
+        topPanel.addWidget("org.kde.plasma.appmenu"); // Global menu
+        topPanel.addWidget("org.kde.plasma.kickoff"); // Start menu (optional)
+        topPanel.addWidget("org.kde.plasma.showdesktop"); // Show desktop (optional)
+    '
+    echo -e "${GREEN}Panels configured: dock and top panel!${NC}"
 
     # Desktop effects (for smooth animations like macOS)
     echo -e "${YELLOW}Configuring desktop effects...${NC}"
