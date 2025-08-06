@@ -45,15 +45,38 @@ EOF
 configure_kde_redmond() {
     echo -e "${BLUE}Configuring KDE for Windows-like experience...${NC}"
     sleep 3
+
     # Set global theme, icons, fonts, and panel layout for Windows-like look
+    echo -e "${YELLOW}Setting global theme to Breeze...${NC}"
     kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "Breeze"
+
+    echo -e "${YELLOW}Setting plasma theme to Breeze...${NC}"
     kwriteconfig5 --file plasmarc --group Theme --key name "Breeze"
+
+    # Window decoration - set to Breeze (Windows-like)
+    echo -e "${YELLOW}Setting Windows-like window decoration...${NC}"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze"
+
+    # Reset any McMojave window decoration settings
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft ""
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "IAX"
+
+    echo -e "${YELLOW}Setting Windows 10 icon theme...${NC}"
     kwriteconfig5 --file kdeglobals --group Icons --key Theme "Windows10"
+
+    # Set cursor theme to default Breeze (not macOS cursors)
+    echo -e "${YELLOW}Setting cursor theme...${NC}"
+    kwriteconfig5 --file kdeglobals --group General --key cursorTheme "breeze_cursors"
+
+    echo -e "${YELLOW}Setting Liberation Sans fonts...${NC}"
     kwriteconfig5 --file kdeglobals --group General --key font "Liberation Sans,11,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group General --key menuFont "Liberation Sans,11,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group General --key toolBarFont "Liberation Sans,10,-1,5,50,0,0,0,0,0"
     kwriteconfig5 --file kdeglobals --group WM --key activeFont "Liberation Sans,11,-1,5,75,0,0,0,0,0"
+
     # Panel: Windows-like taskbar
+    echo -e "${YELLOW}Configuring Windows-like taskbar...${NC}"
     qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
         var allPanels = desktops()[0].panels;
         for (var i = 0; i < allPanels.length; ++i) {
