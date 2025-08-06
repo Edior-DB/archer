@@ -42,31 +42,6 @@ wait_for_input() {
     gum input --placeholder "$message" --value "" > /dev/null
 }
 
-# Install KDE Plasma desktop environment
-install_kde() {
-    echo -e "${BLUE}Installing KDE Plasma desktop environment...${NC}"
-
-    # Core KDE packages
-    local kde_packages=(
-        "plasma"
-        "kde-applications"
-        "sddm"
-        "xorg"
-        "xorg-server"
-        "xorg-apps"
-        "xorg-xinit"
-    )
-
-    for package in "${kde_packages[@]}"; do
-        echo -e "${YELLOW}Installing $package...${NC}"
-        sudo pacman -S --noconfirm --needed "$package"
-    done
-
-    # Enable SDDM
-    sudo systemctl enable sddm
-
-    echo -e "${GREEN}KDE Plasma desktop environment installed!${NC}"
-}
 
 # Install essential KDE applications
 install_essential_apps() {

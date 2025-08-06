@@ -1,3 +1,18 @@
+install_kde_minimal() {
+    echo -e "${BLUE}Installing minimal KDE Plasma 6 desktop...${NC}"
+    local kde_packages=(
+        "plasma"
+        "sddm"
+        "xorg"
+        "xorg-server"
+    )
+    for package in "${kde_packages[@]}"; do
+        echo -e "${YELLOW}Installing $package...${NC}"
+        sudo pacman -S --noconfirm --needed "$package"
+    done
+    sudo systemctl enable sddm
+    echo -e "${GREEN}Minimal KDE Plasma desktop installed!${NC}"
+}
 #!/bin/bash
 
 # Archer - Post-Installation Setup Script
@@ -151,8 +166,7 @@ install_development_base() {
         "clang"
         "python"
         "python-pip"
-        "nodejs"
-        "npm"
+        "mise"
 
         # System tools
         "htop"
@@ -173,7 +187,7 @@ install_development_base() {
         "unrar"
 
         # System libraries
-        "glibc"
+        # "glibc"
         "lib32-glibc"
         "linux-headers"
     )
@@ -314,6 +328,9 @@ run_setup() {
 
     echo -e "${CYAN}=== Step 3: Installing Development Base ===${NC}"
     install_development_base
+    echo ""
+    echo -e "${CYAN}=== Step 3b: Installing Minimal KDE Plasma ===${NC}"
+    install_kde_minimal
     echo ""
 
     echo -e "${CYAN}=== Step 4: Installing GPU Drivers ===${NC}"
