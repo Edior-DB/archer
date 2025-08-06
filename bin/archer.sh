@@ -181,9 +181,6 @@ run_script() {
     if [[ -f "$script_path" ]]; then
         echo -e "${BLUE}Running $script_name...${NC}"
         chmod +x "$script_path"
-<<<<<<< HEAD
-        "$script_path"
-=======
 
         # Special handling for hardware-related scripts
         case "$script_name" in
@@ -206,16 +203,38 @@ run_script() {
                 ;;
         esac
 
-        # Run with sudo if needed
+        # Run script with proper error handling
+        local exit_code=0
         if [[ $EUID -ne 0 ]]; then
+            # Reset terminal state and run script
+            reset 2>/dev/null || true
+            set +e  # Temporarily disable exit on error
             "$script_path"
+            exit_code=$?
+            set -e  # Re-enable exit on error
         else
             echo -e "${YELLOW}Warning: Running as root. Consider running as regular user.${NC}"
+            reset 2>/dev/null || true
+            set +e
             "$script_path"
+            exit_code=$?
+            set -e
         fi
 
-        echo -e "${GREEN}$script_name completed successfully!${NC}"
->>>>>>> parent of 9aa6cd8 (fix: prevent archer.sh menu from becoming unusable after script failures)
+        # Clean up terminal state
+        stty sane 2>/dev/null || true
+        reset 2>/dev/null || true
+
+        # Clear any leftover input
+        while read -r -t 0.1; do true; done 2>/dev/null || true
+
+        if [[ $exit_code -eq 0 ]]; then
+            echo -e "${GREEN}$script_name completed successfully!${NC}"
+        else
+            echo -e "${YELLOW}$script_name exited with code $exit_code${NC}"
+            echo -e "${YELLOW}You can try running it again or check for any error messages above.${NC}"
+        fi
+
         wait_for_input
     else
         echo -e "${RED}Script not found: $script_path${NC}"
@@ -329,12 +348,6 @@ main() {
     # Interactive menu
     while true; do
         show_menu
-
-<<<<<<< HEAD
-        local choice=""
-        local selection_error=false
-
-        # Use gum for menu selection
         options=(
             "1) GPU Drivers Installation"
             "2) WiFi Setup & Network Configuration"
@@ -353,60 +366,32 @@ main() {
             "0) Exit"
         )
 
-        # Handle gum selection with better error handling
-        selection=""
+        selection_error=false
+        choice=""
         if selection=$(select_option "${options[@]}" 2>/dev/null) && [[ -n "$selection" ]]; then
-            # Extract number from selection like "10) AUR Helper Setup" -> "10"
             choice=$(echo "$selection" | cut -d')' -f1)
-
-            # Validate that choice is a number
-            if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        else
+            echo -n "Select an option [0-14]: "
+            if read -r choice 2>/dev/null; then
+                if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+                    selection_error=true
+                fi
+            else
                 selection_error=true
             fi
-        else
-            # If gum fails, show a simple message and exit gracefully
-            echo -e "${RED}Interactive selection unavailable.${NC}"
-            echo -e "${YELLOW}Please run archer in a proper interactive terminal.${NC}"
-            echo -e "${YELLOW}Or use command-line options: archer --help${NC}"
-            exit 1
-        fi        # Handle selection errors
+        fi
+
         if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
-            gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
+            if command -v gum >/dev/null 2>&1; then
+                gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
+            else
+                echo -e "${RED}Invalid selection or input error. Please try again.${NC}"
+            fi
             sleep 2
             continue
-=======
-        if command -v gum >/dev/null 2>&1; then
-            # Use gum for menu selection
-            options=(
-                "1) GPU Drivers Installation"
-                "2) WiFi Setup & Network Configuration"
-                "3) KDE Plasma (macOS-like)"
-                "4) GNOME (Windows-like)"
-                "5) Development Tools & Languages"
-                "6) Code Editors & IDEs"
-                "7) Gaming Setup (Steam, Lutris, Wine)"
-                "8) Multimedia Applications"
-                "9) Office Suite Installation"
-                "10) AUR Helper Setup"
-                "11) System Utilities"
-                "12) Complete Gaming Workstation"
-                "13) Complete Development Environment"
-                "14) Complete Multimedia Setup"
-                "0) Exit"
-            )
-
-            selection=$(select_option "${options[@]}")
-            # Extract number from selection like "10) AUR Helper Setup" -> "10"
-            choice=$(echo "$selection" | cut -d')' -f1)
-        else
-            # Fallback to traditional input
-            echo -n "Select an option [0-14]: "
-            read -r choice
->>>>>>> parent of 9aa6cd8 (fix: prevent archer.sh menu from becoming unusable after script failures)
         fi
 
         echo ""
-
         case $choice in
             1)  run_script "$INSTALL_DIR/system/gpu-drivers.sh" ;;
             2)  run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
