@@ -638,74 +638,7 @@ elif grep -q "AuthenticAMD" /proc/cpuinfo; then
     done
 fi
 
-# Install graphics drivers with retry logic
-if echo "${gpu_type}" | grep -E "NVIDIA|GeForce"; then
-    echo -e "${CYAN}Installing NVIDIA drivers${NC}"
-    retry_count=0
-    while [ \$retry_count -lt \$max_retries ]; do
-        if pacman -S --noconfirm --needed nvidia-lts; then
-            echo -e "${GREEN}NVIDIA drivers installed successfully${NC}"
-            break
-        fi
-        retry_count=\$((retry_count + 1))
-        if [ \$retry_count -lt \$max_retries ]; then
-            echo -e "${YELLOW}GPU driver installation failed, retrying...${NC}"
-            sleep 2
-            pacman -Sy --noconfirm
-        elif gum confirm "NVIDIA driver installation failed. Would you like to try again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying NVIDIA driver installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without NVIDIA drivers (you may install them manually later)${NC}"
-            break
-        fi
-    done
-elif echo "${gpu_type}" | grep 'VGA' | grep -E "Radeon|AMD"; then
-    echo -e "${CYAN}Installing AMD GPU drivers${NC}"
-    retry_count=0
-    while [ \$retry_count -lt \$max_retries ]; do
-        if pacman -S --noconfirm --needed xf86-video-amdgpu; then
-            echo -e "${GREEN}AMD GPU drivers installed successfully${NC}"
-            break
-        fi
-        retry_count=\$((retry_count + 1))
-        if [ \$retry_count -lt \$max_retries ]; then
-            echo -e "${YELLOW}GPU driver installation failed, retrying...${NC}"
-            sleep 2
-            pacman -Sy --noconfirm
-        elif gum confirm "AMD GPU driver installation failed. Would you like to try again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying AMD GPU driver installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without AMD GPU drivers (you may install them manually later)${NC}"
-            break
-        fi
-    done
-elif echo "${gpu_type}" | grep -E "Integrated Graphics Controller|Intel Corporation UHD"; then
-    echo -e "${CYAN}Installing Intel GPU drivers${NC}"
-    retry_count=0
-    while [ \$retry_count -lt \$max_retries ]; do
-        if pacman -S --noconfirm --needed libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils lib32-mesa; then
-            echo -e "${GREEN}Intel GPU drivers installed successfully${NC}"
-            break
-        fi
-        retry_count=\$((retry_count + 1))
-        if [ \$retry_count -lt \$max_retries ]; then
-            echo -e "${YELLOW}GPU driver installation failed, retrying...${NC}"
-            sleep 2
-            pacman -Sy --noconfirm
-        elif gum confirm "Intel GPU driver installation failed. Would you like to try again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying Intel GPU driver installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without Intel GPU drivers (you may install them manually later)${NC}"
-            break
-        fi
-    done
-fi
+# GPU driver installation is now handled by install/system/gpu-drivers.sh
 
 # Create user
 groupadd libvirt 2>/dev/null || true

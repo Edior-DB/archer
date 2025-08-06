@@ -189,29 +189,8 @@ install_development_base() {
 
 # Install GPU drivers
 install_gpu_drivers() {
-    echo -e "${CYAN}Installing GPU drivers...${NC}"
-
-    # Detect GPU
-    gpu_type=$(lspci | grep -E "VGA|3D|Display" 2>/dev/null || echo "")
-
-    if echo "$gpu_type" | grep -E "NVIDIA|GeForce" >/dev/null; then
-        echo -e "${YELLOW}NVIDIA GPU detected, installing drivers...${NC}"
-        sudo pacman -S --noconfirm nvidia nvidia-utils lib32-nvidia-utils
-
-    elif echo "$gpu_type" | grep -E "Radeon|AMD" >/dev/null; then
-        echo -e "${YELLOW}AMD GPU detected, installing drivers...${NC}"
-        sudo pacman -S --noconfirm xf86-video-amdgpu mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon
-
-    elif echo "$gpu_type" | grep -E "Intel.*Graphics" >/dev/null; then
-        echo -e "${YELLOW}Intel GPU detected, installing drivers...${NC}"
-        sudo pacman -S --noconfirm mesa lib32-mesa vulkan-intel lib32-vulkan-intel
-
-    else
-        echo -e "${YELLOW}GPU type not detected or unknown, installing generic mesa drivers...${NC}"
-        sudo pacman -S --noconfirm mesa lib32-mesa
-    fi
-
-    echo -e "${GREEN}GPU drivers installed${NC}"
+    echo -e "${CYAN}Installing GPU drivers using Archer's modular script...${NC}"
+    bash "$ARCHER_DIR/install/system/gpu-drivers.sh"
 }
 
 # Install WiFi drivers and tools
