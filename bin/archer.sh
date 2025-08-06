@@ -34,14 +34,8 @@ wait_for_input() {
 select_option() {
     local options=("$@")
 
-    # Ensure we have proper terminal setup for gum
-    if [[ ! -t 0 ]] || [[ ! -t 1 ]]; then
-        echo "Error: Interactive terminal required for menu selection." >&2
-        return 1
-    fi
-
-    # Use gum choose with error handling
-    gum choose "${options[@]}" < /dev/tty
+    # Ensure proper terminal environment for gum
+    TERM="${TERM:-xterm}" gum choose "${options[@]}"
 }
 
 # Logo
@@ -380,22 +374,23 @@ main() {
             "0) Exit"
         )
 
-        # Handle gum selection with fallback
-        if selection=$(select_option "${options[@]}" 2>/dev/null); then
+        # Handle gum selection with better error handling
+        selection=""
+        if selection=$(select_option "${options[@]}" 2>/dev/null) && [[ -n "$selection" ]]; then
             # Extract number from selection like "10) AUR Helper Setup" -> "10"
             choice=$(echo "$selection" | cut -d')' -f1)
-        else
-            # Fallback to traditional input when gum fails
-            echo -e "${YELLOW}Please enter your choice manually:${NC}"
-            read -p "Select an option [0-14]: " choice 2>/dev/null || selection_error=true
 
-            # Validate input is numeric and in range
-            if ! [[ "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -gt 14 ]]; then
+            # Validate that choice is a number
+            if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
                 selection_error=true
             fi
-        fi
-
-        # Handle selection errors
+        else
+            # If gum fails, show a simple message and exit gracefully
+            echo -e "${RED}Interactive selection unavailable.${NC}"
+            echo -e "${YELLOW}Please run archer in a proper interactive terminal.${NC}"
+            echo -e "${YELLOW}Or use command-line options: archer --help${NC}"
+            exit 1
+        fi        # Handle selection errors
         if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
             gum style --foreground="#ff0000" "Invalid selection or input error. Please try again."
             sleep 2
