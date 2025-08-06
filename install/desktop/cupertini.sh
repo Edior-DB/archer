@@ -92,8 +92,21 @@ install_themes() {
 configure_kde() {
     echo -e "${BLUE}Configuring KDE for macOS-like experience...${NC}"
 
+    # Check if we're in a Wayland session and warn user
+    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
+        echo -e "${YELLOW}Warning: Running on Wayland. Some configuration options work better on X11.${NC}"
+        echo -e "${YELLOW}You can switch to X11 session at the login screen for better compatibility.${NC}"
+    fi
+
     # Wait for KDE session
     sleep 3
+
+    # Ensure both Wayland and X11 sessions are available
+    echo -e "${YELLOW}Ensuring X11 session is available...${NC}"
+    if [[ ! -f "/usr/share/xsessions/plasma.desktop" ]]; then
+        echo -e "${YELLOW}Installing X11 session support...${NC}"
+        install_packages plasma-workspace-x11
+    fi
 
     # Global theme
     echo -e "${YELLOW}Setting global theme...${NC}"
@@ -135,52 +148,72 @@ configure_kde() {
 
     # Panel configuration (macOS-like: bottom dock-style panel)
     echo -e "${YELLOW}Configuring macOS-like dock panel...${NC}"
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        // Remove all existing panels
-        var allPanels = desktops()[0].panels;
-        for (var i = 0; i < allPanels.length; ++i) {
-            allPanels[i].remove();
-        }
 
-        // Create bottom dock-style panel
-        var dock = new Panel;
-        dock.location = "bottom";
-        dock.height = 60;
-        dock.alignment = "center";
-        dock.lengthMode = "fit";
-        dock.hiding = "none";
-        dock.floating = true;
+    # Try to configure panels with better error handling
+    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
+        echo -e "${YELLOW}Configuring panels for Wayland session...${NC}"
+    else
+        echo -e "${YELLOW}Configuring panels for X11 session...${NC}"
+    fi
 
-        // Add widgets to dock
-        dock.addWidget("org.kde.plasma.kickoff");
-        dock.addWidget("org.kde.plasma.icontasks");
-        dock.addWidget("org.kde.plasma.marginsseparator");
-        dock.addWidget("org.kde.plasma.systemtray");
-        dock.addWidget("org.kde.plasma.digitalclock");
+    # Use plasma-interactiveconsole or direct config files for better reliability
+    python3 << 'EOF'
+import os
+import configparser
 
-        // Configure icon tasks for dock-like behavior
-        var iconTasks = dock.widgetById("org.kde.plasma.icontasks");
-        if (iconTasks) {
-            iconTasks.currentConfigGroup = ["General"];
-            iconTasks.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop");
-            iconTasks.writeConfig("showOnlyCurrentDesktop", false);
-            iconTasks.writeConfig("groupingStrategy", 0);
-            iconTasks.writeConfig("indicateAudioStreams", true);
-        }
+# Create/modify panel configuration
+config_dir = os.path.expanduser("~/.config")
+plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
 
-        // Create top panel for global menu (optional)
-        var topPanel = new Panel;
-        topPanel.location = "top";
-        topPanel.height = 28;
-        topPanel.alignment = "stretch";
-        topPanel.hiding = "none";
+# Ensure config directory exists
+os.makedirs(config_dir, exist_ok=True)
 
-        // Add minimal widgets to top panel
-        topPanel.addWidget("org.kde.plasma.appmenu");
-        topPanel.addWidget("org.kde.plasma.panelspacer");
-        topPanel.addWidget("org.kde.plasma.systemmonitor");
-        topPanel.addWidget("org.kde.plasma.showdesktop");
-    '
+# Create basic panel configuration
+panel_config = """[ActionPlugins][0]
+RightButton;NoModifier=org.kde.contextmenu
+
+[ActionPlugins][1]
+RightButton;NoModifier=org.kde.contextmenu
+
+[Containments][1]
+activityId=
+formfactor=2
+immutability=1
+lastScreen=0
+location=4
+plugin=org.kde.panel
+wallpaperplugin=org.kde.image
+
+[Containments][1][Applets][1]
+immutability=1
+plugin=org.kde.plasma.kickoff
+
+[Containments][1][Applets][2]
+immutability=1
+plugin=org.kde.plasma.icontasks
+
+[Containments][1][Applets][3]
+immutability=1
+plugin=org.kde.plasma.systemtray
+
+[Containments][1][Applets][4]
+immutability=1
+plugin=org.kde.plasma.digitalclock
+
+[Containments][1][General]
+AppletOrder=1;2;3;4
+
+[ScreenMapping]
+itemsOnDisabledScreens=
+screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
+"""
+
+with open(plasma_config, 'w') as f:
+    f.write(panel_config)
+
+print("Panel configuration written")
+EOF
+
     echo -e "${GREEN}Panels configured: macOS-like dock panel!${NC}"
 
     # Desktop effects (for smooth animations like macOS)
@@ -190,11 +223,32 @@ configure_kde() {
     kwriteconfig5 --file kwinrc --group Plugins --key slideEnabled "true"
     kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_fadeEnabled "true"
     kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_translucencyEnabled "true"
+    kwriteconfig5 --file kwinrc --group Plugins --key blurEnabled "true"
 
     # Window behavior (more macOS-like)
     echo -e "${YELLOW}Configuring window behavior...${NC}"
-    kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy "FocusFollowsMouse"
+    kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy "ClickToFocus"
     kwriteconfig5 --file kwinrc --group MouseBindings --key CommandAllKey "Meta"
+    kwriteconfig5 --file kwinrc --group Windows --key BorderlessMaximizedWindows "true"
+
+    # Set macOS-like desktop wallpaper
+    echo -e "${YELLOW}Setting macOS-like wallpaper...${NC}"
+    # Download a macOS-like wallpaper if none exists
+    mkdir -p "$HOME/Pictures/Wallpapers"
+    if [[ ! -f "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" ]]; then
+        echo -e "${YELLOW}Downloading macOS-like wallpaper...${NC}"
+        curl -L -o "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" \
+            "https://4kwallpapers.com/images/wallpapers/macos-ventura-apple-layers-fluidic-colorful-gradient-3840x2160-6680.jpg" \
+            2>/dev/null || echo "Could not download wallpaper - using default"
+    fi
+
+    # Set wallpaper using plasma-apply-wallpaperimage
+    if [[ -f "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" ]]; then
+        plasma-apply-wallpaperimage "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" 2>/dev/null || true
+    fi
+
+    # Configure desktop to be more macOS-like
+    kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 1 --group Wallpaper --group org.kde.image --group General --key Image "file://$HOME/Pictures/Wallpapers/macOS-ventura.jpg"
 
     # Konsole configuration (Terminal.app-like)
     echo -e "${YELLOW}Configuring terminal...${NC}"
@@ -220,15 +274,61 @@ EOF
 
     # SDDM theme configuration
     echo -e "${YELLOW}Configuring login screen...${NC}"
-    sudo kwriteconfig5 --file /etc/sddm.conf --group Theme --key Current "sugar-candy"
+    sudo kwriteconfig5 --file /etc/sddm.conf --group Theme --key Current "sugar-candy" 2>/dev/null || \
+    sudo bash -c 'echo -e "[Theme]\nCurrent=sugar-candy" > /etc/sddm.conf'
 
-    # Restart plasmashell to apply changes
-    echo -e "${YELLOW}Restarting plasma shell...${NC}"
-    killall plasmashell 2>/dev/null || true
+    # Force theme application by reloading configuration
+    echo -e "${YELLOW}Applying all configuration changes...${NC}"
+    kquitapp5 plasmashell 2>/dev/null || true
+    sleep 3
+
+    # Reload KDE configuration
+    kbuildsycoca5 --noincremental 2>/dev/null || true
     sleep 2
+
+    # Restart services
     plasmashell &
+    sleep 2
+
+    # Try to force theme application
+    lookandfeeltool -a McMojave 2>/dev/null || echo "Look and feel tool not available"
+
+    # Apply icon theme specifically
+    /usr/bin/plasma-changeicons McMojave-circle 2>/dev/null || true
 
     echo -e "${GREEN}KDE configuration completed!${NC}"
+    echo -e "${CYAN}Note: For best results, log out and log back in, preferably using X11 session.${NC}"
+}
+
+# Ensure X11 session is available at login
+ensure_x11_session() {
+    echo -e "${BLUE}Ensuring X11 session availability...${NC}"
+
+    # Install X11 session support if missing
+    if [[ ! -f "/usr/share/xsessions/plasma.desktop" ]]; then
+        echo -e "${YELLOW}Installing KDE X11 session support...${NC}"
+        install_packages plasma-workspace-x11
+    fi
+
+    # Ensure SDDM shows session selection
+    sudo bash -c 'cat > /etc/sddm.conf.d/kde_settings.conf << EOF
+[Theme]
+Current=sugar-candy
+
+[General]
+HaltCommand=/usr/bin/systemctl poweroff
+RebootCommand=/usr/bin/systemctl reboot
+
+[X11]
+ServerPath=/usr/bin/X
+SessionCommand=/usr/share/sddm/scripts/Xsession
+SessionDir=/usr/share/xsessions
+
+[Wayland]
+SessionDir=/usr/share/wayland-sessions
+EOF'
+
+    echo -e "${GREEN}X11 and Wayland sessions configured!${NC}"
 }
 
 # Install multimedia codecs
@@ -291,6 +391,9 @@ main() {
     install_themes
     install_codecs
 
+    # Ensure both X11 and Wayland sessions are available
+    ensure_x11_session
+
     # Configure (only if in KDE session)
     if [[ "$XDG_CURRENT_DESKTOP" == "KDE" ]] && [[ -n "$DISPLAY" ]]; then
         configure_kde
@@ -301,19 +404,25 @@ main() {
 
     show_completion "Cupertini Installation Complete!" "\
 🍎 macOS-like Desktop Environment Installed:
-- KDE Plasma 6 with macOS-like layout
-- McMojave theme with macOS styling
-- Native Plasma dock-style panel (floating, centered)
-- Tela icon theme (macOS-inspired)
-- macOS-like cursors and fonts
-- Essential macOS-like applications
+- KDE Plasma 6 with macOS-like layout and McMojave theme
+- Apple SF Pro fonts (official Apple fonts)
+- McMojave circle icons and cursors
+- macOS-like dock panel configuration
+- X11 and Wayland session support
+- SDDM login manager with Sugar Candy theme
 
 📋 Next Steps:
-1. Reboot or log out and back in to KDE
-2. The desktop will auto-configure on first login
-3. Customize further using System Settings
-4. Install office suite: ./office-tools/office-suite.sh
-5. Adjust panel settings in System Settings > Workspace > Panels if needed
+1. REBOOT your system to ensure all changes take effect
+2. At the login screen, you'll see both X11 and Wayland session options
+3. For best macOS-like experience, choose 'Plasma (X11)' session
+4. The desktop should now look significantly more like macOS
+5. Install office suite: ./office-tools/office-suite.sh
+6. Customize further using System Settings
+
+⚠️  Important: If the desktop doesn't look like macOS after login:
+- Try logging out and selecting 'Plasma (X11)' instead of Wayland
+- Run this script again with: $0 --configure-only
+- Check System Settings > Appearance > Global Theme
 
 🎉 Welcome to your macOS-like Arch Linux desktop!"
 
