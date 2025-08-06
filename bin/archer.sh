@@ -312,8 +312,32 @@ check_theme_installed() {
                 return 1
             fi
 
-            # Check for McMojave theme (from AUR)
-            if ! pacman -Q mcmojave-kde-theme-git &>/dev/null && ! pacman -Q mcmojave-kde-theme &>/dev/null; then
+            # Check for McMojave theme (from AUR) - updated package names
+            # Check for main theme components installed by cupertini.sh
+            local has_theme=false
+            local has_cursors=false
+            local has_icons=false
+
+            # Check for plasma6 McMojave theme
+            if pacman -Q plasma6-theme-mcmojave-git &>/dev/null; then
+                has_theme=true
+            fi
+
+            # Check for cursors
+            if pacman -Q mcmojave-cursors &>/dev/null; then
+                has_cursors=true
+            fi
+
+            # Check for icon theme
+            if pacman -Q mcmojave-circle-icon-theme-git &>/dev/null; then
+                has_icons=true
+            fi
+
+            # Consider installed if we have at least the main theme and cursors
+            if [[ "$has_theme" == true ]] && [[ "$has_cursors" == true ]]; then
+                echo "installed"
+                return 0
+            else
                 echo "theme_missing"
                 return 1
             fi
