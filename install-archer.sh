@@ -141,6 +141,7 @@ install_kde_minimal() {
         "sddm"
         "xorg"
         "xorg-server"
+        "konsole"
     )
     install_with_retries "${kde_packages[@]}"
     sudo systemctl enable sddm
