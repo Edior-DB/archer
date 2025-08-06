@@ -297,6 +297,23 @@ create_archer_command() {
     fi
 }
 
+update_archer_repo() {
+    show_logo
+    echo -e "${CYAN}Updating Archer repository...${NC}"
+    if [[ -d "$ARCHER_DIR/.git" ]]; then
+        cd "$ARCHER_DIR"
+        if git pull; then
+            echo -e "${GREEN}Archer repository updated successfully!${NC}"
+        else
+            echo -e "${RED}Failed to update Archer repository.${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${YELLOW}Archer directory not found or not a git repo. Cannot update.${NC}"
+        exit 1
+    fi
+}
+
 # Main installation function
 run_setup() {
     show_logo
@@ -366,7 +383,7 @@ main() {
     if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
         echo "Archer Post-Installation Setup"
         echo ""
-        echo "Usage: $0"
+        echo "Usage: $0 [--update|-u]"
         echo ""
         echo "This script sets up the Archer development environment on an installed Arch Linux system."
         echo "It should NOT be run from Live ISO - use install-system.sh for fresh installations."
@@ -379,6 +396,14 @@ main() {
         echo " • Installs AUR helper (yay)"
         echo " • Clones Archer repository"
         echo " • Creates 'archer' command alias"
+        echo ""
+        echo "Options:"
+        echo "  --update, -u   Only update the Archer repository and exit"
+        exit 0
+    fi
+
+    if [[ "$1" == "--update" ]] || [[ "$1" == "-u" ]]; then
+        update_archer_repo
         exit 0
     fi
 
