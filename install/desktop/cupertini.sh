@@ -115,15 +115,17 @@ install_essential_apps() {
 
         # Bluetooth
         "bluedevil"
-
-        # Widgets and plasmoids
-        "plasma-widgets-addons"
     )
+
 
     for app in "${apps[@]}"; do
         echo -e "${YELLOW}Installing $app...${NC}"
         sudo pacman -S --noconfirm --needed "$app"
     done
+
+    # Install kdeplasma-addons from official repo (replacement for plasma-widgets-addons)
+    echo -e "${YELLOW}Installing kdeplasma-addons (official Plasma widgets package)...${NC}"
+    sudo pacman -S --noconfirm --needed kdeplasma-addons
 
     echo -e "${GREEN}Essential KDE applications installed!${NC}"
 }
