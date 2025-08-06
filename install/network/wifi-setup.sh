@@ -4,7 +4,7 @@
 # This script helps set up WiFi connections using NetworkManager
 
 # Source common functions
-source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../system}/common-funcs.sh"
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
 
 # Logo
 echo -ne "

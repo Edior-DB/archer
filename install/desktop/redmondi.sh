@@ -6,7 +6,7 @@
 set -e
 
 # Source common functions
-source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../system}/common-funcs.sh"
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
 
 # Install Windows-like themes and fonts
 install_windows_themes() {

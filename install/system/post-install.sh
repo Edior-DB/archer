@@ -6,7 +6,7 @@
 set -e
 
 # Source common functions
-source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")}/common-funcs.sh"
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
 
 show_banner "Post-Installation Setup"
 

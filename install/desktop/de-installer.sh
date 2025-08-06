@@ -6,7 +6,7 @@
 set -e
 
 # Source common functions
-source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../system}/common-funcs.sh"
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
