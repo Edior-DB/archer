@@ -298,6 +298,9 @@ EOF
 ensure_x11_session() {
     echo -e "${BLUE}Ensuring X11 session availability...${NC}"
 
+    # Create SDDM config directory if it doesn't exist
+    sudo mkdir -p /etc/sddm.conf.d
+
     # Ensure SDDM shows session selection
     sudo bash -c 'cat > /etc/sddm.conf.d/kde_settings.conf << EOF
 [Theme]
