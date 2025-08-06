@@ -80,7 +80,7 @@ install_themes() {
     local aur_themes=(
         "plasma6-theme-mcmojave-git" "mcmojave-cursors" "mcmojave-circle-icon-theme-git"
         "kvantum-theme-libadwaita-git" "plasma5-wallpapers-dynamic" "sddm-sugar-candy-git"
-        "ttf-sf-pro-display"
+        "otf-apple-fonts"
     )
 
     install_aur_packages "${aur_themes[@]}"
@@ -118,13 +118,14 @@ configure_kde() {
 
     # Fonts
     echo -e "${YELLOW}Setting fonts...${NC}"
-    kwriteconfig5 --file kdeglobals --group General --key font "SF Pro Display,11,-1,5,50,0,0,0,0,0"
-    kwriteconfig5 --file kdeglobals --group General --key menuFont "SF Pro Display,11,-1,5,50,0,0,0,0,0"
-    kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0"
-    kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0"
-
-    # Fallback to Roboto if SF Pro Display is not available
-    if ! fc-list | grep -i "SF Pro Display" > /dev/null; then
+    # Try SF Pro Display first (from otf-apple-fonts)
+    if fc-list | grep -i "SF Pro Display" > /dev/null; then
+        echo -e "${GREEN}Using SF Pro Display fonts...${NC}"
+        kwriteconfig5 --file kdeglobals --group General --key font "SF Pro Display,11,-1,5,50,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group General --key menuFont "SF Pro Display,11,-1,5,50,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0"
+    else
         echo -e "${YELLOW}SF Pro Display not found, using Roboto as fallback...${NC}"
         kwriteconfig5 --file kdeglobals --group General --key font "Roboto,11,-1,5,50,0,0,0,0,0"
         kwriteconfig5 --file kdeglobals --group General --key menuFont "Roboto,11,-1,5,50,0,0,0,0,0"
