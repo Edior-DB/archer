@@ -131,8 +131,35 @@ install_essential_apps() {
 install_gnome_extensions() {
     echo -e "${BLUE}Installing GNOME Extensions...${NC}"
 
-    # Install extension manager
-    sudo pacman -S --noconfirm --needed gnome-shell-extensions extension-manager
+    # Install gnome-shell-extensions (extension-manager is not in official repos)
+    sudo pacman -S --noconfirm --needed gnome-shell-extensions
+
+    # Try to install extension-manager from AUR
+    echo -e "${BLUE}Installing Extension Manager (GNOME extension manager)...${NC}"
+    EXT_MGR_INSTALLED=false
+    if command -v yay &> /dev/null || command -v paru &> /dev/null; then
+        local aur_helper="yay"
+        if command -v paru &> /dev/null; then
+            aur_helper="paru"
+        fi
+        if $aur_helper -S --noconfirm --needed extension-manager; then
+            EXT_MGR_INSTALLED=true
+        fi
+    fi
+
+    # Fallback to Flatpak if AUR install failed
+    if [[ "$EXT_MGR_INSTALLED" != true ]]; then
+        if command -v flatpak &> /dev/null; then
+            echo -e "${YELLOW}Trying to install Extension Manager from Flatpak...${NC}"
+            flatpak install -y flathub com.mattjakeman.ExtensionManager && EXT_MGR_INSTALLED=true
+        fi
+    fi
+
+    if [[ "$EXT_MGR_INSTALLED" == true ]]; then
+        echo -e "${GREEN}Extension Manager installed!${NC}"
+    else
+        echo -e "${YELLOW}Warning: Could not install Extension Manager from AUR or Flatpak.${NC}"
+    fi
 
     # Install AUR helper if not present (for AUR extensions)
     if ! command -v yay &> /dev/null && ! command -v paru &> /dev/null; then
