@@ -1,28 +1,14 @@
 #!/bin/bash
 
 # Post-Installation Setup Script
-# Installs essential packages and sets up AUR helper
+# Part of Archer - Arch Linux Home PC Transformation Suite
 
 set -e
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Source common functions
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")}/common-funcs.sh"
 
-# Confirm function using gum
-confirm_action() {
-    local message="$1"
-    gum confirm "$message"
-}
-
-# Wait function using gum
-wait_for_input() {
-    local message="${1:-Press Enter to continue...}"
-    gum input --placeholder "$message" --value "" > /dev/null
-}
+show_banner "Post-Installation Setup"
 
 echo -e "${BLUE}
 =========================================================================

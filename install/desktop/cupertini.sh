@@ -1,41 +1,12 @@
 #!/bin/bash
 
-# Cupertini - macOS-like Desktop Environment (KDE Plasma-based)
+# Cupertini Theme Installer - macOS-like KDE Plasma 6 Theme
 # Part of Archer - Arch Linux Home PC Transformation Suite
 
 set -e
 
-# Check if KDE Plasma is installed
-check_kde_installed() {
-    if ! pacman -Q plasma-desktop &>/dev/null; then
-        echo -e "${RED}KDE Plasma is not installed on this system.${NC}"
-        echo -e "${YELLOW}Please re-run the main install.sh script to install KDE Plasma.${NC}"
-        exit 1
-    fi
-
-    # Check if kwriteconfig5 is available
-    if ! command -v kwriteconfig5 &> /dev/null; then
-        echo -e "${YELLOW}Installing KDE configuration tools...${NC}"
-        sudo pacman -S --noconfirm --needed kconfig5
-
-        # Check again after installation
-        if ! command -v kwriteconfig5 &> /dev/null; then
-            echo -e "${RED}kwriteconfig5 still not found after installing kconfig5${NC}"
-            echo -e "${RED}This is required for KDE theme configuration${NC}"
-            exit 1
-        fi
-    fi
-}
-
-
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# Source common functions
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../system}/common-funcs.sh"
 
 # Show logo
 show_logo() {
@@ -53,41 +24,6 @@ EOF
     echo -e "${NC}"
 }
 
-# Confirm function using gum
-confirm_action() {
-    local message="$1"
-    gum confirm "$message"
-}
-
-# Wait function using gum
-wait_for_input() {
-    local message="${1:-Press Enter to continue...}"
-    gum input --placeholder "$message" --value "" > /dev/null
-}
-
-# Reset KDE settings to default before applying new theme
-reset_kde_settings() {
-    echo -e "${BLUE}Resetting KDE settings to defaults...${NC}"
-
-    # Remove existing theme configurations
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "org.kde.breeze.desktop"
-    kwriteconfig5 --file plasmarc --group Theme --key name "default"
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme "breeze"
-    kwriteconfig5 --file kdeglobals --group General --key cursorTheme "breeze_cursors"
-
-    # Reset fonts to system defaults
-    kwriteconfig5 --file kdeglobals --group General --key font ""
-    kwriteconfig5 --file kdeglobals --group General --key menuFont ""
-    kwriteconfig5 --file kdeglobals --group General --key toolBarFont ""
-    kwriteconfig5 --file kdeglobals --group WM --key activeFont ""
-
-    # Reset window decoration
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae"
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__breeze"
-
-    echo -e "${GREEN}KDE settings reset to defaults!${NC}"
-}
-
 
 # Install essential KDE applications
 install_essential_apps() {
@@ -95,59 +31,32 @@ install_essential_apps() {
 
     local apps=(
         # File manager and utilities
-        "dolphin"
-        "ark"
-        "kdeconnect"
-        "kdenetwork-filesharing"
-
+        "dolphin" "ark" "kdeconnect" "kdenetwork-filesharing"
         # Text editors
-        "kate"
-        "kwrite"
-
+        "kate" "kwrite"
         # System utilities
-        "systemsettings"
-        "kcalc"
-        "spectacle"
-        "kfind"
-        "kcharselect"
-        "kde-cli-tools"
-
+        "systemsettings" "kcalc" "spectacle" "kfind" "kcharselect" "kde-cli-tools"
         # Multimedia
-        "dragon"
-        "elisa"
-        "gwenview"
-        "okular"
-
+        "dragon" "elisa" "gwenview" "okular"
         # Web browser
         "firefox"
-
         # Graphics
-        "krita"
-        "kolourpaint"
-
+        "krita" "kolourpaint"
         # Terminal
         "konsole"
-
         # Network
-        "plasma-nm"
-        "plasma-pa"
-
+        "plasma-nm" "plasma-pa"
         # System monitor
         "plasma-systemmonitor"
-
         # Bluetooth
         "bluedevil"
     )
 
-
-    for app in "${apps[@]}"; do
-        echo -e "${YELLOW}Installing $app...${NC}"
-        sudo pacman -S --noconfirm --needed "$app"
-    done
+    install_packages "${apps[@]}"
 
     # Install kdeplasma-addons from official repo (replacement for plasma-widgets-addons)
     echo -e "${YELLOW}Installing kdeplasma-addons (official Plasma widgets package)...${NC}"
-    sudo pacman -S --noconfirm --needed kdeplasma-addons
+    install_packages kdeplasma-addons
 
     echo -e "${GREEN}Essential KDE applications installed!${NC}"
 }
@@ -158,52 +67,22 @@ install_themes() {
 
     # Install theme packages from official repos
     local theme_packages=(
-        "breeze"
-        "breeze-gtk"
-        "kvantum"
-        "papirus-icon-theme"
-        "ttf-roboto"
-        "ttf-dejavu"
-        "noto-fonts"
-        "noto-fonts-emoji"
-        "ttf-liberation"
+        "breeze" "breeze-gtk" "kvantum" "papirus-icon-theme"
+        "ttf-roboto" "ttf-dejavu" "noto-fonts" "noto-fonts-emoji" "ttf-liberation"
     )
 
-    for package in "${theme_packages[@]}"; do
-        echo -e "${YELLOW}Installing $package...${NC}"
-        sudo pacman -S --noconfirm --needed "$package"
-    done
+    install_packages "${theme_packages[@]}"
 
     # Install AUR helper if not present
-    if ! command -v yay &> /dev/null && ! command -v paru &> /dev/null; then
-        echo -e "${YELLOW}Installing yay for AUR packages...${NC}"
-        git clone https://aur.archlinux.org/yay.git /tmp/yay
-        cd /tmp/yay
-        makepkg -si --noconfirm
-        cd -
-        rm -rf /tmp/yay
-    fi
-
-    # Set AUR helper
-    local aur_helper="yay"
-    if command -v paru &> /dev/null; then
-        aur_helper="paru"
-    fi
+    install_aur_helper
 
     # Install macOS-like themes from AUR
     local aur_themes=(
-        "mcmojave-kde-theme-git"
-        "mcmojave-cursors"
-        "tela-icon-theme-bin"
-        "kvantum-theme-libadwaita-git"
-        "plasma5-wallpapers-dynamic"
-        "sddm-sugar-candy-git"
+        "mcmojave-kde-theme-git" "mcmojave-cursors" "tela-icon-theme-bin"
+        "kvantum-theme-libadwaita-git" "plasma5-wallpapers-dynamic" "sddm-sugar-candy-git"
     )
 
-    for theme in "${aur_themes[@]}"; do
-        echo -e "${YELLOW}Installing $theme...${NC}"
-        $aur_helper -S --noconfirm --needed "$theme" || echo -e "${YELLOW}Could not install $theme, skipping...${NC}"
-    done
+    install_aur_packages "${aur_themes[@]}"
 
     echo -e "${GREEN}macOS-like themes installed!${NC}"
 }
@@ -345,25 +224,16 @@ EOF
 install_codecs() {
     echo -e "${BLUE}Installing multimedia codecs...${NC}"
 
-
     local codecs=(
-        "gstreamer"
-        "gst-plugins-base"
-        "gst-plugins-good"
-        "gst-plugins-bad"
-        "gst-plugins-ugly"
-        "gst-libav"
-        "ffmpeg"
+        "gstreamer" "gst-plugins-base" "gst-plugins-good"
+        "gst-plugins-bad" "gst-plugins-ugly" "gst-libav" "ffmpeg"
     )
 
-    for codec in "${codecs[@]}"; do
-        echo -e "${YELLOW}Installing $codec...${NC}"
-        sudo pacman -S --noconfirm --needed "$codec"
-    done
+    install_packages "${codecs[@]}"
 
     # Install phonon-qt5-gstreamer from AUR
     echo -e "${YELLOW}Installing phonon-qt5-gstreamer from AUR...${NC}"
-    $aur_helper -S --noconfirm --needed phonon-qt5-gstreamer || echo -e "${YELLOW}Could not install phonon-qt5-gstreamer, skipping...${NC}"
+    install_aur_packages phonon-qt5-gstreamer
 
     echo -e "${GREEN}Multimedia codecs installed!${NC}"
 }
@@ -372,7 +242,10 @@ install_codecs() {
 main() {
     show_logo
 
-    check_kde_installed
+    # Check prerequisites
+    if ! check_kde_installed; then
+        exit 1
+    fi
 
     echo -e "${CYAN}This will install a macOS-like desktop environment using KDE Plasma.${NC}"
     echo -e "${CYAN}It includes themes, widgets, and applications for a familiar macOS experience.${NC}"
@@ -383,8 +256,7 @@ main() {
     fi
 
     # Update system
-    echo -e "${BLUE}Updating system...${NC}"
-    sudo pacman -Syu --noconfirm
+    update_system
 
     # Reset settings to avoid conflicts
     reset_kde_settings
@@ -413,25 +285,10 @@ main() {
         configure_kde
     else
         echo -e "${YELLOW}Configuration will be applied after login to KDE.${NC}"
-
-        # Create autostart script for first login
-        mkdir -p "$HOME/.config/autostart"
-        cat > "$HOME/.config/autostart/cupertini-setup.desktop" << EOF
-[Desktop Entry]
-Type=Application
-Name=Cupertini Setup
-Exec=/bin/bash -c 'sleep 10 && $(readlink -f "$0") --configure-only && rm "$HOME/.config/autostart/cupertini-setup.desktop"'
-Hidden=false
-NoDisplay=false
-X-KDE-autostart-after=panel
-EOF
+        create_autostart_entry "Cupertini" "$(readlink -f "$0") --configure-only" "$0"
     fi
 
-    echo -e "${GREEN}
-=========================================================================
-                        Cupertini Installation Complete!
-=========================================================================
-
+    show_completion "Cupertini Installation Complete!" "\
 🍎 macOS-like Desktop Environment Installed:
 - KDE Plasma 6 with macOS-like layout
 - McMojave theme with macOS styling
@@ -447,9 +304,7 @@ EOF
 4. Install office suite: ./office-tools/office-suite.sh
 5. Adjust panel settings in System Settings > Workspace > Panels if needed
 
-🎉 Welcome to your macOS-like Arch Linux desktop!
-
-${NC}"
+🎉 Welcome to your macOS-like Arch Linux desktop!"
 
     wait_for_input "Press Enter to continue..."
 }

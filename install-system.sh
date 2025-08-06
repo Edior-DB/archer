@@ -91,27 +91,80 @@ select_option() {
 
 
 install_with_retries() {
-    local packages=("$@")
+    local command_type=""
+    local target_dir=""
+    local packages=()
+
+    # Parse command type and arguments
+    if [[ "$1" == "pacstrap" ]]; then
+        command_type="pacstrap"
+        target_dir="$2"
+        shift 2  # Remove 'pacstrap' and target directory from arguments
+        packages=("$@")
+    elif [[ "$1" == "yay" || "$1" == "paru" ]]; then
+        command_type="$1"
+        shift  # Remove AUR helper from arguments
+        packages=("$@")
+    else
+        command_type="pacman"
+        packages=("$@")
+    fi
+
     local retry_count=0
     local max_retries=3
+
     while [ $retry_count -lt $max_retries ]; do
         echo -e "${CYAN}Installing: ${packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
-        if pacman -S --noconfirm --needed "${packages[@]}"; then
+
+        local install_success=false
+        case "$command_type" in
+            "pacstrap")
+                if pacstrap "$target_dir" "${packages[@]}" --noconfirm --needed; then
+                    install_success=true
+                fi
+                ;;
+            "yay"|"paru")
+                if "$command_type" -S --noconfirm --needed "${packages[@]}"; then
+                    install_success=true
+                fi
+                ;;
+            "pacman")
+                if pacman -S --noconfirm --needed "${packages[@]}"; then
+                    install_success=true
+                fi
+                ;;
+        esac
+
+        if [ "$install_success" = true ]; then
             echo -e "${GREEN}Packages installed successfully: ${packages[*]}${NC}"
             return 0
         fi
+
         retry_count=$((retry_count + 1))
         if [ $retry_count -lt $max_retries ]; then
             echo -e "${YELLOW}Installation failed, retrying in 3 seconds...${NC}"
             sleep 3
-            pacman -Sy --noconfirm
+            if [[ "$command_type" == "pacstrap" ]]; then
+                pacman -Sy --noconfirm
+            elif [[ "$command_type" == "pacman" ]]; then
+                pacman -Sy --noconfirm
+            else
+                # For AUR helpers, update package databases
+                "$command_type" -Sy --noconfirm
+            fi
         else
             echo -e "${RED}ERROR: Installation failed after $max_retries attempts!${NC}"
             echo -e "${RED}Please check your network connection.${NC}"
-            if gum confirm "Would you like to try installing again?"; then
+            if command -v gum >/dev/null 2>&1 && gum confirm "Would you like to try installing again?"; then
                 retry_count=0
                 echo -e "${CYAN}Retrying installation...${NC}"
-                pacman -Sy --noconfirm
+                if [[ "$command_type" == "pacstrap" ]]; then
+                    pacman -Sy --noconfirm
+                elif [[ "$command_type" == "pacman" ]]; then
+                    pacman -Sy --noconfirm
+                else
+                    "$command_type" -Sy --noconfirm
+                fi
             else
                 echo -e "${RED}Installation cannot continue without these packages: ${packages[*]}${NC}"
                 exit 1

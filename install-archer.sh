@@ -15,7 +15,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-ARCHER_DIR="$HOME/.local/share/archer"
+ARCHER_DIR="${ARCHER_DIR:-$HOME/.local/share/archer}"
 REPO_URL="https://github.com/Edior-DB/archer.git"
 
 # Logo
@@ -37,40 +37,107 @@ LOGOEOF
 
 
 install_with_retries() {
+    local command_type=""
+    local target_dir=""
     local packages=()
-    for pkg in "$@"; do
-        if pacman -Q "$pkg" &>/dev/null; then
-            echo -e "${GREEN}$pkg is already installed and up-to-date${NC}"
-        else
-            packages+=("$pkg")
-        fi
-    done
-    if [ ${#packages[@]} -eq 0 ]; then
+    local filtered_packages=()
+
+    # Parse command type and arguments
+    if [[ "$1" == "pacstrap" ]]; then
+        command_type="pacstrap"
+        target_dir="$2"
+        shift 2  # Remove 'pacstrap' and target directory from arguments
+        packages=("$@")
+        # For pacstrap, we can't check if packages are already installed since target is /mnt
+        filtered_packages=("${packages[@]}")
+    elif [[ "$1" == "yay" || "$1" == "paru" ]]; then
+        command_type="$1"
+        shift  # Remove AUR helper from arguments
+        packages=("$@")
+        # Check if packages are already installed for AUR helpers
+        for pkg in "${packages[@]}"; do
+            if pacman -Q "$pkg" &>/dev/null; then
+                echo -e "${GREEN}$pkg is already installed and up-to-date${NC}"
+            else
+                filtered_packages+=("$pkg")
+            fi
+        done
+    else
+        command_type="pacman"
+        packages=("$@")
+        # Check if packages are already installed for pacman
+        for pkg in "${packages[@]}"; do
+            if pacman -Q "$pkg" &>/dev/null; then
+                echo -e "${GREEN}$pkg is already installed and up-to-date${NC}"
+            else
+                filtered_packages+=("$pkg")
+            fi
+        done
+    fi
+
+    # If all packages are already installed (except for pacstrap)
+    if [[ ${#filtered_packages[@]} -eq 0 && "$command_type" != "pacstrap" ]]; then
         echo -e "${GREEN}All packages are already installed and up-to-date${NC}"
         return 0
     fi
+
     local retry_count=0
     local max_retries=3
+
     while [ $retry_count -lt $max_retries ]; do
-        echo -e "${CYAN}Installing: ${packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
-        if sudo pacman -S --noconfirm --needed "${packages[@]}"; then
-            echo -e "${GREEN}Packages installed successfully: ${packages[*]}${NC}"
+        echo -e "${CYAN}Installing: ${filtered_packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
+
+        local install_success=false
+        case "$command_type" in
+            "pacstrap")
+                if pacstrap "$target_dir" "${filtered_packages[@]}" --noconfirm --needed; then
+                    install_success=true
+                fi
+                ;;
+            "yay"|"paru")
+                if "$command_type" -S --noconfirm --needed "${filtered_packages[@]}"; then
+                    install_success=true
+                fi
+                ;;
+            "pacman")
+                if sudo pacman -S --noconfirm --needed "${filtered_packages[@]}"; then
+                    install_success=true
+                fi
+                ;;
+        esac
+
+        if [ "$install_success" = true ]; then
+            echo -e "${GREEN}Packages installed successfully: ${filtered_packages[*]}${NC}"
             return 0
         fi
+
         retry_count=$((retry_count + 1))
         if [ $retry_count -lt $max_retries ]; then
             echo -e "${YELLOW}Installation failed, retrying in 3 seconds...${NC}"
             sleep 3
-            sudo pacman -Sy --noconfirm
+            if [[ "$command_type" == "pacstrap" ]]; then
+                pacman -Sy --noconfirm
+            elif [[ "$command_type" == "pacman" ]]; then
+                sudo pacman -Sy --noconfirm
+            else
+                # For AUR helpers, update package databases
+                "$command_type" -Sy --noconfirm
+            fi
         else
             echo -e "${RED}ERROR: Installation failed after $max_retries attempts!${NC}"
             echo -e "${RED}Please check your network connection.${NC}"
-            if gum confirm "Would you like to try installing again?"; then
+            if command -v gum >/dev/null 2>&1 && gum confirm "Would you like to try installing again?"; then
                 retry_count=0
                 echo -e "${CYAN}Retrying installation...${NC}"
-                sudo pacman -Sy --noconfirm
+                if [[ "$command_type" == "pacstrap" ]]; then
+                    pacman -Sy --noconfirm
+                elif [[ "$command_type" == "pacman" ]]; then
+                    sudo pacman -Sy --noconfirm
+                else
+                    "$command_type" -Sy --noconfirm
+                fi
             else
-                echo -e "${RED}Installation cannot continue without these packages: ${packages[*]}${NC}"
+                echo -e "${RED}Installation cannot continue without these packages: ${filtered_packages[*]}${NC}"
                 exit 1
             fi
         fi
@@ -312,6 +379,14 @@ create_archer_command() {
         echo "# Add ~/.local/bin to PATH" >> "$HOME/.bashrc"
         echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
         echo -e "${GREEN}~/.local/bin added to PATH in ~/.bashrc${NC}"
+    fi
+
+    # Export ARCHER_DIR environment variable if not already present
+    if ! grep -q "export ARCHER_DIR=" "$HOME/.bashrc" 2>/dev/null; then
+        echo "" >> "$HOME/.bashrc"
+        echo "# Archer directory environment variable" >> "$HOME/.bashrc"
+        echo "export ARCHER_DIR=\"$HOME/.local/share/archer\"" >> "$HOME/.bashrc"
+        echo -e "${GREEN}ARCHER_DIR environment variable added to ~/.bashrc${NC}"
     fi
 
     # Also add archer alias as backup

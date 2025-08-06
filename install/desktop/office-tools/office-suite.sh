@@ -5,33 +5,8 @@
 
 set -e
 
-# Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
-# Confirm function using gum
-confirm_action() {
-    local message="$1"
-    gum confirm "$message"
-}
-
-# Wait function using gum
-wait_for_input() {
-    local message="${1:-Press Enter to continue...}"
-    gum input --placeholder "$message" --value "" > /dev/null
-}
-
-# Input function using gum
-get_input() {
-    local prompt="$1"
-    local placeholder="${2:-}"
-    gum input --prompt "$prompt " --placeholder "$placeholder"
-}
+# Source common functions
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../system}/common-funcs.sh"
 
 # Show logo
 show_logo() {
@@ -80,9 +55,7 @@ install_libreoffice() {
     )
 
     echo -e "${YELLOW}Installing LibreOffice packages...${NC}"
-    for package in "${packages[@]}"; do
-        sudo pacman -S --noconfirm --needed "$package" || echo -e "${YELLOW}Could not install $package${NC}"
-    done
+    install_packages "${packages[@]}"
 
     # Optional language packs
     read -p "Install additional language packs? (y/N): " install_langs

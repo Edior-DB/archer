@@ -5,41 +5,14 @@
 
 set -e
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Source common functions
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../system}/common-funcs.sh"
 
-# Confirm function using gum
-confirm_action() {
-    local message="$1"
-    gum confirm "$message"
-}
+show_banner "Development Tools Installation"
 
-# Wait function using gum
-wait_for_input() {
-    local message="${1:-Press Enter to continue...}"
-    gum input --placeholder "$message" --value "" > /dev/null
-}
-
-# Input function using gum
-get_input() {
-    local prompt="$1"
-    local placeholder="${2:-}"
-    gum input --prompt "$prompt " --placeholder "$placeholder"
-}
-
-echo -e "${BLUE}
-=========================================================================
-                    Development Tools Installation
-=========================================================================
-${NC}"
-
-# Check if yay is installed
-if ! command -v yay &> /dev/null; then
-    echo -e "${RED}yay AUR helper not found. Please run post-install.sh first.${NC}"
+# Check if AUR helper is available
+if ! check_aur_helper; then
+    echo -e "${RED}AUR helper not found. Please run post-install.sh first.${NC}"
     exit 1
 fi
 

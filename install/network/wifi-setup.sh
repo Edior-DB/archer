@@ -3,12 +3,8 @@
 # WiFi Setup Script for Arch Linux
 # This script helps set up WiFi connections using NetworkManager
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source common functions
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../system}/common-funcs.sh"
 
 # Logo
 echo -ne "

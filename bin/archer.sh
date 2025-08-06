@@ -597,7 +597,7 @@ main() {
 
         selection_error=false
         choice=""
-        if selection=$(select_option "${options[@]}" 2>/dev/null) && [[ -n "$selection" ]]; then
+        if selection=$(select_option "${options[@]}") && [[ -n "$selection" ]]; then
             choice=$(echo "$selection" | cut -d')' -f1)
             echo -e "${GREEN}Your selection: ${selection}${NC}"
         else
