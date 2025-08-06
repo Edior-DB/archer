@@ -23,28 +23,28 @@ install_gaming_platforms() {
     # Steam
     if confirm_action "Install Steam?"; then
         echo -e "${YELLOW}Installing Steam...${NC}"
-        sudo pacman -S --noconfirm steam
+        install_packages steam
         echo -e "${GREEN}Steam installed!${NC}"
     fi
 
     # Lutris
     if confirm_action "Install Lutris (Game manager for Wine, emulators, etc.)?"; then
         echo -e "${YELLOW}Installing Lutris...${NC}"
-        sudo pacman -S --noconfirm lutris
+        install_packages lutris
         echo -e "${GREEN}Lutris installed!${NC}"
     fi
 
     # Heroic Games Launcher (Epic Games, GOG)
     if confirm_action "Install Heroic Games Launcher (Epic Games & GOG)?"; then
         echo -e "${YELLOW}Installing Heroic Games Launcher...${NC}"
-        yay -S --noconfirm heroic-games-launcher-bin
+        install_aur_packages heroic-games-launcher-bin
         echo -e "${GREEN}Heroic Games Launcher installed!${NC}"
     fi
 
     # GameHub (Steam, GOG, Humble Bundle)
     if confirm_action "Install GameHub (Multi-platform game manager)?"; then
         echo -e "${YELLOW}Installing GameHub...${NC}"
-        yay -S --noconfirm gamehub
+        install_aur_packages gamehub
         echo -e "${GREEN}GameHub installed!${NC}"
     fi
 }
@@ -79,26 +79,20 @@ install_wine() {
         "lib32-alsa-plugins"
     )
 
-    for package in "${wine_packages[@]}"; do
-        sudo pacman -S --noconfirm "$package" || echo -e "${YELLOW}Failed to install $package${NC}"
-    done
+    install_packages "${wine_packages[@]}"
 
     # Bottles (Modern Wine prefix manager)
     if confirm_action "Install Bottles (Modern Wine prefix manager)?"; then
-    if [[ "$install_bottles" =~ ^[Nn]$ ]]; then
-        echo -e "${YELLOW}Skipping Bottles installation${NC}"
-    else
         echo -e "${YELLOW}Installing Bottles...${NC}"
-        yay -S --noconfirm bottles
+        install_aur_packages bottles
         echo -e "${GREEN}Bottles installed!${NC}"
         echo -e "${BLUE}Bottles provides a modern, user-friendly interface for managing Wine prefixes${NC}"
     fi
 
     # PlayOnLinux (Alternative Wine frontend)
-    read -p "Install PlayOnLinux (Alternative Wine frontend)? (y/N): " install_pol
-    if [[ "$install_pol" =~ ^[Yy]$ ]]; then
+    if confirm_action "Install PlayOnLinux (Alternative Wine frontend)?"; then
         echo -e "${YELLOW}Installing PlayOnLinux...${NC}"
-        yay -S --noconfirm playonlinux
+        install_aur_packages playonlinux
         echo -e "${GREEN}PlayOnLinux installed!${NC}"
     fi
 
@@ -147,9 +141,7 @@ install_gaming_libraries() {
     fi
 
     # Install Vulkan packages
-    for package in "${vulkan_packages[@]}"; do
-        sudo pacman -S --noconfirm "$package" || echo -e "${YELLOW}Failed to install $package${NC}"
-    done
+    install_packages "${vulkan_packages[@]}"
 
     # Gaming libraries
     echo -e "${YELLOW}Installing gaming libraries...${NC}"
@@ -169,9 +161,7 @@ install_gaming_libraries() {
         "lib32-sdl2"
     )
 
-    for lib in "${gaming_libs[@]}"; do
-        sudo pacman -S --noconfirm "$lib" || echo -e "${YELLOW}Failed to install $lib${NC}"
-    done
+    install_packages "${gaming_libs[@]}"
 }
 
 # Install emulators
@@ -189,8 +179,8 @@ install_emulators() {
     )
 
     echo -e "${YELLOW}Available emulators:${NC}"
-    for i, emulator in "${emulators[@]}"; do
-        echo "  $((i+1)). $emulator"
+    for i in "${!emulators[@]}"; do
+        echo "  $((i+1)). ${emulators[$i]}"
     done
 
     read -p "Install emulators? Enter numbers separated by spaces (e.g., 1 3 4) or 'all' for all, 'none' to skip: " emulator_choice
