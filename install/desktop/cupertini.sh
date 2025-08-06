@@ -5,6 +5,16 @@
 
 set -e
 
+# Check if KDE Plasma is installed
+check_kde_installed() {
+    if ! pacman -Q plasma &>/dev/null; then
+        echo -e "${RED}KDE Plasma is not installed on this system.${NC}"
+        echo -e "${YELLOW}Please re-run the main install.sh script to install KDE Plasma.${NC}"
+        exit 1
+    fi
+}
+
+
 # Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -40,6 +50,29 @@ confirm_action() {
 wait_for_input() {
     local message="${1:-Press Enter to continue...}"
     gum input --placeholder "$message" --value "" > /dev/null
+}
+
+# Reset KDE settings to default before applying new theme
+reset_kde_settings() {
+    echo -e "${BLUE}Resetting KDE settings to defaults...${NC}"
+
+    # Remove existing theme configurations
+    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "org.kde.breeze.desktop"
+    kwriteconfig5 --file plasmarc --group Theme --key name "default"
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme "breeze"
+    kwriteconfig5 --file kdeglobals --group General --key cursorTheme "breeze_cursors"
+
+    # Reset fonts to system defaults
+    kwriteconfig5 --file kdeglobals --group General --key font ""
+    kwriteconfig5 --file kdeglobals --group General --key menuFont ""
+    kwriteconfig5 --file kdeglobals --group General --key toolBarFont ""
+    kwriteconfig5 --file kdeglobals --group WM --key activeFont ""
+
+    # Reset window decoration
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__breeze"
+
+    echo -e "${GREEN}KDE settings reset to defaults!${NC}"
 }
 
 
@@ -307,6 +340,8 @@ install_codecs() {
 main() {
     show_logo
 
+    check_kde_installed
+
     echo -e "${CYAN}This will install a macOS-like desktop environment using KDE Plasma.${NC}"
     echo -e "${CYAN}It includes themes, widgets, and applications for a familiar macOS experience.${NC}"
     echo ""
@@ -319,6 +354,8 @@ main() {
     echo -e "${BLUE}Updating system...${NC}"
     sudo pacman -Syu --noconfirm
 
+    # Reset settings to avoid conflicts
+    reset_kde_settings
 
     # Check if GDM is enabled and offer to switch to SDDM
     if systemctl is-enabled gdm &>/dev/null; then
@@ -335,7 +372,6 @@ main() {
     fi
 
     # Install components
-    install_kde
     install_essential_apps
     install_themes
     install_codecs

@@ -152,26 +152,27 @@ show_menu() {
     echo -e "${GREEN}Desktop Environments:${NC}"
     echo "  3) KDE Plasma (macOS-like)"
     echo "  4) GNOME (Windows-like)"
+    echo "  5) Switch Desktop Theme (Cupertini ↔ Redmondi)"
     echo ""
     echo -e "${GREEN}Development:${NC}"
-    echo "  5) Development Tools & Languages"
-    echo "  6) Code Editors & IDEs"
+    echo "  6) Development Tools & Languages"
+    echo "  7) Code Editors & IDEs"
     echo ""
     echo -e "${GREEN}Gaming & Multimedia:${NC}"
-    echo "  7) Gaming Setup (Steam, Lutris, Wine)"
-    echo "  8) Multimedia Applications"
+    echo "  8) Gaming Setup (Steam, Lutris, Wine)"
+    echo "  9) Multimedia Applications"
     echo ""
     echo -e "${GREEN}Office & Productivity:${NC}"
-    echo "  9) Office Suite Installation"
+    echo " 10) Office Suite Installation"
     echo ""
     echo -e "${GREEN}System Tools:${NC}"
-    echo " 10) AUR Helper Setup"
-    echo " 11) System Utilities"
+    echo " 11) AUR Helper Setup"
+    echo " 12) System Utilities"
     echo ""
     echo -e "${YELLOW}Quick Profiles:${NC}"
-    echo " 12) Complete Gaming Workstation"
-    echo " 13) Complete Development Environment"
-    echo " 14) Complete Multimedia Setup"
+    echo " 13) Complete Gaming Workstation"
+    echo " 14) Complete Development Environment"
+    echo " 15) Complete Multimedia Setup"
     echo ""
     echo " 0) Exit"
     echo ""
@@ -287,6 +288,207 @@ install_profile() {
     esac
 }
 
+# Detect current desktop theme
+detect_current_theme() {
+    # Check for theme indicators in KDE config files
+    if [[ -f "$HOME/.config/kdeglobals" ]]; then
+        # Check for McMojave theme (Cupertini)
+        if kreadconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null | grep -q "McMojave"; then
+            echo "cupertini"
+            return 0
+        fi
+
+        # Check for Windows-like theme indicators (Redmondi)
+        if kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null | grep -q "Windows-10"; then
+            echo "redmondi"
+            return 0
+        fi
+
+        # Check plasma theme
+        local plasma_theme=$(kreadconfig5 --file plasmarc --group Theme --key name 2>/dev/null || echo "")
+        if [[ "$plasma_theme" == "McMojave" ]]; then
+            echo "cupertini"
+            return 0
+        elif [[ "$plasma_theme" =~ [Ww]indows ]]; then
+            echo "redmondi"
+            return 0
+        fi
+    fi
+
+    echo "unknown"
+}
+
+# Check if a theme is installed
+check_theme_installed() {
+    local theme="$1"
+
+    case "$theme" in
+        "cupertini")
+            # Check for KDE Plasma and McMojave theme components
+            if ! pacman -Q plasma &>/dev/null; then
+                echo "plasma_missing"
+                return 1
+            fi
+
+            # Check for McMojave theme (from AUR)
+            if ! pacman -Q mcmojave-kde-theme-git &>/dev/null && ! pacman -Q mcmojave-kde-theme &>/dev/null; then
+                echo "theme_missing"
+                return 1
+            fi
+
+            echo "installed"
+            return 0
+            ;;
+        "redmondi")
+            # Check for KDE Plasma
+            if ! pacman -Q plasma &>/dev/null; then
+                echo "plasma_missing"
+                return 1
+            fi
+
+            # Check for Windows-like components (icon theme)
+            if ! pacman -Q windows-10-dark-icon-theme &>/dev/null && ! pacman -Q windows-10-icons-git &>/dev/null; then
+                echo "theme_missing"
+                return 1
+            fi
+
+            echo "installed"
+            return 0
+            ;;
+    esac
+
+    echo "unknown"
+    return 1
+}
+
+# Switch between desktop themes
+switch_theme() {
+    local target_theme="$1"
+    local current_theme=$(detect_current_theme)
+
+    echo -e "${BLUE}Theme Switcher${NC}"
+    echo -e "${CYAN}===============================================${NC}"
+
+    if [[ "$current_theme" == "unknown" ]]; then
+        echo -e "${YELLOW}Current theme: Unknown or default${NC}"
+    else
+        echo -e "${GREEN}Current theme: ${current_theme^}${NC}"
+    fi
+
+    if [[ -n "$target_theme" ]]; then
+        echo -e "${YELLOW}Target theme: ${target_theme^}${NC}"
+    else
+        echo -e "${YELLOW}Available themes:${NC}"
+        echo "  • Cupertini (macOS-like KDE Plasma)"
+        echo "  • Redmondi (Windows-like KDE Plasma)"
+        echo ""
+
+        if [[ "$current_theme" == "cupertini" ]]; then
+            echo -e "${CYAN}Switching to Redmondi (Windows-like theme)...${NC}"
+            target_theme="redmondi"
+        elif [[ "$current_theme" == "redmondi" ]]; then
+            echo -e "${CYAN}Switching to Cupertini (macOS-like theme)...${NC}"
+            target_theme="cupertini"
+        else
+            echo -e "${YELLOW}No current theme detected. Please choose:${NC}"
+            local theme_options=("Cupertini (macOS-like)" "Redmondi (Windows-like)" "Cancel")
+            local selection=$(select_option "${theme_options[@]}")
+            case "$selection" in
+                "Cupertini (macOS-like)")
+                    target_theme="cupertini"
+                    ;;
+                "Redmondi (Windows-like)")
+                    target_theme="redmondi"
+                    ;;
+                *)
+                    echo -e "${YELLOW}Theme switching cancelled.${NC}"
+                    return 0
+                    ;;
+            esac
+        fi
+    fi
+
+    # Check if target theme is installed
+    echo -e "${BLUE}Checking theme installation...${NC}"
+    local install_status=$(check_theme_installed "$target_theme")
+
+    case "$install_status" in
+        "plasma_missing")
+            echo -e "${RED}KDE Plasma is not installed on this system.${NC}"
+            echo -e "${YELLOW}The target theme '$target_theme' requires KDE Plasma.${NC}"
+            if confirm_action "Would you like to install KDE Plasma first?"; then
+                echo -e "${BLUE}Please run the main installation script first to install KDE Plasma.${NC}"
+                echo -e "${CYAN}Use: ./install-archer.sh or the full system installation.${NC}"
+                return 1
+            else
+                echo -e "${YELLOW}Theme switching cancelled.${NC}"
+                return 0
+            fi
+            ;;
+        "theme_missing")
+            echo -e "${YELLOW}Theme components for '$target_theme' are not fully installed.${NC}"
+            case "$target_theme" in
+                "cupertini")
+                    echo -e "${CYAN}Missing components: McMojave theme and related packages${NC}"
+                    ;;
+                "redmondi")
+                    echo -e "${CYAN}Missing components: Windows-like themes and related packages${NC}"
+                    ;;
+            esac
+            echo ""
+            if confirm_action "Would you like to install the missing theme components?"; then
+                echo -e "${GREEN}Theme components will be installed as part of the theme switch.${NC}"
+            else
+                echo -e "${YELLOW}Theme switching cancelled.${NC}"
+                return 0
+            fi
+            ;;
+        "installed")
+            echo -e "${GREEN}✓ Theme '$target_theme' components are already installed.${NC}"
+            ;;
+        *)
+            echo -e "${YELLOW}⚠ Could not verify theme installation status.${NC}"
+            echo -e "${YELLOW}Proceeding with theme switch (components will be installed if needed).${NC}"
+            ;;
+    esac
+
+    echo ""
+    echo -e "${YELLOW}This will:${NC}"
+    case "$target_theme" in
+        "cupertini")
+            echo "  • Reset KDE settings to avoid conflicts"
+            echo "  • Install McMojave theme and macOS-like components"
+            echo "  • Configure dock + top panel layout"
+            echo "  • Set SF Pro Display fonts and Tela icons"
+            ;;
+        "redmondi")
+            echo "  • Reset KDE settings to avoid conflicts"
+            echo "  • Install Windows-like themes and components"
+            echo "  • Configure single bottom taskbar layout"
+            echo "  • Set Segoe UI fonts and Windows-10-Dark icons"
+            ;;
+    esac
+    echo ""
+
+    if ! confirm_action "Continue with theme switch to ${target_theme^}?"; then
+        echo -e "${YELLOW}Theme switching cancelled.${NC}"
+        return 0
+    fi
+
+    # Run the appropriate theme script
+    case "$target_theme" in
+        "cupertini")
+            run_script "$INSTALL_DIR/desktop/cupertini.sh"
+            ;;
+        "redmondi")
+            run_script "$INSTALL_DIR/desktop/redmondi.sh"
+            ;;
+    esac
+
+    echo -e "${GREEN}Theme switch completed!${NC}"
+    echo -e "${YELLOW}Please log out and back in to see all changes.${NC}"
+}
+
 # Handle command line arguments
 handle_args() {
     case "$1" in
@@ -296,6 +498,18 @@ handle_args() {
             ;;
         "--wifi")
             run_script "$INSTALL_DIR/network/wifi-setup.sh"
+            exit 0
+            ;;
+        "--switch-theme")
+            switch_theme "$2"
+            exit 0
+            ;;
+        "--cupertini")
+            switch_theme "cupertini"
+            exit 0
+            ;;
+        "--redmondi")
+            switch_theme "redmondi"
             exit 0
             ;;
         "--gaming")
@@ -322,6 +536,11 @@ handle_args() {
             echo "Hardware Management:"
             echo "  --gpu                 GPU drivers (hardware upgrades)"
             echo "  --wifi                WiFi setup and network drivers"
+            echo ""
+            echo "Desktop Theme Switching:"
+            echo "  --switch-theme        Auto-detect and switch between themes"
+            echo "  --cupertini           Switch to Cupertini (macOS-like)"
+            echo "  --redmondi            Switch to Redmondi (Windows-like)"
             echo ""
             echo "Software Profiles:"
             echo "  --gaming              Complete gaming setup"
@@ -361,16 +580,17 @@ main() {
             "2) WiFi Setup & Network Configuration"
             "3) KDE Plasma (macOS-like)"
             "4) GNOME (Windows-like)"
-            "5) Development Tools & Languages"
-            "6) Code Editors & IDEs"
-            "7) Gaming Setup (Steam, Lutris, Wine)"
-            "8) Multimedia Applications"
-            "9) Office Suite Installation"
-            "10) AUR Helper Setup"
-            "11) System Utilities"
-            "12) Complete Gaming Workstation"
-            "13) Complete Development Environment"
-            "14) Complete Multimedia Setup"
+            "5) Switch Desktop Theme (Cupertini ↔ Redmondi)"
+            "6) Development Tools & Languages"
+            "7) Code Editors & IDEs"
+            "8) Gaming Setup (Steam, Lutris, Wine)"
+            "9) Multimedia Applications"
+            "10) Office Suite Installation"
+            "11) AUR Helper Setup"
+            "12) System Utilities"
+            "13) Complete Gaming Workstation"
+            "14) Complete Development Environment"
+            "15) Complete Multimedia Setup"
             "0) Exit"
         )
 
@@ -380,7 +600,7 @@ main() {
             choice=$(echo "$selection" | cut -d')' -f1)
         else
             # Fallback: use gum input for manual entry
-            choice=$(gum input --placeholder "Select an option [0-14]: " --width=20)
+            choice=$(gum input --placeholder "Select an option [0-15]: " --width=20)
             if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
                 selection_error=true
             fi
@@ -398,16 +618,17 @@ main() {
             2)  run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
             3)  run_script "$INSTALL_DIR/desktop/cupertini.sh" ;;
             4)  run_script "$INSTALL_DIR/desktop/redmondi.sh" ;;
-            5)  run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
-            6)  run_script "$INSTALL_DIR/development/editors.sh" ;;
-            7)  run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
-            8)  run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
-            9)  run_script "$INSTALL_DIR/desktop/office-tools/office-suite.sh" ;;
-            10) run_script "$INSTALL_DIR/extras/aur-helper.sh" ;;
-            11) run_script "$INSTALL_DIR/system/system-utilities.sh" ;;
-            12) install_profile "gaming" ;;
-            13) install_profile "development" ;;
-            14) install_profile "multimedia" ;;
+            5)  switch_theme ;;
+            6)  run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
+            7)  run_script "$INSTALL_DIR/development/editors.sh" ;;
+            8)  run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
+            9)  run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
+            10) run_script "$INSTALL_DIR/desktop/office-tools/office-suite.sh" ;;
+            11) run_script "$INSTALL_DIR/extras/aur-helper.sh" ;;
+            12) run_script "$INSTALL_DIR/system/system-utilities.sh" ;;
+            13) install_profile "gaming" ;;
+            14) install_profile "development" ;;
+            15) install_profile "multimedia" ;;
             0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
                 exit 0
