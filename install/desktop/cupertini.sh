@@ -102,12 +102,6 @@ configure_kde() {
     sleep 3
 
     # Ensure both Wayland and X11 sessions are available
-    echo -e "${YELLOW}Ensuring X11 session is available...${NC}"
-    if [[ ! -f "/usr/share/xsessions/plasma.desktop" ]]; then
-        echo -e "${YELLOW}Installing X11 session support...${NC}"
-        install_packages plasma-workspace-x11
-    fi
-
     # Global theme
     echo -e "${YELLOW}Setting global theme...${NC}"
     kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "McMojave"
@@ -303,12 +297,6 @@ EOF
 # Ensure X11 session is available at login
 ensure_x11_session() {
     echo -e "${BLUE}Ensuring X11 session availability...${NC}"
-
-    # Install X11 session support if missing
-    if [[ ! -f "/usr/share/xsessions/plasma.desktop" ]]; then
-        echo -e "${YELLOW}Installing KDE X11 session support...${NC}"
-        install_packages plasma-workspace-x11
-    fi
 
     # Ensure SDDM shows session selection
     sudo bash -c 'cat > /etc/sddm.conf.d/kde_settings.conf << EOF

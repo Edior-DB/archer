@@ -211,6 +211,7 @@ install_kde_minimal() {
         "konsole"
         "kde-cli-tools"
         "kconfig5"
+        "plasma-x11-session"  # X11 session support for theme compatibility
     )
     install_with_retries "${kde_packages[@]}"
     sudo systemctl enable sddm

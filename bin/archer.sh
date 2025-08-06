@@ -269,13 +269,15 @@ detect_current_theme() {
     # Check for theme indicators in KDE config files
     if [[ -f "$HOME/.config/kdeglobals" ]]; then
         # Check for McMojave theme (Cupertini)
-        if kreadconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null | grep -q "McMojave"; then
+        local lookfeel=$(kreadconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || echo "")
+        if [[ "$lookfeel" == "McMojave" ]]; then
             echo "cupertini"
             return 0
         fi
 
         # Check for Windows-like theme indicators (Redmondi)
-        if kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null | grep -q "Windows10"; then
+        local icon_theme=$(kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null || echo "")
+        if [[ "$icon_theme" == "Windows10" ]]; then
             echo "redmondi"
             return 0
         fi
@@ -286,6 +288,29 @@ detect_current_theme() {
             echo "cupertini"
             return 0
         elif [[ "$plasma_theme" =~ [Ww]indows ]]; then
+            echo "redmondi"
+            return 0
+        fi
+
+        # Additional checks for McMojave-circle icons (Cupertini)
+        if [[ "$icon_theme" == "McMojave-circle" ]]; then
+            echo "cupertini"
+            return 0
+        fi
+
+        # Check cursor theme for additional hints
+        local cursor_theme=$(kreadconfig5 --file kdeglobals --group General --key cursorTheme 2>/dev/null || echo "")
+        if [[ "$cursor_theme" == "McMojave-cursors" ]]; then
+            echo "cupertini"
+            return 0
+        fi
+
+        # Check font for additional detection
+        local font=$(kreadconfig5 --file kdeglobals --group General --key font 2>/dev/null || echo "")
+        if [[ "$font" =~ "SF Pro Display" ]]; then
+            echo "cupertini"
+            return 0
+        elif [[ "$font" =~ "Liberation Sans" ]]; then
             echo "redmondi"
             return 0
         fi
@@ -629,6 +654,68 @@ show_theme_status() {
     esac
 }
 
+# Show KDE configuration values for theme debugging
+show_theme_debug() {
+    echo -e "${BLUE}KDE Theme Configuration Debug${NC}"
+    echo -e "${CYAN}===============================================${NC}"
+
+    if [[ ! -f "$HOME/.config/kdeglobals" ]]; then
+        echo -e "${RED}KDE configuration file not found: ~/.config/kdeglobals${NC}"
+        echo -e "${YELLOW}KDE Plasma may not be installed or configured.${NC}"
+        return 1
+    fi
+
+    echo -e "${YELLOW}Current KDE Configuration Values:${NC}"
+    echo ""
+
+    # Look and Feel Package
+    local lookfeel=$(kreadconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || echo "not set")
+    echo -e "${CYAN}Look and Feel Package:${NC} $lookfeel"
+
+    # Icon Theme
+    local icon_theme=$(kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null || echo "not set")
+    echo -e "${CYAN}Icon Theme:${NC} $icon_theme"
+
+    # Cursor Theme
+    local cursor_theme=$(kreadconfig5 --file kdeglobals --group General --key cursorTheme 2>/dev/null || echo "not set")
+    echo -e "${CYAN}Cursor Theme:${NC} $cursor_theme"
+
+    # Font
+    local font=$(kreadconfig5 --file kdeglobals --group General --key font 2>/dev/null || echo "not set")
+    echo -e "${CYAN}System Font:${NC} $font"
+
+    # Plasma Theme
+    local plasma_theme=$(kreadconfig5 --file plasmarc --group Theme --key name 2>/dev/null || echo "not set")
+    echo -e "${CYAN}Plasma Theme:${NC} $plasma_theme"
+
+    echo ""
+    echo -e "${YELLOW}Expected Values for Theme Detection:${NC}"
+    echo ""
+    echo -e "${GREEN}Cupertini (macOS-like):${NC}"
+    echo "  Look and Feel: McMojave"
+    echo "  Icon Theme: McMojave-circle"
+    echo "  Cursor Theme: McMojave-cursors"
+    echo "  Font: SF Pro Display,..."
+    echo "  Plasma Theme: McMojave"
+    echo ""
+    echo -e "${GREEN}Redmondi (Windows-like):${NC}"
+    echo "  Icon Theme: Windows10"
+    echo "  Font: Liberation Sans,..."
+    echo ""
+
+    # Show detection result
+    local detected=$(detect_current_theme)
+    echo -e "${CYAN}Current Detection Result:${NC} $detected"
+
+    if [[ "$detected" == "unknown" ]]; then
+        echo ""
+        echo -e "${YELLOW}Troubleshooting:${NC}"
+        echo "• If you recently installed a theme, try logging out and back in"
+        echo "• Run the theme script again: archer --cupertini or archer --redmondi"
+        echo "• Check if the theme packages are properly installed with: archer --theme-status"
+    fi
+}
+
 # Handle command line arguments
 handle_args() {
     case "$1" in
@@ -677,6 +764,10 @@ handle_args() {
             show_theme_status
             exit 0
             ;;
+        "--theme-debug")
+            show_theme_debug
+            exit 0
+            ;;
         "--help"|"-h")
             show_logo
             echo "Usage: archer [option]"
@@ -692,6 +783,7 @@ handle_args() {
             echo "  --theme-info          Show current theme information"
             echo "  --current-theme       Show current theme (alias for --theme-info)"
             echo "  --theme-status        Show detailed theme installation status"
+            echo "  --theme-debug         Show KDE configuration values for debugging"
             echo ""
             echo "Software Profiles:"
             echo "  --gaming              Complete gaming setup"
