@@ -88,6 +88,40 @@ select_option() {
     fi
 }
 
+
+
+install_with_retries() {
+    local packages=("$@")
+    local retry_count=0
+    local max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        echo -e "${CYAN}Installing: ${packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
+        if pacman -S --noconfirm --needed "${packages[@]}"; then
+            echo -e "${GREEN}Packages installed successfully: ${packages[*]}${NC}"
+            return 0
+        fi
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            echo -e "${YELLOW}Installation failed, retrying in 3 seconds...${NC}"
+            sleep 3
+            pacman -Sy --noconfirm
+        else
+            echo -e "${RED}ERROR: Installation failed after $max_retries attempts!${NC}"
+            echo -e "${RED}Please check your network connection.${NC}"
+            if gum confirm "Would you like to try installing again?"; then
+                retry_count=0
+                echo -e "${CYAN}Retrying installation...${NC}"
+                pacman -Sy --noconfirm
+            else
+                echo -e "${RED}Installation cannot continue without these packages: ${packages[*]}${NC}"
+                exit 1
+            fi
+        fi
+    done
+}
+
+
+
 # Logo
 show_logo() {
     clear
@@ -322,34 +356,7 @@ run_installation() {
     [ ! -d "/mnt" ] && mkdir /mnt
     echo -e "${CYAN}Installing Prerequisites${NC}"
 
-    retry_count=0
-    max_retries=3
-
-    while [ $retry_count -lt $max_retries ]; do
-        echo -e "${CYAN}Installing prerequisites - Attempt $((retry_count + 1)) of $max_retries...${NC}"
-        if pacman -S --noconfirm --needed gptfdisk btrfs-progs glibc; then
-            echo -e "${GREEN}Prerequisites installed successfully${NC}"
-            break
-        fi
-
-        retry_count=$((retry_count + 1))
-        if [ $retry_count -lt $max_retries ]; then
-            echo -e "${YELLOW}Prerequisites installation failed, retrying in 3 seconds...${NC}"
-            sleep 3
-            pacman -Sy --noconfirm
-        else
-            echo -e "${RED}ERROR: Prerequisites installation failed after $max_retries attempts!${NC}"
-            echo -e "${RED}Please check your network connection.${NC}"
-            if gum confirm "Would you like to try installing prerequisites again?"; then
-                retry_count=0  # Reset retry counter
-                echo -e "${CYAN}Retrying prerequisites installation...${NC}"
-                pacman -Sy --noconfirm
-            else
-                echo -e "${RED}Installation cannot continue without prerequisites.${NC}"
-                exit 1
-            fi
-        fi
-    done
+    install_with_retries gptfdisk btrfs-progs glibc
 
     # Format disk
     echo -e "${CYAN}Formatting Disk${NC}"
@@ -432,44 +439,11 @@ run_installation() {
     # Install base system with retry logic
     echo -e "${CYAN}Installing Arch Linux Base System${NC}"
 
-    # Retry pacstrap up to 3 times
-    retry_count=0
-    max_retries=3
-
-    while [ $retry_count -lt $max_retries ]; do
-        echo -e "${CYAN}Attempt $((retry_count + 1)) of $max_retries...${NC}"
-
-        if [[ ! -d "/sys/firmware/efi" ]]; then
-            if pacstrap /mnt base base-devel linux-lts linux-firmware --noconfirm --needed; then
-                echo -e "${GREEN}Base system installation successful${NC}"
-                break
-            fi
-        else
-            if pacstrap /mnt base base-devel linux-lts linux-firmware efibootmgr --noconfirm --needed; then
-                echo -e "${GREEN}Base system installation successful${NC}"
-                break
-            fi
-        fi
-
-        retry_count=$((retry_count + 1))
-        if [ $retry_count -lt $max_retries ]; then
-            echo -e "${YELLOW}Installation failed, retrying in 5 seconds...${NC}"
-            sleep 5
-            echo -e "${CYAN}Refreshing package databases...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${RED}ERROR: Base system installation failed after $max_retries attempts!${NC}"
-            echo -e "${RED}Please check your network connection.${NC}"
-            if gum confirm "Would you like to try installing the base system again?"; then
-                retry_count=0  # Reset retry counter
-                echo -e "${CYAN}Retrying base system installation...${NC}"
-                pacman -Sy --noconfirm
-            else
-                echo -e "${RED}Installation cannot continue without base system.${NC}"
-                exit 1
-            fi
-        fi
-    done
+    if [[ ! -d "/sys/firmware/efi" ]]; then
+        install_with_retries pacstrap /mnt base base-devel linux-lts linux-firmware --noconfirm --needed
+    else
+        install_with_retries pacstrap /mnt base base-devel linux-lts linux-firmware efibootmgr --noconfirm --needed
+    fi
 
     echo "keyserver hkp://keyserver.ubuntu.com" >> /mnt/etc/pacman.d/gnupg/gpg.conf
     cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist

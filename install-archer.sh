@@ -1,18 +1,6 @@
-install_kde_minimal() {
-    echo -e "${BLUE}Installing minimal KDE Plasma 6 desktop...${NC}"
-    local kde_packages=(
-        "plasma"
-        "sddm"
-        "xorg"
-        "xorg-server"
-    )
-    for package in "${kde_packages[@]}"; do
-        echo -e "${YELLOW}Installing $package...${NC}"
-        sudo pacman -S --noconfirm --needed "$package"
-    done
-    sudo systemctl enable sddm
-    echo -e "${GREEN}Minimal KDE Plasma desktop installed!${NC}"
-}
+
+
+
 #!/bin/bash
 
 # Archer - Post-Installation Setup Script
@@ -46,6 +34,49 @@ show_logo() {
 LOGOEOF
     echo -e "${NC}"
 }
+
+
+install_with_retries() {
+    local packages=()
+    for pkg in "$@"; do
+        if pacman -Q "$pkg" &>/dev/null; then
+            echo -e "${GREEN}$pkg is already installed and up-to-date${NC}"
+        else
+            packages+=("$pkg")
+        fi
+    done
+    if [ ${#packages[@]} -eq 0 ]; then
+        echo -e "${GREEN}All packages are already installed and up-to-date${NC}"
+        return 0
+    fi
+    local retry_count=0
+    local max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        echo -e "${CYAN}Installing: ${packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
+        if sudo pacman -S --noconfirm --needed "${packages[@]}"; then
+            echo -e "${GREEN}Packages installed successfully: ${packages[*]}${NC}"
+            return 0
+        fi
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            echo -e "${YELLOW}Installation failed, retrying in 3 seconds...${NC}"
+            sleep 3
+            sudo pacman -Sy --noconfirm
+        else
+            echo -e "${RED}ERROR: Installation failed after $max_retries attempts!${NC}"
+            echo -e "${RED}Please check your network connection.${NC}"
+            if gum confirm "Would you like to try installing again?"; then
+                retry_count=0
+                echo -e "${CYAN}Retrying installation...${NC}"
+                sudo pacman -Sy --noconfirm
+            else
+                echo -e "${RED}Installation cannot continue without these packages: ${packages[*]}${NC}"
+                exit 1
+            fi
+        fi
+    done
+}
+
 
 # Confirm function with fallback
 confirm_action() {
@@ -102,17 +133,27 @@ check_internet() {
     echo -e "${GREEN}Internet connection: OK${NC}"
 }
 
+
+install_kde_minimal() {
+    echo -e "${BLUE}Installing minimal KDE Plasma 6 desktop...${NC}"
+    local kde_packages=(
+        "plasma"
+        "sddm"
+        "xorg"
+        "xorg-server"
+    )
+    install_with_retries "${kde_packages[@]}"
+    sudo systemctl enable sddm
+    echo -e "${GREEN}Minimal KDE Plasma desktop installed!${NC}"
+}
+
 # Install essential packages
 install_essentials() {
     echo -e "${CYAN}Installing essential packages...${NC}"
 
     # Update system first
     echo -e "${YELLOW}Updating system packages...${NC}"
-    sudo pacman -Syu --noconfirm
-
-    # Install git and gum if not present
-    sudo pacman -S --noconfirm git
-    sudo pacman -S --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Warning: gum not available in repositories${NC}"
+    install_with_retries git gum
 
     echo -e "${GREEN}Essential packages installed${NC}"
 }
@@ -193,10 +234,7 @@ install_development_base() {
     )
 
     echo -e "${YELLOW}Installing development packages...${NC}"
-    for package in "${dev_packages[@]}"; do
-        echo -e "${CYAN}Installing $package...${NC}"
-        sudo pacman -S --noconfirm "$package" 2>/dev/null || echo -e "${YELLOW}Warning: Could not install $package${NC}"
-    done
+    install_with_retries "${dev_packages[@]}"
 
     echo -e "${GREEN}Development base packages installed${NC}"
 }
@@ -220,9 +258,7 @@ install_wifi_support() {
         "netctl"
     )
 
-    for package in "${wifi_packages[@]}"; do
-        sudo pacman -S --noconfirm "$package" 2>/dev/null || echo -e "${YELLOW}Warning: Could not install $package${NC}"
-    done
+    install_with_retries "${wifi_packages[@]}"
 
     # Enable NetworkManager if not already enabled
     sudo systemctl enable NetworkManager
