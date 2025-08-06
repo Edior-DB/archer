@@ -580,7 +580,7 @@ main() {
             "1) GPU Drivers Installation"
             "2) WiFi Setup & Network Configuration"
             "3) KDE Plasma (macOS-like)"
-            "4) GNOME (Windows-like)"
+            "4) KDE Plasma (Windows-like)"
             "5) Switch Desktop Theme (Cupertini ↔ Redmondi)"
             "6) Development Tools & Languages"
             "7) Code Editors & IDEs"
