@@ -341,9 +341,6 @@ check_theme_installed() {
                 echo "theme_missing"
                 return 1
             fi
-
-            echo "installed"
-            return 0
             ;;
         "redmondi")
             # Check for KDE Plasma
