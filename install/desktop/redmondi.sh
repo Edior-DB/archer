@@ -12,6 +12,12 @@ check_kde_installed() {
         echo -e "${YELLOW}Please re-run the main install.sh script to install KDE Plasma.${NC}"
         exit 1
     fi
+
+    # Check if kwriteconfig5 is available
+    if ! command -v kwriteconfig5 &> /dev/null; then
+        echo -e "${YELLOW}Installing KDE configuration tools...${NC}"
+        sudo pacman -S --noconfirm --needed kde-cli-tools
+    fi
 }
 
 # Install Windows-like themes and fonts
