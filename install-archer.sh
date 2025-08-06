@@ -160,7 +160,7 @@ install_development_base() {
         "unzip"
         "zip"
         "rsync"
-        "neofetch"
+        "fastfetch"
         "gum"
 
         # Network tools
