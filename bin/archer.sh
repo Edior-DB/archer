@@ -127,7 +127,7 @@ show_menu() {
     echo ""
     echo -e "${GREEN}Desktop Environments:${NC}"
     echo "  3) KDE Plasma (macOS-like)"
-    echo "  4) GNOME (Windows-like)"
+    echo "  4) KDE Plasma (Windows-like)"
     echo "  5) Switch Desktop Theme (Cupertini ↔ Redmondi)"
     echo ""
     echo -e "${GREEN}Development:${NC}"
