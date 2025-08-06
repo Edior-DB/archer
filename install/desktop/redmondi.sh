@@ -211,6 +211,14 @@ install_themes() {
     echo -e "${YELLOW}Installing arc-gtk-theme from AUR...${NC}"
     $aur_helper -S --noconfirm --needed arc-gtk-theme || echo -e "${YELLOW}Could not install arc-gtk-theme, skipping...${NC}"
 
+    # Install Zorin themes from AUR
+    echo -e "${YELLOW}Installing zorin-desktop-themes from AUR...${NC}"
+    $aur_helper -S --noconfirm --needed zorin-desktop-themes || echo -e "${YELLOW}Could not install zorin-desktop-themes, skipping...${NC}"
+
+    # Install Windows fonts from AUR
+    echo -e "${YELLOW}Installing ttf-ms-win10 from AUR...${NC}"
+    $aur_helper -S --noconfirm --needed ttf-ms-win10 || echo -e "${YELLOW}Could not install ttf-ms-win10, skipping...${NC}"
+
     # Install other theme packages from pacman
     local theme_packages=(
         "papirus-icon-theme"
@@ -225,12 +233,6 @@ install_themes() {
         sudo pacman -S --noconfirm --needed "$package"
     done
 
-    # Set AUR helper
-    local aur_helper="yay"
-    if command -v paru &> /dev/null; then
-        aur_helper="paru"
-    fi
-
     # Install Windows-like themes from AUR
     local aur_themes=(
         "windows-10-icon-theme"
@@ -239,7 +241,6 @@ install_themes() {
         "numix-icon-theme-git"
         "tela-icon-theme"
     )
-
     for theme in "${aur_themes[@]}"; do
         echo -e "${YELLOW}Installing $theme...${NC}"
         $aur_helper -S --noconfirm --needed "$theme" || echo -e "${YELLOW}Could not install $theme, skipping...${NC}"
@@ -269,22 +270,22 @@ configure_gnome() {
 
     # Configure interface settings
     echo -e "${YELLOW}Configuring interface settings...${NC}"
-    gsettings set org.gnome.desktop.interface gtk-theme "Arc-Dark"
-    gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
+    gsettings set org.gnome.desktop.interface gtk-theme "ZorinBlue-Dark"
+    gsettings set org.gnome.desktop.interface icon-theme "Windows-10-Dark"
     gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
-    gsettings set org.gnome.desktop.interface font-name "Roboto 11"
-    gsettings set org.gnome.desktop.interface document-font-name "Roboto 11"
-    gsettings set org.gnome.desktop.interface monospace-font-name "Roboto Mono 10"
+    gsettings set org.gnome.desktop.interface font-name "Segoe UI 11"
+    gsettings set org.gnome.desktop.interface document-font-name "Segoe UI 11"
+    gsettings set org.gnome.desktop.interface monospace-font-name "Consolas 10"
 
     # Configure window settings
     echo -e "${YELLOW}Configuring window settings...${NC}"
     gsettings set org.gnome.desktop.wm.preferences button-layout "appmenu:minimize,maximize,close"
-    gsettings set org.gnome.desktop.wm.preferences theme "Arc-Dark"
-    gsettings set org.gnome.desktop.wm.preferences titlebar-font "Roboto Bold 11"
+    gsettings set org.gnome.desktop.wm.preferences theme "ZorinBlue-Dark"
+    gsettings set org.gnome.desktop.wm.preferences titlebar-font "Segoe UI Bold 11"
 
     # Configure shell settings
     echo -e "${YELLOW}Configuring shell settings...${NC}"
-    gsettings set org.gnome.shell.extensions.user-theme name "Arc-Dark"
+    gsettings set org.gnome.shell.extensions.user-theme name "ZorinBlue-Dark"
 
     # Configure dash-to-panel for Windows-like taskbar
     echo -e "${YELLOW}Configuring taskbar...${NC}"
@@ -299,7 +300,7 @@ configure_gnome() {
     echo -e "${YELLOW}Configuring start menu...${NC}"
     gsettings set org.gnome.shell.extensions.arcmenu menu-layout "Windows"
     gsettings set org.gnome.shell.extensions.arcmenu position-in-panel "Left"
-    gsettings set org.gnome.shell.extensions.arcmenu menu-button-icon "Start_Here_Symbolic"
+    gsettings set org.gnome.shell.extensions.arcmenu menu-button-icon "windows-logo-symbolic"
 
     # Configure desktop icons
     echo -e "${YELLOW}Configuring desktop icons...${NC}"
@@ -314,8 +315,13 @@ configure_gnome() {
 
     # Configure background
     echo -e "${YELLOW}Setting wallpaper...${NC}"
-    gsettings set org.gnome.desktop.background picture-uri "file:///usr/share/backgrounds/gnome/adwaita-timed.xml"
-    gsettings set org.gnome.desktop.background picture-uri-dark "file:///usr/share/backgrounds/gnome/adwaita-timed.xml"
+    # Download Windows 10 wallpaper if not present
+    WALLPAPER_PATH="$HOME/Pictures/windows-10-wallpaper.jpg"
+    if [[ ! -f "$WALLPAPER_PATH" ]]; then
+        wget -O "$WALLPAPER_PATH" "https://wallpapercave.com/wp/wp2550360.jpg" || true
+    fi
+    gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_PATH"
+    gsettings set org.gnome.desktop.background picture-uri-dark "file://$WALLPAPER_PATH"
 
     echo -e "${GREEN}GNOME configuration completed!${NC}"
 }
