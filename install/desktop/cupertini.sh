@@ -101,6 +101,10 @@ configure_kde() {
     # Wait for KDE session
     sleep 3
 
+    # Clear any existing theme markers first
+    echo -e "${YELLOW}Clearing previous theme markers...${NC}"
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null || true
+
     # Ensure both Wayland and X11 sessions are available
     # Global theme
     echo -e "${YELLOW}Setting global theme...${NC}"

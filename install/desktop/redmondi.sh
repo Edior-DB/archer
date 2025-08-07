@@ -46,6 +46,10 @@ configure_kde_redmond() {
     echo -e "${BLUE}Configuring KDE for Windows-like experience...${NC}"
     sleep 3
 
+    # Clear any existing theme markers first
+    echo -e "${YELLOW}Clearing previous theme markers...${NC}"
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null || true
+
     # Set global theme, icons, fonts, and panel layout for Windows-like look
     echo -e "${YELLOW}Setting global theme to Breeze...${NC}"
     kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "org.kde.breeze.desktop"
