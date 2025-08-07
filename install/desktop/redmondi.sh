@@ -30,7 +30,7 @@ install_windows_themes() {
     # Try to install Windows-like window decorations
     echo -e "${YELLOW}Installing Windows-like window decorations...${NC}"
     local windows_decorations=(
-        "lightly-git" "breeze-enhanced-git"
+        "lightly" "kvantum"
     )
 
     for decoration in "${windows_decorations[@]}"; do
@@ -63,6 +63,7 @@ install_qt_dependencies() {
     local qt_deps=(
         "libxcb" "xcb-util-cursor" "qt6-base" "qt6-svg"
         "libx11" "libxext" "libxfixes" "libxi" "libxrender"
+        "xcb-util-cursor"
     )
 
     install_packages "${qt_deps[@]}"
@@ -77,19 +78,28 @@ cleanup_previous_themes() {
     local current_theme=$(kreadconfig5 --file kdeglobals --group Archer --key ThemeType 2>/dev/null || echo "unknown")
     echo -e "${CYAN}Previous theme detected: $current_theme${NC}"
 
-    # Force all plasma processes to quit first
-    echo -e "${YELLOW}Stopping plasma processes...${NC}"
-    kquitapp5 plasmashell 2>/dev/null || true
-    sleep 2
+    # Only run plasma commands if we have a display
+    if [[ -n "$DISPLAY" ]] || [[ -n "$WAYLAND_DISPLAY" ]]; then
+        # Force all plasma processes to quit first
+        echo -e "${YELLOW}Stopping plasma processes...${NC}"
+        kquitapp5 plasmashell 2>/dev/null || true
+        sleep 2
 
-    # Remove any existing panels completely
-    echo -e "${YELLOW}Removing existing panels...${NC}"
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var allPanels = panels();
-        for (var i = 0; i < allPanels.length; ++i) {
-            allPanels[i].remove();
-        }
-    ' 2>/dev/null || echo "Could not remove existing panels"
+        # Remove any existing panels completely
+        echo -e "${YELLOW}Removing existing panels...${NC}"
+        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+            var allPanels = panels();
+            for (var i = 0; i < allPanels.length; ++i) {
+                allPanels[i].remove();
+            }
+        ' 2>/dev/null || echo "Could not remove existing panels"
+
+        # Restart plasmashell
+        plasmashell &
+        sleep 3
+    else
+        echo -e "${YELLOW}No display detected - skipping plasma operations${NC}"
+    fi
 
     # Remove panel configuration file completely
     rm -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
@@ -105,10 +115,6 @@ cleanup_previous_themes() {
     # Force clear all color scheme files
     rm -f "$HOME/.config/kdeglobals" 2>/dev/null || true
     rm -f "$HOME/.config/plasmarc" 2>/dev/null || true
-
-    # Restart plasmashell
-    plasmashell &
-    sleep 3
 
     # Clear Cupertini-specific configurations
     echo -e "${YELLOW}Clearing macOS-like theme remnants...${NC}"
@@ -147,10 +153,16 @@ cleanup_previous_themes() {
     # Clear any theme markers
     kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null || true
 
-    # Force plasma to release old configurations
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'reloadConfig()' 2>/dev/null || true
+    # Only run plasma reload if we have a display
+    if [[ -n "$DISPLAY" ]] || [[ -n "$WAYLAND_DISPLAY" ]]; then
+        # Force plasma to restart configuration
+        echo -e "${YELLOW}Restarting plasma configuration...${NC}"
+        kquitapp5 plasmashell 2>/dev/null || true
+        sleep 2
+        plasmashell &
+        sleep 3
+    fi
 
-    sleep 3
     echo -e "${GREEN}Previous theme configurations cleaned up!${NC}"
 }
 
@@ -440,6 +452,9 @@ main() {
 
     # Clean up any previous theme configurations first
     cleanup_previous_themes
+
+    # Install Qt dependencies to prevent display errors
+    install_qt_dependencies
 
     # Install themes
     install_windows_themes
