@@ -128,7 +128,7 @@ show_menu() {
     echo -e "${GREEN}Desktop Environments:${NC}"
     echo "  3) KDE Plasma (macOS-like)"
     echo "  4) KDE Plasma (Windows-like)"
-    echo "  5) Switch Desktop Theme (Cupertini ↔ Redmondi)"
+    echo "  5) Switch Desktop Theme (Cupertini ↔ Redmondi ↔ Vanilla)"
     echo ""
     echo -e "${GREEN}Development:${NC}"
     echo "  6) Development Tools & Languages"
@@ -415,6 +415,28 @@ check_theme_installed() {
             echo "installed"
             return 0
             ;;
+        "vanilla")
+            # Check for KDE Plasma
+            if ! pacman -Q plasma-desktop &>/dev/null; then
+                echo "plasma_missing"
+                return 1
+            fi
+
+            # Check if kwriteconfig5 is available
+            if ! command -v kwriteconfig5 &> /dev/null; then
+                echo "theme_missing"
+                return 1
+            fi
+
+            # Check for basic KDE components (always available if KDE is installed)
+            if pacman -Q breeze &>/dev/null; then
+                echo "installed"
+                return 0
+            else
+                echo "theme_missing"
+                return 1
+            fi
+            ;;
     esac
 
     echo "unknown"
@@ -441,31 +463,36 @@ switch_theme() {
         echo -e "${YELLOW}Available themes:${NC}"
         echo "  • Cupertini (macOS-like KDE Plasma)"
         echo "  • Redmondi (Windows-like KDE Plasma)"
+        echo "  • Vanilla (Default KDE Plasma)"
         echo ""
 
-        if [[ "$current_theme" == "cupertini" ]]; then
-            echo -e "${CYAN}Switching to Redmondi (Windows-like theme)...${NC}"
-            target_theme="redmondi"
-        elif [[ "$current_theme" == "redmondi" ]]; then
-            echo -e "${CYAN}Switching to Cupertini (macOS-like theme)...${NC}"
-            target_theme="cupertini"
+        # Use gum choose for theme selection
+        echo -e "${CYAN}Please select a theme:${NC}"
+        local theme_options=("Cupertini (macOS-like)" "Redmondi (Windows-like)" "Vanilla (Default KDE)" "Cancel")
+        local selection
+
+        if command -v gum &> /dev/null; then
+            selection=$(gum choose "${theme_options[@]}")
         else
-            echo -e "${YELLOW}No current theme detected. Please choose:${NC}"
-            local theme_options=("Cupertini (macOS-like)" "Redmondi (Windows-like)" "Cancel")
-            local selection=$(select_option "${theme_options[@]}")
-            case "$selection" in
-                "Cupertini (macOS-like)")
-                    target_theme="cupertini"
-                    ;;
-                "Redmondi (Windows-like)")
-                    target_theme="redmondi"
-                    ;;
-                *)
-                    echo -e "${YELLOW}Theme switching cancelled.${NC}"
-                    return 0
-                    ;;
-            esac
+            # Fallback to manual selection if gum is not available
+            selection=$(select_option "${theme_options[@]}")
         fi
+
+        case "$selection" in
+            "Cupertini (macOS-like)")
+                target_theme="cupertini"
+                ;;
+            "Redmondi (Windows-like)")
+                target_theme="redmondi"
+                ;;
+            "Vanilla (Default KDE)")
+                target_theme="vanilla"
+                ;;
+            *)
+                echo -e "${YELLOW}Theme switching cancelled.${NC}"
+                return 0
+                ;;
+        esac
     fi
 
     # Check if target theme is installed
@@ -493,6 +520,9 @@ switch_theme() {
                     ;;
                 "redmondi")
                     echo -e "${CYAN}Missing components: Windows-like themes and related packages${NC}"
+                    ;;
+                "vanilla")
+                    echo -e "${CYAN}Missing components: Default KDE packages${NC}"
                     ;;
             esac
             echo ""
@@ -527,6 +557,12 @@ switch_theme() {
             echo "  • Configure single bottom taskbar layout"
             echo "  • Set Liberation Sans fonts and Windows10 icons"
             ;;
+        "vanilla")
+            echo "  • Reset KDE settings to clean defaults"
+            echo "  • Configure default KDE Plasma layout"
+            echo "  • Set standard panel with all default widgets"
+            echo "  • Use default Breeze theme and Noto Sans fonts"
+            ;;
     esac
     echo ""
 
@@ -542,6 +578,9 @@ switch_theme() {
             ;;
         "redmondi")
             run_script "$INSTALL_DIR/desktop/redmondi.sh"
+            ;;
+        "vanilla")
+            run_script "$INSTALL_DIR/desktop/vanilla.sh"
             ;;
     esac
 
@@ -583,6 +622,7 @@ show_theme_info() {
             echo -e "${YELLOW}Available themes:${NC}"
             echo "  • Cupertini (macOS-like) - Run: archer --cupertini"
             echo "  • Redmondi (Windows-like) - Run: archer --redmondi"
+            echo "  • Vanilla (Default KDE) - Run: archer --vanilla"
             ;;
     esac
 
@@ -652,6 +692,31 @@ show_theme_status() {
     esac
 
     echo ""
+
+    # Check Vanilla
+    echo -e "${YELLOW}Vanilla (Default KDE):${NC}"
+    local vanilla_status=$(check_theme_installed "vanilla")
+    case "$vanilla_status" in
+        "installed")
+            echo -e "  ${GREEN}✓ Fully installed and ready${NC}"
+            # Check individual components
+            if pacman -Q breeze &>/dev/null; then
+                echo -e "  ${GREEN}✓ Breeze theme${NC}"
+            fi
+            if pacman -Q noto-fonts &>/dev/null; then
+                echo -e "  ${GREEN}✓ Noto fonts${NC}"
+            fi
+            ;;
+        "plasma_missing")
+            echo -e "  ${RED}✗ KDE Plasma not installed${NC}"
+            ;;
+        "theme_missing")
+            echo -e "  ${YELLOW}⚠ Partially installed or missing components${NC}"
+            echo -e "    Run: archer --vanilla (to install/complete)"
+            ;;
+    esac
+
+    echo ""
     echo -e "${CYAN}Current Active Theme:${NC}"
     local current=$(detect_current_theme)
     case "$current" in
@@ -660,6 +725,9 @@ show_theme_status() {
             ;;
         "redmondi")
             echo -e "  ${GREEN}Redmondi (Windows-like) is active${NC}"
+            ;;
+        "vanilla")
+            echo -e "  ${GREEN}Vanilla (Default KDE) is active${NC}"
             ;;
         "unknown")
             echo -e "  ${YELLOW}No specific theme detected (default/unknown)${NC}"
@@ -724,7 +792,7 @@ show_theme_debug() {
         echo ""
         echo -e "${YELLOW}Troubleshooting:${NC}"
         echo "• If you recently installed a theme, try logging out and back in"
-        echo "• Run the theme script again: archer --cupertini or archer --redmondi"
+        echo "• Run the theme script again: archer --cupertini, archer --redmondi, or archer --vanilla"
         echo "• Check if the theme packages are properly installed with: archer --theme-status"
     fi
 }
@@ -750,6 +818,10 @@ handle_args() {
             ;;
         "--redmondi")
             switch_theme "redmondi"
+            exit 0
+            ;;
+        "--vanilla")
+            switch_theme "vanilla"
             exit 0
             ;;
         "--gaming")
@@ -793,6 +865,7 @@ handle_args() {
             echo "  --switch-theme        Auto-detect and switch between themes"
             echo "  --cupertini           Switch to Cupertini (macOS-like)"
             echo "  --redmondi            Switch to Redmondi (Windows-like)"
+            echo "  --vanilla             Switch to Vanilla (Default KDE)"
             echo "  --theme-info          Show current theme information"
             echo "  --current-theme       Show current theme (alias for --theme-info)"
             echo "  --theme-status        Show detailed theme installation status"

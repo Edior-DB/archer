@@ -147,108 +147,9 @@ install_qt_dependencies() {
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
 }
 
-# Clean up any existing theme configurations
-cleanup_previous_themes() {
-    echo -e "${BLUE}Cleaning up previous theme configurations...${NC}"
-
-    # Detect current theme
-    local current_theme=$(kreadconfig5 --file kdeglobals --group Archer --key ThemeType 2>/dev/null || echo "unknown")
-    echo -e "${CYAN}Previous theme detected: $current_theme${NC}"
-
-    # Only run plasma commands if we have a display
-    if [[ -n "$DISPLAY" ]] || [[ -n "$WAYLAND_DISPLAY" ]]; then
-        # Force all plasma processes to quit first
-        echo -e "${YELLOW}Stopping plasma processes...${NC}"
-        kquitapp5 plasmashell 2>/dev/null || true
-        sleep 2
-
-        # Remove any existing panels completely
-        echo -e "${YELLOW}Removing existing panels...${NC}"
-        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-            var allPanels = panels();
-            for (var i = 0; i < allPanels.length; ++i) {
-                allPanels[i].remove();
-            }
-        ' 2>/dev/null || echo "Could not remove existing panels"
-
-        # Restart plasmashell
-        plasmashell &
-        sleep 3
-    else
-        echo -e "${YELLOW}No display detected - skipping plasma operations${NC}"
-    fi
-
-    # Remove panel configuration file completely
-    rm -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
-
-    # Clear all theme-related configurations
-    echo -e "${YELLOW}Clearing all theme configurations...${NC}"
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key cursorTheme --delete 2>/dev/null || true
-    kwriteconfig5 --file plasmarc --group Theme --key name --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key ColorScheme --delete 2>/dev/null || true
-
-    # Force clear all color scheme files
-    rm -f "$HOME/.config/kdeglobals" 2>/dev/null || true
-    rm -f "$HOME/.config/plasmarc" 2>/dev/null || true
-
-    # Clear Redmondi-specific configurations
-    echo -e "${YELLOW}Clearing Windows-like theme remnants...${NC}"
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key cursorTheme --delete 2>/dev/null || true
-    kwriteconfig5 --file plasmarc --group Theme --key name --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage --delete 2>/dev/null || true
-
-    # Clear font settings completely
-    kwriteconfig5 --file kdeglobals --group General --key font --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key menuFont --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key toolBarFont --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group WM --key activeFont --delete 2>/dev/null || true
-
-    # Clear window decoration settings completely
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library --delete 2>/dev/null || true
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme --delete 2>/dev/null || true
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft --delete 2>/dev/null || true
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight --delete 2>/dev/null || true
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ShowToolTips --delete 2>/dev/null || true
-
-    # Clear Breeze-specific configurations that might conflict
-    kwriteconfig5 --file breezerc --group Common --key OutlineCloseButton --delete 2>/dev/null || true
-    kwriteconfig5 --file breezerc --group Windeco --key DrawBackgroundGradient --delete 2>/dev/null || true
-    kwriteconfig5 --file breezerc --group Windeco --key DrawTitleBarSeparator --delete 2>/dev/null || true
-    kwriteconfig5 --file breezerc --group Windeco --key TitleAlignment --delete 2>/dev/null || true
-
-    # Remove panel configuration file to start fresh
-    rm -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
-
-    # Clear color scheme settings
-    kwriteconfig5 --file kdeglobals --group General --key ColorScheme --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group Colors:Button --delete 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group Colors:Window --delete 2>/dev/null || true
-
-    # Clear any theme markers
-    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null || true
-
-    # Only run plasma reload if we have a display
-    if [[ -n "$DISPLAY" ]] || [[ -n "$WAYLAND_DISPLAY" ]]; then
-        # Force plasma to restart configuration
-        echo -e "${YELLOW}Restarting plasma configuration...${NC}"
-        kquitapp5 plasmashell 2>/dev/null || true
-        sleep 2
-        plasmashell &
-        sleep 3
-    fi
-
-    echo -e "${GREEN}Previous theme configurations cleaned up!${NC}"
-}
-
 # Configure KDE for macOS-like experience
 configure_kde() {
     echo -e "${BLUE}Configuring KDE for macOS-like experience...${NC}"
-
-    # Clean up any previous theme configurations first
-    cleanup_previous_themes
 
     # Check if we're in a proper KDE session
     if [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
@@ -293,17 +194,7 @@ configure_kde() {
     # Wait for KDE session
     sleep 3
 
-    # Clean up any previous theme configurations first
-    cleanup_previous_themes
-
-    # Clear any existing theme markers first
-    echo -e "${YELLOW}Clearing previous theme markers...${NC}"
-    if ! kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null; then
-        echo -e "${YELLOW}Warning: Could not clear theme markers (file may not exist yet)${NC}"
-    fi
-
-    # Global theme
-    echo -e "${YELLOW}Setting global theme...${NC}"
+    # Set a marker for Cupertini theme detection
     # Check if McMojave look-and-feel package exists before trying to set it
     local global_theme=""
     if [[ -d "/usr/share/plasma/look-and-feel/mcmojave" ]] || [[ -d "$HOME/.local/share/plasma/look-and-feel/mcmojave" ]]; then
@@ -321,19 +212,13 @@ configure_kde() {
         echo -e "${RED}✗ Failed to set global theme${NC}"
     fi
 
-    # Set a marker for Cupertini theme detection and force clear conflicting settings
-    echo -e "${YELLOW}Setting Cupertini theme marker and clearing conflicts...${NC}"
+    # Set a marker for Cupertini theme detection
+    echo -e "${YELLOW}Setting Cupertini theme marker...${NC}"
     kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "cupertini" 2>/dev/null || true
+    echo -e "${GREEN}✓ Theme marker set${NC}"
 
-    # Force clear any redmondi-specific settings that might persist
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme "breeze" 2>/dev/null || true
-    kwriteconfig5 --file kdeglobals --group General --key ColorScheme "BreezeLight" 2>/dev/null || true
-    kwriteconfig5 --file plasmarc --group Theme --key name "default" 2>/dev/null || true
-
-    echo -e "${GREEN}✓ Theme marker set and conflicts cleared${NC}"
-
-    # Plasma theme
-    echo -e "${YELLOW}Setting plasma theme...${NC}"
+    # Global theme
+    echo -e "${YELLOW}Setting global theme...${NC}"
     # Check if McMojave themes exist before trying to set them
     local plasma_theme=""
     if [[ -d "/usr/share/plasma/desktoptheme/mcmojave" ]] || [[ -d "$HOME/.local/share/plasma/desktoptheme/mcmojave" ]]; then
@@ -395,41 +280,8 @@ configure_kde() {
     qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
     sleep 2
 
-    # Use plasmashell to apply decoration theme immediately
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var allDesktops = desktops();
-        for (var i = 0; i < allDesktops.length; i++) {
-            allDesktops[i].wallpaperPlugin = "org.kde.image";
-        }
-    ' 2>/dev/null || true
-
-    # Alternative method to force decoration reload for X11/Wayland
-    if [[ "$XDG_SESSION_TYPE" != "wayland" ]]; then
-        if command -v kwin_x11 &> /dev/null; then
-            echo -e "${CYAN}Restarting KWin (X11) to apply decorations...${NC}"
-            kwin_x11 --replace &
-            sleep 3
-        fi
-    else
-        # For Wayland, restart kwin_wayland
-        echo -e "${CYAN}Restarting KWin (Wayland) to apply decorations...${NC}"
-        systemctl --user restart plasma-kwin_wayland.service 2>/dev/null || true
-        sleep 3
-    fi
-
-    # Force reload all KDE configuration
-    kbuildsycoca5 --noincremental 2>/dev/null || true
-
-    # Try using systemsettings5 command to apply decoration
-    echo -e "${CYAN}Applying decoration via System Settings...${NC}"
-    if [[ "$plasma_theme" == "mcmojave" ]] || [[ "$plasma_theme" == "McMojave" ]]; then
-        systemsettings5 kcm_kwindecoration --args "org.kde.kwin.aurorae,__aurorae__svg__mcmojave" 2>/dev/null || true
-    else
-        systemsettings5 kcm_kwindecoration --args "org.kde.breeze.decoration,Breeze" 2>/dev/null || true
-    fi
-
     if [[ "$window_decoration_set" == "true" ]]; then
-        echo -e "${GREEN}✓ macOS-like window decoration configured and applied${NC}"
+        echo -e "${GREEN}✓ macOS-like window decoration configured${NC}"
     else
         echo -e "${RED}✗ Failed to set window decoration${NC}"
     fi    # Icons
@@ -757,26 +609,8 @@ EOF
     # Force theme application by reloading configuration
     echo -e "${YELLOW}Applying all configuration changes...${NC}"
 
-    # Force reload all KDE configuration
-    kbuildsycoca5 --noincremental 2>/dev/null || true
-    sleep 2
-
-    # Quit and restart plasmashell to apply all changes
-    kquitapp5 plasmashell 2>/dev/null || true
-    sleep 3
-
-    # Restart services
-    plasmashell &
-    sleep 3
-
-    # Try to force theme application
-    lookandfeeltool -a mcmojave 2>/dev/null || lookandfeeltool -a org.kde.breezedark.desktop 2>/dev/null || echo "Look and feel tool not available"
-
-    # Apply icon theme specifically
-    /usr/bin/plasma-changeicons McMojave-circle 2>/dev/null || true
-
     echo -e "${GREEN}KDE configuration completed!${NC}"
-    echo -e "${CYAN}Note: For best results, log out and log back in, preferably using X11 session.${NC}"
+    echo -e "${YELLOW}Note: Theme changes will take full effect after a reboot.${NC}"
 }
 
 # Ensure X11 session is available at login
@@ -862,9 +696,6 @@ main() {
         fi
     fi
 
-    # Clean up any previous theme configurations first
-    cleanup_previous_themes
-
     # Install Qt dependencies to prevent display errors
     install_qt_dependencies
 
@@ -893,23 +724,31 @@ main() {
 - SDDM login manager with Sugar Candy theme
 
 📋 Next Steps:
-1. REBOOT your system to ensure all changes take effect
-2. At the login screen, you'll see both X11 and Wayland session options
-3. For best macOS-like experience, choose Plasma (X11) session
-4. The desktop should now look significantly more like macOS
-5. Install office suite: ./office-tools/office-suite.sh
-6. Customize further using System Settings
+1. Reboot to apply all theme changes completely
+2. At the login screen, choose Plasma (X11) for best experience
+3. Install office suite: ./office-tools/office-suite.sh
+4. Customize further using System Settings
 
-⚠️  Important: If the desktop doesn't look like macOS after login:
-- Try logging out and selecting Plasma (X11) instead of Wayland
-- Run this script again with: \$0 --configure-only
-- Check System Settings > Appearance > Global Theme
-
-Welcome to your macOS-like Arch Linux desktop!"
+🎉 Welcome to your macOS-like Arch Linux desktop!"
 
     show_completion "Cupertini Installation Complete!" "$completion_msg"
 
-    wait_for_input "Press Enter to continue..."
+    echo ""
+    echo -e "${YELLOW}⚠ Theme changes require a reboot to take full effect.${NC}"
+    echo ""
+
+    if confirm_action "Would you like to reboot now to apply all theme changes?"; then
+        echo -e "${BLUE}Rebooting in 3 seconds...${NC}"
+        sleep 1
+        echo -e "${BLUE}Rebooting in 2 seconds...${NC}"
+        sleep 1
+        echo -e "${BLUE}Rebooting in 1 second...${NC}"
+        sleep 1
+        sudo reboot
+    else
+        echo -e "${CYAN}Remember to reboot later to apply all theme changes completely.${NC}"
+        wait_for_input "Press Enter to continue..."
+    fi
 }
 
 # Handle configuration-only mode
