@@ -48,10 +48,14 @@ configure_kde_redmond() {
 
     # Set global theme, icons, fonts, and panel layout for Windows-like look
     echo -e "${YELLOW}Setting global theme to Breeze...${NC}"
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "Breeze"
+    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "org.kde.breeze.desktop"
 
     echo -e "${YELLOW}Setting plasma theme to Breeze...${NC}"
-    kwriteconfig5 --file plasmarc --group Theme --key name "Breeze"
+    kwriteconfig5 --file plasmarc --group Theme --key name "default"
+
+    # Set a marker for Redmondi theme detection
+    echo -e "${YELLOW}Setting Redmondi theme marker...${NC}"
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "redmondi"
 
     # Window decoration - set to Breeze (Windows-like)
     echo -e "${YELLOW}Setting Windows-like window decoration...${NC}"

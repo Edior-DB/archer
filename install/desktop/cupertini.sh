@@ -106,6 +106,10 @@ configure_kde() {
     echo -e "${YELLOW}Setting global theme...${NC}"
     kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "McMojave"
 
+    # Set a marker for Cupertini theme detection
+    echo -e "${YELLOW}Setting Cupertini theme marker...${NC}"
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "cupertini"
+
     # Plasma theme
     echo -e "${YELLOW}Setting plasma theme...${NC}"
     kwriteconfig5 --file plasmarc --group Theme --key name "McMojave"

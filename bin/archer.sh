@@ -268,6 +268,13 @@ install_profile() {
 detect_current_theme() {
     # Check for theme indicators in KDE config files
     if [[ -f "$HOME/.config/kdeglobals" ]]; then
+        # First check for explicit Archer theme markers (most reliable)
+        local archer_theme=$(kreadconfig5 --file kdeglobals --group Archer --key ThemeType 2>/dev/null || echo "")
+        if [[ -n "$archer_theme" ]]; then
+            echo "$archer_theme"
+            return 0
+        fi
+
         # Check for McMojave theme (Cupertini)
         local lookfeel=$(kreadconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || echo "")
         if [[ "$lookfeel" == "McMojave" ]]; then
@@ -278,8 +285,11 @@ detect_current_theme() {
         # Check for Windows-like theme indicators (Redmondi)
         local icon_theme=$(kreadconfig5 --file kdeglobals --group Icons --key Theme 2>/dev/null || echo "")
         if [[ "$icon_theme" == "Windows10" ]]; then
-            echo "redmondi"
-            return 0
+            # Double-check with Breeze-like settings
+            if [[ "$lookfeel" == "org.kde.breeze.desktop" ]] || [[ "$lookfeel" == "Breeze" ]]; then
+                echo "redmondi"
+                return 0
+            fi
         fi
 
         # Check plasma theme
@@ -287,7 +297,7 @@ detect_current_theme() {
         if [[ "$plasma_theme" == "McMojave" ]]; then
             echo "cupertini"
             return 0
-        elif [[ "$plasma_theme" =~ [Ww]indows ]]; then
+        elif [[ "$plasma_theme" == "default" ]] && [[ "$icon_theme" == "Windows10" ]]; then
             echo "redmondi"
             return 0
         fi
@@ -303,6 +313,9 @@ detect_current_theme() {
         if [[ "$cursor_theme" == "McMojave-cursors" ]]; then
             echo "cupertini"
             return 0
+        elif [[ "$cursor_theme" == "breeze_cursors" ]] && [[ "$icon_theme" == "Windows10" ]]; then
+            echo "redmondi"
+            return 0
         fi
 
         # Check font for additional detection
@@ -310,7 +323,7 @@ detect_current_theme() {
         if [[ "$font" =~ "SF Pro Display" ]]; then
             echo "cupertini"
             return 0
-        elif [[ "$font" =~ "Liberation Sans" ]]; then
+        elif [[ "$font" =~ "Liberation Sans" ]] && [[ "$icon_theme" == "Windows10" ]]; then
             echo "redmondi"
             return 0
         fi
