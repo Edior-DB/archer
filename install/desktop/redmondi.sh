@@ -30,7 +30,7 @@ install_windows_themes() {
     # Try to install Windows-like window decorations
     echo -e "${YELLOW}Installing Windows-like window decorations...${NC}"
     local windows_decorations=(
-        "lightly" "kvantum"
+        "kvantum"
     )
 
     for decoration in "${windows_decorations[@]}"; do
@@ -125,7 +125,10 @@ configure_kde_redmond() {
     kwriteconfig5 --file kwinrc --group Effect-kwin4_effect_shadow --key ShadowStrength "25" 2>/dev/null || true
 
     # Clear any McMojave window decoration settings
-    echo -e "${GREEN}✓ Windows-like window decoration configured${NC}"    echo -e "${YELLOW}Setting Windows 10 icon theme...${NC}"
+    echo -e "${GREEN}✓ Windows-like window decoration configured${NC}"
+
+    # Set icon theme to Windows 10
+    echo -e "${YELLOW}Setting Windows 10 icon theme...${NC}"
     if kwriteconfig5 --file kdeglobals --group Icons --key Theme "Windows10" 2>/dev/null; then
         echo -e "${GREEN}✓ Icon theme set to Windows10${NC}"
     else

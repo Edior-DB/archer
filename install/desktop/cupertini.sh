@@ -89,7 +89,7 @@ install_themes() {
     # Try to install additional macOS-like window decorations
     echo -e "${YELLOW}Installing additional macOS-like window decorations...${NC}"
     local additional_decorations=(
-        "lightly" "kvantum"
+        "kvantum"
     )
 
     for decoration in "${additional_decorations[@]}"; do
