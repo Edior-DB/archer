@@ -147,54 +147,16 @@ install_qt_dependencies() {
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
 }
 
-# Configure KDE for macOS-like experience
+# Configure KDE for macOS-like experience (configuration only - requires reboot)
 configure_kde() {
     echo -e "${BLUE}Configuring KDE for macOS-like experience...${NC}"
-
-    # Check if we're in a proper KDE session
-    if [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
-        echo -e "${RED}Error: No display server detected (neither X11 nor Wayland)${NC}"
-        echo -e "${YELLOW}This script should be run from within a KDE Plasma session.${NC}"
-        echo -e "${CYAN}Please log into KDE Plasma and run this script again.${NC}"
-        return 1
-    fi
-
-    # Check if KDE tools are available and working
-    if ! command -v kwriteconfig5 &> /dev/null; then
-        echo -e "${RED}Error: kwriteconfig5 not found. KDE Plasma may not be properly installed.${NC}"
-        return 1
-    fi
-
-    # Test if Qt/KDE commands work
-    echo -e "${BLUE}Testing KDE configuration access...${NC}"
-    if ! kwriteconfig5 --file test-config --group Test --key TestKey "test" 2>/dev/null; then
-        echo -e "${RED}Error: Cannot access KDE configuration system.${NC}"
-        echo -e "${YELLOW}Qt platform error detected. Possible causes:${NC}"
-        echo -e "${CYAN}  1. Not running in a KDE session${NC}"
-        echo -e "${CYAN}  2. Missing X11/Wayland libraries${NC}"
-        echo -e "${CYAN}  3. Session environment not properly set${NC}"
-        echo ""
-        echo -e "${YELLOW}Solutions to try:${NC}"
-        echo -e "${CYAN}  1. Log out and log into KDE Plasma session${NC}"
-        echo -e "${CYAN}  2. Run: export DISPLAY=:0 (if using X11)${NC}"
-        echo -e "${CYAN}  3. Install missing packages: sudo pacman -S libxcb libxcb-cursor${NC}"
-        return 1
-    else
-        # Clean up test config
-        kwriteconfig5 --file test-config --group Test --key TestKey --delete 2>/dev/null || true
-        echo -e "${GREEN}✓ KDE configuration system accessible${NC}"
-    fi
-
-    # Check if we're in a Wayland session and warn user
-    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
-        echo -e "${YELLOW}Warning: Running on Wayland. Some configuration options work better on X11.${NC}"
-        echo -e "${YELLOW}You can switch to X11 session at the login screen for better compatibility.${NC}"
-    fi
-
-    # Wait for KDE session
-    sleep 3
+    echo -e "${YELLOW}⚠ This will configure the theme files only. A reboot is required to apply changes.${NC}"
 
     # Set a marker for Cupertini theme detection
+    echo -e "${YELLOW}Setting Cupertini theme marker...${NC}"
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "cupertini" 2>/dev/null || true
+    echo -e "${GREEN}✓ Theme marker set${NC}"
+
     # Check if McMojave look-and-feel package exists before trying to set it
     local global_theme=""
     if [[ -d "/usr/share/plasma/look-and-feel/mcmojave" ]] || [[ -d "$HOME/.local/share/plasma/look-and-feel/mcmojave" ]]; then
@@ -206,19 +168,10 @@ configure_kde() {
         echo -e "${YELLOW}⚠ McMojave look-and-feel not found, using breeze-dark fallback${NC}"
     fi
 
-    if kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "$global_theme" 2>/dev/null; then
-        echo -e "${GREEN}✓ Global theme set to $global_theme${NC}"
-    else
-        echo -e "${RED}✗ Failed to set global theme${NC}"
-    fi
+    # Write configuration files (no dynamic application)
+    echo -e "${YELLOW}Writing theme configuration...${NC}"
+    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "$global_theme" 2>/dev/null || true
 
-    # Set a marker for Cupertini theme detection
-    echo -e "${YELLOW}Setting Cupertini theme marker...${NC}"
-    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "cupertini" 2>/dev/null || true
-    echo -e "${GREEN}✓ Theme marker set${NC}"
-
-    # Global theme
-    echo -e "${YELLOW}Setting global theme...${NC}"
     # Check if McMojave themes exist before trying to set them
     local plasma_theme=""
     if [[ -d "/usr/share/plasma/desktoptheme/mcmojave" ]] || [[ -d "$HOME/.local/share/plasma/desktoptheme/mcmojave" ]]; then
@@ -230,44 +183,26 @@ configure_kde() {
         echo -e "${YELLOW}⚠ McMojave plasma theme not found, using breeze-dark fallback${NC}"
     fi
 
-    if kwriteconfig5 --file plasmarc --group Theme --key name "$plasma_theme" 2>/dev/null; then
-        echo -e "${GREEN}✓ Plasma theme set to $plasma_theme${NC}"
-    else
-        echo -e "${RED}✗ Failed to set plasma theme${NC}"
-    fi
+    kwriteconfig5 --file plasmarc --group Theme --key name "$plasma_theme" 2>/dev/null || true
 
-    # Window decoration (macOS-like)
-    echo -e "${YELLOW}Setting macOS-like window decoration...${NC}"
+    # Window decoration (macOS-like) - configuration only
+    echo -e "${YELLOW}Writing macOS-like window decoration configuration...${NC}"
 
     # First try McMojave window decoration if available
-    local window_decoration_set=false
-
-    # Check if McMojave window decoration exists
     if [[ -d "/usr/share/aurorae/themes/mcmojave" ]] || [[ -d "$HOME/.local/share/aurorae/themes/mcmojave" ]]; then
-        echo -e "${CYAN}Using McMojave window decoration...${NC}"
-        if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae" 2>/dev/null && \
-           kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave" 2>/dev/null; then
-            window_decoration_set=true
-            echo -e "${GREEN}✓ McMojave window decoration set${NC}"
-        fi
-    fi
-
-    # Fallback to Breeze with macOS-like configuration
-    if [[ "$window_decoration_set" != "true" ]]; then
-        echo -e "${YELLOW}McMojave decoration not found, using Breeze with macOS-like settings...${NC}"
-        if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null && \
-           kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze" 2>/dev/null; then
-            echo -e "${GREEN}✓ Breeze window decoration set${NC}"
-            window_decoration_set=true
-        fi
+        echo -e "${CYAN}Configuring McMojave window decoration...${NC}"
+        kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae" 2>/dev/null || true
+        kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave" 2>/dev/null || true
+    else
+        # Fallback to Breeze with macOS-like configuration
+        echo -e "${YELLOW}McMojave decoration not found, configuring Breeze with macOS-like settings...${NC}"
+        kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null || true
+        kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze" 2>/dev/null || true
     fi
 
     # Configure macOS-like window button layout (close, minimize, maximize on left)
-    echo -e "${YELLOW}Setting macOS-like window button layout...${NC}"
     kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft "XIA" 2>/dev/null || true
     kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "H" 2>/dev/null || true
-
-    # Configure window behavior for macOS-like experience
     kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ShowToolTips "false" 2>/dev/null || true
 
     # Set window decoration colors to match macOS
@@ -275,84 +210,37 @@ configure_kde() {
     kwriteconfig5 --file breezerc --group Windeco --key DrawBackgroundGradient "false" 2>/dev/null || true
     kwriteconfig5 --file breezerc --group Windeco --key DrawTitleBarSeparator "false" 2>/dev/null || true
 
-    # Force apply window decoration changes
-    echo -e "${YELLOW}Applying window decoration changes...${NC}"
+    # Icons configuration
+    echo -e "${YELLOW}Writing icon theme configuration...${NC}"
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle" 2>/dev/null || true
 
-    # Restart KWin to ensure decorations are applied
-    kwriteconfig5 --file kwinrc --group Compositing --key Enabled "true"
+    # Cursors configuration
+    echo -e "${YELLOW}Writing cursor theme configuration...${NC}"
+    kwriteconfig5 --file kdeglobals --group General --key cursorTheme "McMojave-cursors" 2>/dev/null || true
 
-    # Force reload window decorations
-    qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
-    sleep 1
-
-    if [[ "$window_decoration_set" == "true" ]]; then
-        echo -e "${GREEN}✓ macOS-like window decoration configured and applied${NC}"
-    else
-        echo -e "${RED}✗ Failed to set window decoration${NC}"
-    fi
-
-    # Icons
-    echo -e "${YELLOW}Setting icon theme...${NC}"
-    if kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle" 2>/dev/null; then
-        echo -e "${GREEN}✓ Icon theme set to McMojave-circle${NC}"
-    else
-        echo -e "${RED}✗ Failed to set icon theme${NC}"
-    fi
-
-    # Cursors
-    echo -e "${YELLOW}Setting cursor theme...${NC}"
-    if kwriteconfig5 --file kdeglobals --group General --key cursorTheme "McMojave-cursors" 2>/dev/null; then
-        echo -e "${GREEN}✓ Cursor theme set to McMojave-cursors${NC}"
-    else
-        echo -e "${RED}✗ Failed to set cursor theme${NC}"
-    fi
-
-    # Fonts
-    echo -e "${YELLOW}Setting fonts...${NC}"
+    # Fonts configuration
+    echo -e "${YELLOW}Writing font configuration...${NC}"
     # Try SF Pro Display first (from otf-apple-fonts)
     if fc-list | grep -i "SF Pro Display" > /dev/null; then
         echo -e "${GREEN}Using SF Pro Display fonts...${NC}"
-        kwriteconfig5 --file kdeglobals --group General --key font "SF Pro Display,11,-1,5,50,0,0,0,0,0"
-        kwriteconfig5 --file kdeglobals --group General --key menuFont "SF Pro Display,11,-1,5,50,0,0,0,0,0"
-        kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0"
-        kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group General --key font "SF Pro Display,11,-1,5,50,0,0,0,0,0" 2>/dev/null || true
+        kwriteconfig5 --file kdeglobals --group General --key menuFont "SF Pro Display,11,-1,5,50,0,0,0,0,0" 2>/dev/null || true
+        kwriteconfig5 --file kdeglobals --group General --key toolBarFont "SF Pro Display,10,-1,5,50,0,0,0,0,0" 2>/dev/null || true
+        kwriteconfig5 --file kdeglobals --group WM --key activeFont "SF Pro Display,11,-1,5,75,0,0,0,0,0" 2>/dev/null || true
     else
         echo -e "${YELLOW}SF Pro Display not found, using Roboto as fallback...${NC}"
-        kwriteconfig5 --file kdeglobals --group General --key font "Roboto,11,-1,5,50,0,0,0,0,0"
-        kwriteconfig5 --file kdeglobals --group General --key menuFont "Roboto,11,-1,5,50,0,0,0,0,0"
-        kwriteconfig5 --file kdeglobals --group General --key toolBarFont "Roboto,10,-1,5,50,0,0,0,0,0"
-        kwriteconfig5 --file kdeglobals --group WM --key activeFont "Roboto,11,-1,5,75,0,0,0,0,0"
+        kwriteconfig5 --file kdeglobals --group General --key font "Roboto,11,-1,5,50,0,0,0,0,0" 2>/dev/null || true
+        kwriteconfig5 --file kdeglobals --group General --key menuFont "Roboto,11,-1,5,50,0,0,0,0,0" 2>/dev/null || true
+        kwriteconfig5 --file kdeglobals --group General --key toolBarFont "Roboto,10,-1,5,50,0,0,0,0,0" 2>/dev/null || true
+        kwriteconfig5 --file kdeglobals --group WM --key activeFont "Roboto,11,-1,5,75,0,0,0,0,0" 2>/dev/null || true
     fi
 
-    # Panel configuration (macOS-like: bottom dock-style panel)
-    echo -e "${YELLOW}Configuring macOS-like dock panel...${NC}"
+    # Panel configuration (macOS-like dock configuration)
+    echo -e "${YELLOW}Writing macOS-like panel configuration...${NC}"
 
-    # Try to configure panels with better error handling
-    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
-        echo -e "${YELLOW}Configuring panels for Wayland session...${NC}"
-    else
-        echo -e "${YELLOW}Configuring panels for X11 session...${NC}"
-    fi
-
-    # Use direct config file modification for consistent macOS-like dual panel layout
-    echo -e "${YELLOW}Configuring macOS-like dual panel layout...${NC}"
-
-    # Remove existing panels first using qdbus
-    if command -v qdbus &> /dev/null; then
-        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-            var allPanels = panels();
-            for (var i = 0; i < allPanels.length; ++i) {
-                allPanels[i].remove();
-            }
-        ' 2>/dev/null || echo "Could not remove existing panels"
-        sleep 2
-    fi
-
-    # Use single method: direct config file modification for better macOS-like dock
+    # Create proper macOS-like panel configuration
     python3 << 'EOF'
 import os
-import configparser
-import time
 
 # Create/modify panel configuration for macOS-like dock
 config_dir = os.path.expanduser("~/.config")
@@ -450,11 +338,12 @@ AppletOrder=7;8;9;10;11
 PreloadWeight=100
 
 [Containments][2][Configuration][General]
-alignment=132
+alignment=left
 iconSize=22
-lengthMode=2
+lengthMode=fill
 panelSize=28
-panelVisibility=0
+panelVisibility=NormalPanel
+floating=0
 
 [Containments][3]
 activityId=
@@ -474,7 +363,7 @@ PreloadWeight=100
 
 [Containments][3][Applets][12][Configuration][General]
 groupingStrategy=0
-iconSpacing=2
+iconSpacing=3
 launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop
 maxStripes=1
 showOnlyCurrentDesktop=false
@@ -488,13 +377,14 @@ AppletOrder=12
 PreloadWeight=100
 
 [Containments][3][Configuration][General]
-alignment=132
-iconSize=56
-lengthMode=1
-maxLength=800
-minLength=300
-panelSize=68
-panelVisibility=0
+alignment=center
+iconSize=64
+lengthMode=fit
+maxLength=1200
+minLength=400
+panelSize=72
+panelVisibility=NormalPanel
+floating=0
 
 [ScreenMapping]
 itemsOnDisabledScreens=
@@ -507,26 +397,25 @@ with open(plasma_config, 'w') as f:
 print("macOS-like configuration written (desktop + top menu bar + bottom dock)")
 EOF
 
-    echo -e "${GREEN}macOS-like dual panel layout configured!${NC}"
+    echo -e "${GREEN}macOS-like panel configuration written!${NC}"
 
-    # Desktop effects (for smooth animations like macOS)
-    echo -e "${YELLOW}Configuring desktop effects...${NC}"
-    kwriteconfig5 --file kwinrc --group Compositing --key Enabled "true"
-    kwriteconfig5 --file kwinrc --group Compositing --key AnimationSpeed "3"
-    kwriteconfig5 --file kwinrc --group Plugins --key slideEnabled "true"
-    kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_fadeEnabled "true"
-    kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_translucencyEnabled "true"
-    kwriteconfig5 --file kwinrc --group Plugins --key blurEnabled "true"
+    # Desktop effects configuration (for smooth animations like macOS)
+    echo -e "${YELLOW}Writing desktop effects configuration...${NC}"
+    kwriteconfig5 --file kwinrc --group Compositing --key Enabled "true" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Compositing --key AnimationSpeed "3" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Plugins --key slideEnabled "true" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_fadeEnabled "true" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_translucencyEnabled "true" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Plugins --key blurEnabled "true" 2>/dev/null || true
 
-    # Window behavior (more macOS-like)
-    echo -e "${YELLOW}Configuring window behavior...${NC}"
-    kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy "ClickToFocus"
-    kwriteconfig5 --file kwinrc --group MouseBindings --key CommandAllKey "Meta"
-    kwriteconfig5 --file kwinrc --group Windows --key BorderlessMaximizedWindows "true"
+    # Window behavior configuration (more macOS-like)
+    echo -e "${YELLOW}Writing window behavior configuration...${NC}"
+    kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy "ClickToFocus" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group MouseBindings --key CommandAllKey "Meta" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Windows --key BorderlessMaximizedWindows "true" 2>/dev/null || true
 
-    # Set macOS-like desktop wallpaper
-    echo -e "${YELLOW}Setting macOS-like wallpaper...${NC}"
-    # Download a macOS-like wallpaper if none exists
+    # Wallpaper configuration
+    echo -e "${YELLOW}Writing wallpaper configuration...${NC}"
     mkdir -p "$HOME/Pictures/Wallpapers"
     if [[ ! -f "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" ]]; then
         echo -e "${YELLOW}Downloading macOS-like wallpaper...${NC}"
@@ -535,16 +424,8 @@ EOF
             2>/dev/null || echo "Could not download wallpaper - using default"
     fi
 
-    # Set wallpaper using plasma-apply-wallpaperimage
-    if [[ -f "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" ]]; then
-        plasma-apply-wallpaperimage "$HOME/Pictures/Wallpapers/macOS-ventura.jpg" 2>/dev/null || true
-    fi
-
-    # Configure desktop to be more macOS-like
-    kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc --group Containments --group 1 --group Wallpaper --group org.kde.image --group General --key Image "file://$HOME/Pictures/Wallpapers/macOS-ventura.jpg"
-
     # Konsole configuration (Terminal.app-like)
-    echo -e "${YELLOW}Configuring terminal...${NC}"
+    echo -e "${YELLOW}Writing terminal configuration...${NC}"
     mkdir -p "$HOME/.local/share/konsole/"
     cat > "$HOME/.local/share/konsole/macOS.profile" << EOF
 [Appearance]
@@ -563,27 +444,15 @@ BlinkingCursorEnabled=true
 EOF
 
     # Set default Konsole profile
-    kwriteconfig5 --file konsolerc --group Desktop\ Entry --key DefaultProfile "macOS.profile"
+    kwriteconfig5 --file konsolerc --group Desktop\ Entry --key DefaultProfile "macOS.profile" 2>/dev/null || true
 
     # SDDM theme configuration
-    echo -e "${YELLOW}Configuring login screen...${NC}"
+    echo -e "${YELLOW}Writing login screen configuration...${NC}"
     sudo kwriteconfig5 --file /etc/sddm.conf --group Theme --key Current "sugar-candy" 2>/dev/null || \
     sudo bash -c 'echo -e "[Theme]\nCurrent=sugar-candy" > /etc/sddm.conf'
 
-    # Force theme application by reloading configuration
-    echo -e "${YELLOW}Applying all configuration changes...${NC}"
-
-    # Final restart of plasmashell to ensure all panel and theme changes take effect
-    if pgrep plasmashell > /dev/null; then
-        echo -e "${YELLOW}Restarting plasmashell to apply all changes...${NC}"
-        killall plasmashell 2>/dev/null || true
-        sleep 2
-        nohup plasmashell > /dev/null 2>&1 &
-        sleep 3
-    fi
-
-    echo -e "${GREEN}KDE configuration completed!${NC}"
-    echo -e "${YELLOW}Note: Theme changes will take full effect after a reboot.${NC}"
+    echo -e "${GREEN}✓ Cupertini theme configuration completed!${NC}"
+    echo -e "${YELLOW}⚠ All changes will take effect after reboot${NC}"
 }
 
 # Ensure X11 session is available at login
@@ -680,13 +549,8 @@ main() {
     # Ensure both X11 and Wayland sessions are available
     ensure_x11_session
 
-    # Configure (only if in KDE session)
-    if [[ "$XDG_CURRENT_DESKTOP" == "KDE" ]] && [[ -n "$DISPLAY" ]]; then
-        configure_kde
-    else
-        echo -e "${YELLOW}Configuration will be applied after login to KDE.${NC}"
-        create_autostart_entry "Cupertini" "$(readlink -f "$0") --configure-only" "$0"
-    fi
+    # Configure (theme files only - no dynamic application)
+    configure_kde
 
     local completion_msg="🍎 macOS-like Desktop Environment Installed:
 - KDE Plasma 6 with macOS-like layout and McMojave theme
@@ -723,12 +587,6 @@ main() {
         wait_for_input "Press Enter to continue..."
     fi
 }
-
-# Handle configuration-only mode
-if [[ "$1" == "--configure-only" ]]; then
-    configure_kde
-    exit 0
-fi
 
 # Run main function
 main
