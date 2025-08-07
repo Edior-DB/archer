@@ -277,14 +277,21 @@ configure_kde() {
 
     # Force apply window decoration changes
     echo -e "${YELLOW}Applying window decoration changes...${NC}"
+
+    # Restart KWin to ensure decorations are applied
+    kwriteconfig5 --file kwinrc --group Compositing --key Enabled "true"
+
+    # Force reload window decorations
     qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
-    sleep 2
+    sleep 1
 
     if [[ "$window_decoration_set" == "true" ]]; then
-        echo -e "${GREEN}✓ macOS-like window decoration configured${NC}"
+        echo -e "${GREEN}✓ macOS-like window decoration configured and applied${NC}"
     else
         echo -e "${RED}✗ Failed to set window decoration${NC}"
-    fi    # Icons
+    fi
+
+    # Icons
     echo -e "${YELLOW}Setting icon theme...${NC}"
     if kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle" 2>/dev/null; then
         echo -e "${GREEN}✓ Icon theme set to McMojave-circle${NC}"
@@ -327,96 +334,21 @@ configure_kde() {
         echo -e "${YELLOW}Configuring panels for X11 session...${NC}"
     fi
 
-    # Use qdbus to configure panels more reliably
+    # Use direct config file modification for consistent macOS-like dual panel layout
+    echo -e "${YELLOW}Configuring macOS-like dual panel layout...${NC}"
+
+    # Remove existing panels first using qdbus
     if command -v qdbus &> /dev/null; then
-        echo -e "${YELLOW}Using qdbus to configure panels...${NC}"
-        # Remove existing panels - use correct API
         qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
             var allPanels = panels();
             for (var i = 0; i < allPanels.length; ++i) {
                 allPanels[i].remove();
             }
         ' 2>/dev/null || echo "Could not remove existing panels"
-
-        sleep 3
-
-        # Create macOS-like top panel (menu bar)
-        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-            var topPanel = new Panel;
-            if (topPanel) {
-                topPanel.location = "top";
-                topPanel.height = 28;
-                topPanel.lengthMode = "FitWidth";
-                topPanel.alignment = "left";
-
-                // Add application launcher (like Apple menu)
-                var appLauncher = topPanel.addWidget("org.kde.plasma.kickoff");
-                if (appLauncher) {
-                    appLauncher.currentConfigGroup = ["General"];
-                    appLauncher.writeConfig("icon", "applications-system");
-                    appLauncher.writeConfig("useCustomButtonImage", false);
-                }
-
-                // Add global menu (application menus)
-                var globalMenu = topPanel.addWidget("org.kde.plasma.appmenu");
-                if (globalMenu) {
-                    globalMenu.currentConfigGroup = ["General"];
-                    globalMenu.writeConfig("view", 0);
-                    globalMenu.writeConfig("compactView", false);
-                }
-
-                // Add spacer to push items to right
-                topPanel.addWidget("org.kde.plasma.panelspacer");
-
-                // Add system indicators
-                var systemTray = topPanel.addWidget("org.kde.plasma.systemtray");
-                if (systemTray) {
-                    systemTray.currentConfigGroup = ["General"];
-                    systemTray.writeConfig("scaleIconsToFit", true);
-                }
-
-                // Add digital clock
-                var clock = topPanel.addWidget("org.kde.plasma.digitalclock");
-                if (clock) {
-                    clock.currentConfigGroup = ["Appearance"];
-                    clock.writeConfig("showDate", false);
-                    clock.writeConfig("use24hFormat", 0);
-                }
-            }
-        ' 2>/dev/null || echo "Could not create top panel"
-
         sleep 2
-
-        # Create macOS-like dock panel - improved dimensions
-        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-            var panel = new Panel;
-            if (panel) {
-                panel.location = "bottom";
-                panel.height = 68;
-                panel.lengthMode = "FitContent";
-                panel.maximumLength = 800;
-                panel.minimumLength = 300;
-                panel.alignment = "center";
-
-                // Add dock-style launcher (Icons-only Task Manager)
-                var taskManager = panel.addWidget("org.kde.plasma.icontasks");
-                if (taskManager) {
-                    taskManager.currentConfigGroup = ["General"];
-                    taskManager.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop");
-                    taskManager.writeConfig("showOnlyCurrentDesktop", false);
-                    taskManager.writeConfig("groupingStrategy", 0);
-                    taskManager.writeConfig("iconSpacing", 2);
-                    taskManager.writeConfig("maxStripes", 1);
-                    taskManager.writeConfig("indicateAudioStreams", false);
-                    taskManager.writeConfig("fill", true);
-                }
-
-                // No system tray in dock (moved to top panel)
-            }
-        ' 2>/dev/null || echo "qdbus panel configuration failed, using fallback"
     fi
 
-    # Fallback: Use direct config file modification for better macOS-like dock
+    # Use single method: direct config file modification for better macOS-like dock
     python3 << 'EOF'
 import os
 import configparser
@@ -608,6 +540,15 @@ EOF
 
     # Force theme application by reloading configuration
     echo -e "${YELLOW}Applying all configuration changes...${NC}"
+
+    # Final restart of plasmashell to ensure all panel and theme changes take effect
+    if pgrep plasmashell > /dev/null; then
+        echo -e "${YELLOW}Restarting plasmashell to apply all changes...${NC}"
+        killall plasmashell 2>/dev/null || true
+        sleep 2
+        nohup plasmashell > /dev/null 2>&1 &
+        sleep 3
+    fi
 
     echo -e "${GREEN}KDE configuration completed!${NC}"
     echo -e "${YELLOW}Note: Theme changes will take full effect after a reboot.${NC}"
