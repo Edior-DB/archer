@@ -307,11 +307,20 @@ configure_kde() {
                 topPanel.lengthMode = "FitWidth";
                 topPanel.alignment = "left";
 
+                // Add application launcher (like Apple menu)
+                var appLauncher = topPanel.addWidget("org.kde.plasma.kickoff");
+                if (appLauncher) {
+                    appLauncher.currentConfigGroup = ["General"];
+                    appLauncher.writeConfig("icon", "applications-system");
+                    appLauncher.writeConfig("useCustomButtonImage", false);
+                }
+
                 // Add global menu (application menus)
                 var globalMenu = topPanel.addWidget("org.kde.plasma.appmenu");
                 if (globalMenu) {
                     globalMenu.currentConfigGroup = ["General"];
                     globalMenu.writeConfig("view", 0);
+                    globalMenu.writeConfig("compactView", false);
                 }
 
                 // Add spacer to push items to right
@@ -336,15 +345,15 @@ configure_kde() {
 
         sleep 2
 
-        # Create macOS-like dock panel - simplified approach
+        # Create macOS-like dock panel - improved dimensions
         qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
             var panel = new Panel;
             if (panel) {
                 panel.location = "bottom";
-                panel.height = 56;
+                panel.height = 68;
                 panel.lengthMode = "FitContent";
-                panel.maximumLength = 1200;
-                panel.minimumLength = 400;
+                panel.maximumLength = 800;
+                panel.minimumLength = 300;
                 panel.alignment = "center";
 
                 // Add dock-style launcher (Icons-only Task Manager)
@@ -354,8 +363,10 @@ configure_kde() {
                     taskManager.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop");
                     taskManager.writeConfig("showOnlyCurrentDesktop", false);
                     taskManager.writeConfig("groupingStrategy", 0);
-                    taskManager.writeConfig("iconSpacing", 1);
+                    taskManager.writeConfig("iconSpacing", 2);
                     taskManager.writeConfig("maxStripes", 1);
+                    taskManager.writeConfig("indicateAudioStreams", false);
+                    taskManager.writeConfig("fill", true);
                 }
 
                 // No system tray in dock (moved to top panel)
@@ -392,9 +403,27 @@ location=3
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
+[Containments][1][Applets][1]
+immutability=1
+plugin=org.kde.plasma.kickoff
+
+[Containments][1][Applets][1][Configuration]
+PreloadWeight=100
+
+[Containments][1][Applets][1][Configuration][General]
+icon=applications-system
+useCustomButtonImage=false
+
 [Containments][1][Applets][2]
 immutability=1
 plugin=org.kde.plasma.appmenu
+
+[Containments][1][Applets][2][Configuration]
+PreloadWeight=100
+
+[Containments][1][Applets][2][Configuration][General]
+view=0
+compactView=false
 
 [Containments][1][Applets][3]
 immutability=1
@@ -409,7 +438,7 @@ immutability=1
 plugin=org.kde.plasma.digitalclock
 
 [Containments][1][General]
-AppletOrder=2;3;4;5
+AppletOrder=1;2;3;4;5
 
 [Containments][1][Configuration]
 PreloadWeight=100
@@ -439,10 +468,12 @@ PreloadWeight=100
 
 [Containments][2][Applets][6][Configuration][General]
 groupingStrategy=0
-iconSpacing=1
+iconSpacing=2
 launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop
 maxStripes=1
 showOnlyCurrentDesktop=false
+indicateAudioStreams=false
+fill=true
 
 [Containments][2][General]
 AppletOrder=6
@@ -452,11 +483,11 @@ PreloadWeight=100
 
 [Containments][2][Configuration][General]
 alignment=132
-iconSize=48
+iconSize=56
 lengthMode=1
-maxLength=1200
-minLength=400
-panelSize=56
+maxLength=800
+minLength=300
+panelSize=68
 panelVisibility=0
 
 [ScreenMapping]
