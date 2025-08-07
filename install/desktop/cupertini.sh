@@ -108,7 +108,7 @@ configure_kde() {
     # Ensure both Wayland and X11 sessions are available
     # Global theme
     echo -e "${YELLOW}Setting global theme...${NC}"
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "McMojave"
+    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "mcmojave"
 
     # Set a marker for Cupertini theme detection
     echo -e "${YELLOW}Setting Cupertini theme marker...${NC}"
@@ -116,12 +116,12 @@ configure_kde() {
 
     # Plasma theme
     echo -e "${YELLOW}Setting plasma theme...${NC}"
-    kwriteconfig5 --file plasmarc --group Theme --key name "McMojave"
+    kwriteconfig5 --file plasmarc --group Theme --key name "mcmojave"
 
     # Window decoration
     echo -e "${YELLOW}Setting window decoration...${NC}"
     kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae"
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__McMojave"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave"
 
     # Icons
     echo -e "${YELLOW}Setting icon theme...${NC}"
@@ -347,7 +347,7 @@ EOF
     sleep 2
 
     # Try to force theme application
-    lookandfeeltool -a McMojave 2>/dev/null || echo "Look and feel tool not available"
+    lookandfeeltool -a mcmojave 2>/dev/null || echo "Look and feel tool not available"
 
     # Apply icon theme specifically
     /usr/bin/plasma-changeicons McMojave-circle 2>/dev/null || true

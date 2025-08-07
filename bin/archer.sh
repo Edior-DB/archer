@@ -277,7 +277,7 @@ detect_current_theme() {
 
         # Check for McMojave theme (Cupertini)
         local lookfeel=$(kreadconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage 2>/dev/null || echo "")
-        if [[ "$lookfeel" == "McMojave" ]]; then
+        if [[ "$lookfeel" == "mcmojave" || "$lookfeel" == "McMojave" ]]; then
             echo "cupertini"
             return 0
         fi
@@ -294,7 +294,7 @@ detect_current_theme() {
 
         # Check plasma theme
         local plasma_theme=$(kreadconfig5 --file plasmarc --group Theme --key name 2>/dev/null || echo "")
-        if [[ "$plasma_theme" == "McMojave" ]]; then
+        if [[ "$plasma_theme" == "mcmojave" || "$plasma_theme" == "McMojave" ]]; then
             echo "cupertini"
             return 0
         elif [[ "$plasma_theme" == "default" ]] && [[ "$icon_theme" == "Windows10" ]]; then
