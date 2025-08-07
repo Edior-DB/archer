@@ -69,6 +69,7 @@ install_themes() {
     local theme_packages=(
         "breeze" "breeze-gtk" "kvantum" "papirus-icon-theme"
         "ttf-roboto" "ttf-dejavu" "noto-fonts" "noto-fonts-emoji" "ttf-liberation"
+        "kde-cli-tools" "systemsettings"
     )
 
     install_packages "${theme_packages[@]}"
@@ -283,13 +284,49 @@ configure_kde() {
     kwriteconfig5 --file breezerc --group Windeco --key DrawBackgroundGradient "false" 2>/dev/null || true
     kwriteconfig5 --file breezerc --group Windeco --key DrawTitleBarSeparator "false" 2>/dev/null || true
 
-    if [[ "$window_decoration_set" == "true" ]]; then
-        echo -e "${GREEN}✓ macOS-like window decoration configured${NC}"
+    # Force apply window decoration changes
+    echo -e "${YELLOW}Applying window decoration changes...${NC}"
+    qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    sleep 2
+
+    # Use plasmashell to apply decoration theme immediately
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+        var allDesktops = desktops();
+        for (var i = 0; i < allDesktops.length; i++) {
+            allDesktops[i].wallpaperPlugin = "org.kde.image";
+        }
+    ' 2>/dev/null || true
+
+    # Alternative method to force decoration reload for X11/Wayland
+    if [[ "$XDG_SESSION_TYPE" != "wayland" ]]; then
+        if command -v kwin_x11 &> /dev/null; then
+            echo -e "${CYAN}Restarting KWin (X11) to apply decorations...${NC}"
+            kwin_x11 --replace &
+            sleep 3
+        fi
     else
-        echo -e "${RED}✗ Failed to set window decoration${NC}"
+        # For Wayland, restart kwin_wayland
+        echo -e "${CYAN}Restarting KWin (Wayland) to apply decorations...${NC}"
+        systemctl --user restart plasma-kwin_wayland.service 2>/dev/null || true
+        sleep 3
     fi
 
-    # Icons
+    # Force reload all KDE configuration
+    kbuildsycoca5 --noincremental 2>/dev/null || true
+
+    # Try using systemsettings5 command to apply decoration
+    echo -e "${CYAN}Applying decoration via System Settings...${NC}"
+    if [[ "$plasma_theme" == "mcmojave" ]] || [[ "$plasma_theme" == "McMojave" ]]; then
+        systemsettings5 kcm_kwindecoration --args "org.kde.kwin.aurorae,__aurorae__svg__mcmojave" 2>/dev/null || true
+    else
+        systemsettings5 kcm_kwindecoration --args "org.kde.breeze.decoration,Breeze" 2>/dev/null || true
+    fi
+
+    if [[ "$window_decoration_set" == "true" ]]; then
+        echo -e "${GREEN}✓ macOS-like window decoration configured and applied${NC}"
+    else
+        echo -e "${RED}✗ Failed to set window decoration${NC}"
+    fi    # Icons
     echo -e "${YELLOW}Setting icon theme...${NC}"
     if kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle" 2>/dev/null; then
         echo -e "${GREEN}✓ Icon theme set to McMojave-circle${NC}"

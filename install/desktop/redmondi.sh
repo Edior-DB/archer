@@ -16,6 +16,10 @@ install_windows_themes() {
     echo -e "${YELLOW}Installing Windows-compatible fonts...${NC}"
     install_packages ttf-liberation ttf-dejavu
 
+    # Install additional packages for window decorations
+    echo -e "${YELLOW}Installing window decoration packages...${NC}"
+    install_packages breeze kde-cli-tools
+
     # Install AUR helper if not present
     install_aur_helper
 
@@ -167,9 +171,38 @@ configure_kde_redmond() {
     echo -e "${YELLOW}Clearing macOS-specific window settings...${NC}"
     kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null || true
 
-    echo -e "${GREEN}✓ Windows-like window decoration configured${NC}"
+    # Force apply window decoration changes
+    echo -e "${YELLOW}Applying window decoration changes...${NC}"
+    qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || true
+    sleep 2
 
-    echo -e "${YELLOW}Setting Windows 10 icon theme...${NC}"
+    # Use plasmashell to apply decoration theme
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+        var allDesktops = desktops();
+        for (var i = 0; i < allDesktops.length; i++) {
+            allDesktops[i].wallpaperPlugin = "org.kde.image";
+        }
+    ' 2>/dev/null || true
+
+    # Alternative: Use kwin-decoration-viewer to ensure decoration is applied
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze" 2>/dev/null || true
+
+    # Force reload all KDE configuration
+    kbuildsycoca5 --noincremental 2>/dev/null || true
+
+    # Alternative method to force decoration reload
+    if command -v kwin_x11 &> /dev/null; then
+        echo -e "${CYAN}Restarting KWin to apply decorations...${NC}"
+        kwin_x11 --replace &
+        sleep 3
+    fi
+
+    # Try using systemsettings5 command to apply decoration
+    echo -e "${CYAN}Applying decoration via System Settings...${NC}"
+    systemsettings5 kcm_kwindecoration --args "org.kde.breeze.decoration,Breeze" 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Windows-like window decoration configured${NC}"    echo -e "${YELLOW}Setting Windows 10 icon theme...${NC}"
     if kwriteconfig5 --file kdeglobals --group Icons --key Theme "Windows10" 2>/dev/null; then
         echo -e "${GREEN}✓ Icon theme set to Windows10${NC}"
     else
