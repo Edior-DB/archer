@@ -88,9 +88,56 @@ install_themes() {
     echo -e "${GREEN}macOS-like themes installed!${NC}"
 }
 
+# Install missing X11/Qt dependencies
+install_qt_dependencies() {
+    echo -e "${BLUE}Installing Qt/X11 dependencies...${NC}"
+
+    local qt_deps=(
+        "libxcb" "libxcb-cursor" "xcb-util-cursor" "qt6-base" "qt6-svg"
+        "libx11" "libxext" "libxfixes" "libxi" "libxrender"
+    )
+
+    install_packages "${qt_deps[@]}"
+    echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
+}
+
 # Configure KDE for macOS-like experience
 configure_kde() {
     echo -e "${BLUE}Configuring KDE for macOS-like experience...${NC}"
+
+    # Check if we're in a proper KDE session
+    if [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
+        echo -e "${RED}Error: No display server detected (neither X11 nor Wayland)${NC}"
+        echo -e "${YELLOW}This script should be run from within a KDE Plasma session.${NC}"
+        echo -e "${CYAN}Please log into KDE Plasma and run this script again.${NC}"
+        return 1
+    fi
+
+    # Check if KDE tools are available and working
+    if ! command -v kwriteconfig5 &> /dev/null; then
+        echo -e "${RED}Error: kwriteconfig5 not found. KDE Plasma may not be properly installed.${NC}"
+        return 1
+    fi
+
+    # Test if Qt/KDE commands work
+    echo -e "${BLUE}Testing KDE configuration access...${NC}"
+    if ! kwriteconfig5 --file test-config --group Test --key TestKey "test" 2>/dev/null; then
+        echo -e "${RED}Error: Cannot access KDE configuration system.${NC}"
+        echo -e "${YELLOW}Qt platform error detected. Possible causes:${NC}"
+        echo -e "${CYAN}  1. Not running in a KDE session${NC}"
+        echo -e "${CYAN}  2. Missing X11/Wayland libraries${NC}"
+        echo -e "${CYAN}  3. Session environment not properly set${NC}"
+        echo ""
+        echo -e "${YELLOW}Solutions to try:${NC}"
+        echo -e "${CYAN}  1. Log out and log into KDE Plasma session${NC}"
+        echo -e "${CYAN}  2. Run: export DISPLAY=:0 (if using X11)${NC}"
+        echo -e "${CYAN}  3. Install missing packages: sudo pacman -S libxcb libxcb-cursor${NC}"
+        return 1
+    else
+        # Clean up test config
+        kwriteconfig5 --file test-config --group Test --key TestKey --delete 2>/dev/null || true
+        echo -e "${GREEN}✓ KDE configuration system accessible${NC}"
+    fi
 
     # Check if we're in a Wayland session and warn user
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
@@ -103,33 +150,58 @@ configure_kde() {
 
     # Clear any existing theme markers first
     echo -e "${YELLOW}Clearing previous theme markers...${NC}"
-    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null || true
+    if ! kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null; then
+        echo -e "${YELLOW}Warning: Could not clear theme markers (file may not exist yet)${NC}"
+    fi
 
-    # Ensure both Wayland and X11 sessions are available
     # Global theme
     echo -e "${YELLOW}Setting global theme...${NC}"
-    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "mcmojave"
+    if kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "mcmojave" 2>/dev/null; then
+        echo -e "${GREEN}✓ Global theme set to mcmojave${NC}"
+    else
+        echo -e "${RED}✗ Failed to set global theme${NC}"
+    fi
 
     # Set a marker for Cupertini theme detection
     echo -e "${YELLOW}Setting Cupertini theme marker...${NC}"
-    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "cupertini"
+    if kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "cupertini" 2>/dev/null; then
+        echo -e "${GREEN}✓ Theme marker set${NC}"
+    else
+        echo -e "${RED}✗ Failed to set theme marker${NC}"
+    fi
 
     # Plasma theme
     echo -e "${YELLOW}Setting plasma theme...${NC}"
-    kwriteconfig5 --file plasmarc --group Theme --key name "mcmojave"
+    if kwriteconfig5 --file plasmarc --group Theme --key name "mcmojave" 2>/dev/null; then
+        echo -e "${GREEN}✓ Plasma theme set to mcmojave${NC}"
+    else
+        echo -e "${RED}✗ Failed to set plasma theme${NC}"
+    fi
 
     # Window decoration
     echo -e "${YELLOW}Setting window decoration...${NC}"
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae"
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave"
+    if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae" 2>/dev/null && \
+       kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave" 2>/dev/null; then
+        echo -e "${GREEN}✓ Window decoration set${NC}"
+    else
+        echo -e "${RED}✗ Failed to set window decoration${NC}"
+    fi
 
     # Icons
     echo -e "${YELLOW}Setting icon theme...${NC}"
-    kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle"
+    if kwriteconfig5 --file kdeglobals --group Icons --key Theme "McMojave-circle" 2>/dev/null; then
+        echo -e "${GREEN}✓ Icon theme set to McMojave-circle${NC}"
+    else
+        echo -e "${RED}✗ Failed to set icon theme${NC}"
+    fi
 
     # Cursors
     echo -e "${YELLOW}Setting cursor theme...${NC}"
-    kwriteconfig5 --file kdeglobals --group General --key cursorTheme "McMojave-cursors"
+    if kwriteconfig5 --file kdeglobals --group General --key cursorTheme "McMojave-cursors" 2>/dev/null; then
+        echo -e "${GREEN}✓ Cursor theme set to McMojave-cursors${NC}"
+    else
+        echo -e "${RED}✗ Failed to set cursor theme${NC}"
+    fi
 
     # Fonts
     echo -e "${YELLOW}Setting fonts...${NC}"
