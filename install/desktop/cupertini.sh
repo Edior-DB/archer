@@ -106,6 +106,16 @@ install_themes() {
     if [[ "$theme_found" != "true" ]]; then
         echo -e "${YELLOW}⚠ McMojave plasma theme not found in expected locations${NC}"
         echo -e "${YELLOW}  Theme installation may have failed - will use Breeze fallback${NC}"
+
+        # List available plasma themes for debugging
+        echo -e "${CYAN}Available plasma themes:${NC}"
+        if [[ -d "/usr/share/plasma/desktoptheme" ]]; then
+            ls -1 /usr/share/plasma/desktoptheme/ | head -5
+        fi
+        if [[ -d "$HOME/.local/share/plasma/desktoptheme" ]]; then
+            echo -e "${CYAN}User themes:${NC}"
+            ls -1 "$HOME/.local/share/plasma/desktoptheme/" 2>/dev/null | head -5 || echo "None found"
+        fi
     fi
 
     echo -e "${GREEN}macOS-like themes installed!${NC}"
@@ -179,8 +189,19 @@ configure_kde() {
 
     # Global theme
     echo -e "${YELLOW}Setting global theme...${NC}"
-    if kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "mcmojave" 2>/dev/null; then
-        echo -e "${GREEN}✓ Global theme set to mcmojave${NC}"
+    # Check if McMojave look-and-feel package exists before trying to set it
+    local global_theme=""
+    if [[ -d "/usr/share/plasma/look-and-feel/mcmojave" ]] || [[ -d "$HOME/.local/share/plasma/look-and-feel/mcmojave" ]]; then
+        global_theme="mcmojave"
+    elif [[ -d "/usr/share/plasma/look-and-feel/McMojave" ]] || [[ -d "$HOME/.local/share/plasma/look-and-feel/McMojave" ]]; then
+        global_theme="McMojave"
+    else
+        global_theme="org.kde.breezedark.desktop"
+        echo -e "${YELLOW}⚠ McMojave look-and-feel not found, using breeze-dark fallback${NC}"
+    fi
+
+    if kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage "$global_theme" 2>/dev/null; then
+        echo -e "${GREEN}✓ Global theme set to $global_theme${NC}"
     else
         echo -e "${RED}✗ Failed to set global theme${NC}"
     fi
@@ -195,13 +216,19 @@ configure_kde() {
 
     # Plasma theme
     echo -e "${YELLOW}Setting plasma theme...${NC}"
-    # First try mcmojave, then fall back to McMojave, then to breeze
-    if kwriteconfig5 --file plasmarc --group Theme --key name "mcmojave" 2>/dev/null; then
-        echo -e "${GREEN}✓ Plasma theme set to mcmojave${NC}"
-    elif kwriteconfig5 --file plasmarc --group Theme --key name "McMojave" 2>/dev/null; then
-        echo -e "${GREEN}✓ Plasma theme set to McMojave${NC}"
-    elif kwriteconfig5 --file plasmarc --group Theme --key name "breeze-dark" 2>/dev/null; then
-        echo -e "${YELLOW}⚠ McMojave theme not found, using breeze-dark as fallback${NC}"
+    # Check if McMojave themes exist before trying to set them
+    local plasma_theme=""
+    if [[ -d "/usr/share/plasma/desktoptheme/mcmojave" ]] || [[ -d "$HOME/.local/share/plasma/desktoptheme/mcmojave" ]]; then
+        plasma_theme="mcmojave"
+    elif [[ -d "/usr/share/plasma/desktoptheme/McMojave" ]] || [[ -d "$HOME/.local/share/plasma/desktoptheme/McMojave" ]]; then
+        plasma_theme="McMojave"
+    else
+        plasma_theme="breeze-dark"
+        echo -e "${YELLOW}⚠ McMojave plasma theme not found, using breeze-dark fallback${NC}"
+    fi
+
+    if kwriteconfig5 --file plasmarc --group Theme --key name "$plasma_theme" 2>/dev/null; then
+        echo -e "${GREEN}✓ Plasma theme set to $plasma_theme${NC}"
     else
         echo -e "${RED}✗ Failed to set plasma theme${NC}"
     fi
