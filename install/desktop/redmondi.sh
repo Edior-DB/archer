@@ -46,7 +46,7 @@ install_qt_dependencies() {
     echo -e "${BLUE}Installing Qt/X11 dependencies...${NC}"
 
     local qt_deps=(
-        "libxcb" "libxcb-cursor" "xcb-util-cursor" "qt6-base" "qt6-svg"
+        "libxcb" "xcb-util-cursor" "qt6-base" "qt6-svg"
         "libx11" "libxext" "libxfixes" "libxi" "libxrender"
     )
 

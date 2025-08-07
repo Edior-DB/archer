@@ -93,15 +93,13 @@ install_qt_dependencies() {
     echo -e "${BLUE}Installing Qt/X11 dependencies...${NC}"
 
     local qt_deps=(
-        "libxcb" "libxcb-cursor" "xcb-util-cursor" "qt6-base" "qt6-svg"
+        "libxcb" "xcb-util-cursor" "qt6-base" "qt6-svg"
         "libx11" "libxext" "libxfixes" "libxi" "libxrender"
     )
 
     install_packages "${qt_deps[@]}"
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
-}
-
-# Configure KDE for macOS-like experience
+}# Configure KDE for macOS-like experience
 configure_kde() {
     echo -e "${BLUE}Configuring KDE for macOS-like experience...${NC}"
 
