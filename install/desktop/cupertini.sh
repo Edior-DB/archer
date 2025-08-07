@@ -85,6 +85,29 @@ install_themes() {
 
     install_aur_packages "${aur_themes[@]}"
 
+    # Verify theme installation
+    echo -e "${YELLOW}Verifying McMojave theme installation...${NC}"
+    local theme_dirs=(
+        "/usr/share/plasma/desktoptheme/mcmojave"
+        "/usr/share/plasma/desktoptheme/McMojave"
+        "$HOME/.local/share/plasma/desktoptheme/mcmojave"
+        "$HOME/.local/share/plasma/desktoptheme/McMojave"
+    )
+
+    local theme_found=false
+    for theme_dir in "${theme_dirs[@]}"; do
+        if [[ -d "$theme_dir" ]]; then
+            echo -e "${GREEN}✓ Found McMojave plasma theme in: $theme_dir${NC}"
+            theme_found=true
+            break
+        fi
+    done
+
+    if [[ "$theme_found" != "true" ]]; then
+        echo -e "${YELLOW}⚠ McMojave plasma theme not found in expected locations${NC}"
+        echo -e "${YELLOW}  Theme installation may have failed - will use Breeze fallback${NC}"
+    fi
+
     echo -e "${GREEN}macOS-like themes installed!${NC}"
 }
 
@@ -99,7 +122,9 @@ install_qt_dependencies() {
 
     install_packages "${qt_deps[@]}"
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
-}# Configure KDE for macOS-like experience
+}
+
+# Configure KDE for macOS-like experience
 configure_kde() {
     echo -e "${BLUE}Configuring KDE for macOS-like experience...${NC}"
 
@@ -170,8 +195,13 @@ configure_kde() {
 
     # Plasma theme
     echo -e "${YELLOW}Setting plasma theme...${NC}"
+    # First try mcmojave, then fall back to McMojave, then to breeze
     if kwriteconfig5 --file plasmarc --group Theme --key name "mcmojave" 2>/dev/null; then
         echo -e "${GREEN}✓ Plasma theme set to mcmojave${NC}"
+    elif kwriteconfig5 --file plasmarc --group Theme --key name "McMojave" 2>/dev/null; then
+        echo -e "${GREEN}✓ Plasma theme set to McMojave${NC}"
+    elif kwriteconfig5 --file plasmarc --group Theme --key name "breeze-dark" 2>/dev/null; then
+        echo -e "${YELLOW}⚠ McMojave theme not found, using breeze-dark as fallback${NC}"
     else
         echo -e "${RED}✗ Failed to set plasma theme${NC}"
     fi
@@ -231,39 +261,45 @@ configure_kde() {
     # Use qdbus to configure panels more reliably
     if command -v qdbus &> /dev/null; then
         echo -e "${YELLOW}Using qdbus to configure panels...${NC}"
-        # Remove existing panels
+        # Remove existing panels - use correct API
         qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
             var allPanels = panels();
             for (var i = 0; i < allPanels.length; ++i) {
                 allPanels[i].remove();
             }
-        ' 2>/dev/null || true
+        ' 2>/dev/null || echo "Could not remove existing panels"
 
-        sleep 2
+        sleep 3
 
-        # Create macOS-like dock panel
+        # Create macOS-like dock panel - simplified approach
         qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
             var panel = new Panel;
-            panel.location = "bottom";
-            panel.height = 56;
-            panel.lengthMode = Panel.FitContent;
-            panel.maximumLength = 1200;
-            panel.minimumLength = 400;
-            panel.alignment = "center";
+            if (panel) {
+                panel.location = "bottom";
+                panel.height = 56;
+                panel.lengthMode = "FitContent";
+                panel.maximumLength = 1200;
+                panel.minimumLength = 400;
+                panel.alignment = "center";
 
-            // Add dock-style launcher (Icons-only Task Manager)
-            var taskManager = panel.addWidget("org.kde.plasma.icontasks");
-            taskManager.currentConfigGroup = ["General"];
-            taskManager.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop");
-            taskManager.writeConfig("showOnlyCurrentDesktop", false);
-            taskManager.writeConfig("groupingStrategy", 0);
-            taskManager.writeConfig("iconSpacing", 1);
-            taskManager.writeConfig("maxStripes", 1);
+                // Add dock-style launcher (Icons-only Task Manager)
+                var taskManager = panel.addWidget("org.kde.plasma.icontasks");
+                if (taskManager) {
+                    taskManager.currentConfigGroup = ["General"];
+                    taskManager.writeConfig("launchers", "applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop");
+                    taskManager.writeConfig("showOnlyCurrentDesktop", false);
+                    taskManager.writeConfig("groupingStrategy", 0);
+                    taskManager.writeConfig("iconSpacing", 1);
+                    taskManager.writeConfig("maxStripes", 1);
+                }
 
-            // Optional: Add system tray (minimized)
-            var systray = panel.addWidget("org.kde.plasma.systemtray");
-            systray.currentConfigGroup = ["General"];
-            systray.writeConfig("scaleIconsToFit", true);
+                // Add system tray (minimized)
+                var systray = panel.addWidget("org.kde.plasma.systemtray");
+                if (systray) {
+                    systray.currentConfigGroup = ["General"];
+                    systray.writeConfig("scaleIconsToFit", true);
+                }
+            }
         ' 2>/dev/null || echo "qdbus panel configuration failed, using fallback"
     fi
 
@@ -525,8 +561,7 @@ main() {
         create_autostart_entry "Cupertini" "$(readlink -f "$0") --configure-only" "$0"
     fi
 
-    show_completion "Cupertini Installation Complete!" "\
-🍎 macOS-like Desktop Environment Installed:
+    local completion_msg="🍎 macOS-like Desktop Environment Installed:
 - KDE Plasma 6 with macOS-like layout and McMojave theme
 - Apple SF Pro fonts (official Apple fonts)
 - McMojave circle icons and cursors
@@ -537,17 +572,19 @@ main() {
 📋 Next Steps:
 1. REBOOT your system to ensure all changes take effect
 2. At the login screen, you'll see both X11 and Wayland session options
-3. For best macOS-like experience, choose 'Plasma (X11)' session
+3. For best macOS-like experience, choose Plasma (X11) session
 4. The desktop should now look significantly more like macOS
 5. Install office suite: ./office-tools/office-suite.sh
 6. Customize further using System Settings
 
 ⚠️  Important: If the desktop doesn't look like macOS after login:
-- Try logging out and selecting 'Plasma (X11)' instead of Wayland
-- Run this script again with: $0 --configure-only
+- Try logging out and selecting Plasma (X11) instead of Wayland
+- Run this script again with: \$0 --configure-only
 - Check System Settings > Appearance > Global Theme
 
-🎉 Welcome to your macOS-like Arch Linux desktop!"
+Welcome to your macOS-like Arch Linux desktop!"
+
+    show_completion "Cupertini Installation Complete!" "$completion_msg"
 
     wait_for_input "Press Enter to continue..."
 }

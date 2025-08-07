@@ -84,7 +84,7 @@ configure_kde_redmond() {
         echo -e "${YELLOW}Solutions to try:${NC}"
         echo -e "${CYAN}  1. Log out and log into KDE Plasma session${NC}"
         echo -e "${CYAN}  2. Run: export DISPLAY=:0 (if using X11)${NC}"
-        echo -e "${CYAN}  3. Install missing packages: sudo pacman -S libxcb libxcb-cursor${NC}"
+        echo -e "${CYAN}  3. Install missing packages: sudo pacman -S libxcb xcb-util-cursor${NC}"
         return 1
     else
         # Clean up test config
@@ -164,19 +164,21 @@ configure_kde_redmond() {
     # Panel: Windows-like taskbar
     echo -e "${YELLOW}Configuring Windows-like taskbar...${NC}"
     qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var allPanels = desktops()[0].panels;
+        var allPanels = panels();
         for (var i = 0; i < allPanels.length; ++i) {
             allPanels[i].remove();
         }
         var taskbar = new Panel;
-        taskbar.location = "bottom";
-        taskbar.height = 40;
-        taskbar.alignment = "center";
-        taskbar.addWidget("org.kde.plasma.kickoff");
-        taskbar.addWidget("org.kde.plasma.icontasks");
-        taskbar.addWidget("org.kde.plasma.systemtray");
-        taskbar.addWidget("org.kde.plasma.digitalclock");
-    '
+        if (taskbar) {
+            taskbar.location = "bottom";
+            taskbar.height = 40;
+            taskbar.alignment = "center";
+            taskbar.addWidget("org.kde.plasma.kickoff");
+            taskbar.addWidget("org.kde.plasma.icontasks");
+            taskbar.addWidget("org.kde.plasma.systemtray");
+            taskbar.addWidget("org.kde.plasma.digitalclock");
+        }
+    ' 2>/dev/null || echo "Panel configuration failed, using fallback"
     echo -e "${GREEN}KDE configuration completed!${NC}"
 }
 
@@ -208,8 +210,7 @@ main() {
         create_autostart_entry "Redmondi" "$(readlink -f "$0") --configure-only" "$0"
     fi
 
-    show_completion "Redmondi KDE Configuration Complete!" "\
-🪟 Windows-like KDE Plasma Desktop Installed:
+    local completion_msg="🪟 Windows-like KDE Plasma Desktop Installed:
 - KDE Plasma 6 with Windows-like layout
 - Breeze theme and Windows 10 icons
 - Windows-like fonts and taskbar
@@ -221,6 +222,8 @@ main() {
 4. Install office suite: ./office-tools/office-suite.sh
 
 🎉 Welcome to your Windows-like Arch Linux desktop!"
+
+    show_completion "Redmondi KDE Configuration Complete!" "$completion_msg"
 
     wait_for_input "Press Enter to continue..."
 }
