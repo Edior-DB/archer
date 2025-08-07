@@ -361,7 +361,7 @@ plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsr
 # Ensure config directory exists
 os.makedirs(config_dir, exist_ok=True)
 
-# Create macOS-like panel configuration (top menu bar + bottom dock)
+# Create macOS-like panel configuration (desktop + top menu bar + bottom dock)
 dock_config = """[ActionPlugins][0]
 RightButton;NoModifier=org.kde.contextmenu
 
@@ -370,6 +370,28 @@ RightButton;NoModifier=org.kde.contextmenu
 
 [Containments][1]
 activityId=
+formfactor=0
+immutability=1
+lastScreen=0
+location=0
+plugin=org.kde.plasma.desktop
+wallpaperplugin=org.kde.image
+
+[Containments][1][ConfigDialog]
+DialogHeight=540
+DialogWidth=720
+
+[Containments][1][General]
+ToolBoxButtonState=topright
+ToolBoxButtonX=555
+ToolBoxButtonY=30
+
+[Containments][1][Wallpaper][org.kde.image][General]
+Image=file:///home/Pictures/Wallpapers/macOS-ventura.jpg
+SlidePaths=/home/Pictures/Wallpapers,/usr/share/pixmaps
+
+[Containments][2]
+activityId=
 formfactor=2
 immutability=1
 lastScreen=0
@@ -377,54 +399,64 @@ location=3
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][1][Applets][1]
+[Containments][2][Applets][7]
 immutability=1
 plugin=org.kde.plasma.kickoff
 
-[Containments][1][Applets][1][Configuration]
+[Containments][2][Applets][7][Configuration]
 PreloadWeight=100
 
-[Containments][1][Applets][1][Configuration][General]
+[Containments][2][Applets][7][Configuration][General]
 icon=applications-system
 useCustomButtonImage=false
 
-[Containments][1][Applets][2]
+[Containments][2][Applets][8]
 immutability=1
 plugin=org.kde.plasma.appmenu
 
-[Containments][1][Applets][2][Configuration]
+[Containments][2][Applets][8][Configuration]
 PreloadWeight=100
 
-[Containments][1][Applets][2][Configuration][General]
+[Containments][2][Applets][8][Configuration][General]
 view=0
 compactView=false
 
-[Containments][1][Applets][3]
+[Containments][2][Applets][9]
 immutability=1
 plugin=org.kde.plasma.panelspacer
 
-[Containments][1][Applets][4]
+[Containments][2][Applets][10]
 immutability=1
 plugin=org.kde.plasma.systemtray
 
-[Containments][1][Applets][5]
+[Containments][2][Applets][10][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][11]
 immutability=1
 plugin=org.kde.plasma.digitalclock
 
-[Containments][1][General]
-AppletOrder=1;2;3;4;5
-
-[Containments][1][Configuration]
+[Containments][2][Applets][11][Configuration]
 PreloadWeight=100
 
-[Containments][1][Configuration][General]
+[Containments][2][Applets][11][Configuration][Appearance]
+showDate=false
+use24hFormat=0
+
+[Containments][2][General]
+AppletOrder=7;8;9;10;11
+
+[Containments][2][Configuration]
+PreloadWeight=100
+
+[Containments][2][Configuration][General]
 alignment=132
 iconSize=22
 lengthMode=2
 panelSize=28
 panelVisibility=0
 
-[Containments][2]
+[Containments][3]
 activityId=
 formfactor=2
 immutability=1
@@ -433,14 +465,14 @@ location=4
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][2][Applets][6]
+[Containments][3][Applets][12]
 immutability=1
 plugin=org.kde.plasma.icontasks
 
-[Containments][2][Applets][6][Configuration]
+[Containments][3][Applets][12][Configuration]
 PreloadWeight=100
 
-[Containments][2][Applets][6][Configuration][General]
+[Containments][3][Applets][12][Configuration][General]
 groupingStrategy=0
 iconSpacing=2
 launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop
@@ -449,13 +481,13 @@ showOnlyCurrentDesktop=false
 indicateAudioStreams=false
 fill=true
 
-[Containments][2][General]
-AppletOrder=6
+[Containments][3][General]
+AppletOrder=12
 
-[Containments][2][Configuration]
+[Containments][3][Configuration]
 PreloadWeight=100
 
-[Containments][2][Configuration][General]
+[Containments][3][Configuration][General]
 alignment=132
 iconSize=56
 lengthMode=1
@@ -472,7 +504,7 @@ screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
 with open(plasma_config, 'w') as f:
     f.write(dock_config)
 
-print("macOS-like dual panel configuration written (top menu bar + bottom dock)")
+print("macOS-like configuration written (desktop + top menu bar + bottom dock)")
 EOF
 
     echo -e "${GREEN}macOS-like dual panel layout configured!${NC}"
