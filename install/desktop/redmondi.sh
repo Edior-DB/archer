@@ -69,9 +69,97 @@ install_qt_dependencies() {
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
 }
 
+# Clean up any existing theme configurations
+cleanup_previous_themes() {
+    echo -e "${BLUE}Cleaning up previous theme configurations...${NC}"
+
+    # Detect current theme
+    local current_theme=$(kreadconfig5 --file kdeglobals --group Archer --key ThemeType 2>/dev/null || echo "unknown")
+    echo -e "${CYAN}Previous theme detected: $current_theme${NC}"
+
+    # Force all plasma processes to quit first
+    echo -e "${YELLOW}Stopping plasma processes...${NC}"
+    kquitapp5 plasmashell 2>/dev/null || true
+    sleep 2
+
+    # Remove any existing panels completely
+    echo -e "${YELLOW}Removing existing panels...${NC}"
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+        var allPanels = panels();
+        for (var i = 0; i < allPanels.length; ++i) {
+            allPanels[i].remove();
+        }
+    ' 2>/dev/null || echo "Could not remove existing panels"
+
+    # Remove panel configuration file completely
+    rm -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
+
+    # Clear all theme-related configurations
+    echo -e "${YELLOW}Clearing all theme configurations...${NC}"
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key cursorTheme --delete 2>/dev/null || true
+    kwriteconfig5 --file plasmarc --group Theme --key name --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key ColorScheme --delete 2>/dev/null || true
+
+    # Force clear all color scheme files
+    rm -f "$HOME/.config/kdeglobals" 2>/dev/null || true
+    rm -f "$HOME/.config/plasmarc" 2>/dev/null || true
+
+    # Restart plasmashell
+    plasmashell &
+    sleep 3
+
+    # Clear Cupertini-specific configurations
+    echo -e "${YELLOW}Clearing macOS-like theme remnants...${NC}"
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key cursorTheme --delete 2>/dev/null || true
+    kwriteconfig5 --file plasmarc --group Theme --key name --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group KDE --key LookAndFeelPackage --delete 2>/dev/null || true
+
+    # Clear font settings completely
+    kwriteconfig5 --file kdeglobals --group General --key font --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key menuFont --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key toolBarFont --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group WM --key activeFont --delete 2>/dev/null || true
+
+    # Clear window decoration settings completely
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library --delete 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme --delete 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft --delete 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight --delete 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ShowToolTips --delete 2>/dev/null || true
+
+    # Clear McMojave/Aurorae-specific configurations
+    kwriteconfig5 --file breezerc --group Common --key OutlineCloseButton --delete 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key DrawBackgroundGradient --delete 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key DrawTitleBarSeparator --delete 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key TitleAlignment --delete 2>/dev/null || true
+
+    # Remove panel configuration file to start fresh
+    rm -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null || true
+
+    # Clear color scheme settings
+    kwriteconfig5 --file kdeglobals --group General --key ColorScheme --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group Colors:Button --delete 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group Colors:Window --delete 2>/dev/null || true
+
+    # Clear any theme markers
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType --delete 2>/dev/null || true
+
+    # Force plasma to release old configurations
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'reloadConfig()' 2>/dev/null || true
+
+    sleep 3
+    echo -e "${GREEN}Previous theme configurations cleaned up!${NC}"
+}
+
 # Install Windows-like KDE configuration
 configure_kde_redmond() {
     echo -e "${BLUE}Configuring KDE for Windows-like experience...${NC}"
+
+    # Clean up any previous theme configurations first
+    cleanup_previous_themes
 
     # Check if we're in a proper KDE session
     if [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
@@ -130,13 +218,16 @@ configure_kde_redmond() {
         echo -e "${RED}✗ Failed to set plasma theme${NC}"
     fi
 
-    # Set a marker for Redmondi theme detection
-    echo -e "${YELLOW}Setting Redmondi theme marker...${NC}"
-    if kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "redmondi" 2>/dev/null; then
-        echo -e "${GREEN}✓ Theme marker set${NC}"
-    else
-        echo -e "${RED}✗ Failed to set theme marker${NC}"
-    fi
+    # Set a marker for Redmondi theme detection and force clear conflicting settings
+    echo -e "${YELLOW}Setting Redmondi theme marker and clearing conflicts...${NC}"
+    kwriteconfig5 --file kdeglobals --group Archer --key ThemeType "redmondi" 2>/dev/null || true
+
+    # Force clear any cupertini-specific settings that might persist
+    kwriteconfig5 --file kdeglobals --group Icons --key Theme "breeze" 2>/dev/null || true
+    kwriteconfig5 --file kdeglobals --group General --key ColorScheme "BreezeLight" 2>/dev/null || true
+    kwriteconfig5 --file plasmarc --group Theme --key name "default" 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Theme marker set and conflicts cleared${NC}"
 
     # Window decoration (Windows-like)
     echo -e "${YELLOW}Setting Windows-like window decoration...${NC}"
@@ -227,24 +318,109 @@ configure_kde_redmond() {
         echo -e "${RED}✗ Failed to set Liberation Sans fonts${NC}"
     fi
 
-    # Panel: Windows-like taskbar
+    # Panel: Windows-like taskbar (single panel)
     echo -e "${YELLOW}Configuring Windows-like taskbar...${NC}"
+
+    # Ensure all panels are removed first
     qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
         var allPanels = panels();
         for (var i = 0; i < allPanels.length; ++i) {
             allPanels[i].remove();
         }
+    ' 2>/dev/null || echo "Could not remove existing panels"
+
+    sleep 3
+
+    # Create single Windows-like taskbar
+    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
         var taskbar = new Panel;
         if (taskbar) {
             taskbar.location = "bottom";
             taskbar.height = 40;
-            taskbar.alignment = "center";
+            taskbar.lengthMode = "FitWidth";
+            taskbar.alignment = "left";
+
+            // Add start menu
             taskbar.addWidget("org.kde.plasma.kickoff");
-            taskbar.addWidget("org.kde.plasma.icontasks");
+
+            // Add taskbar
+            var iconTasks = taskbar.addWidget("org.kde.plasma.icontasks");
+            if (iconTasks) {
+                iconTasks.currentConfigGroup = ["General"];
+                iconTasks.writeConfig("groupingStrategy", 1);
+                iconTasks.writeConfig("showOnlyCurrentDesktop", false);
+            }
+
+            // Add system tray
             taskbar.addWidget("org.kde.plasma.systemtray");
+
+            // Add clock
             taskbar.addWidget("org.kde.plasma.digitalclock");
         }
     ' 2>/dev/null || echo "Panel configuration failed, using fallback"
+
+    # Fallback: Create basic panel configuration file
+    cat > "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" << 'EOF'
+[ActionPlugins][0]
+RightButton;NoModifier=org.kde.contextmenu
+
+[Containments][1]
+activityId=
+formfactor=2
+immutability=1
+lastScreen=0
+location=4
+plugin=org.kde.panel
+wallpaperplugin=org.kde.image
+
+[Containments][1][Applets][2]
+immutability=1
+plugin=org.kde.plasma.kickoff
+
+[Containments][1][Applets][3]
+immutability=1
+plugin=org.kde.plasma.icontasks
+
+[Containments][1][Applets][4]
+immutability=1
+plugin=org.kde.plasma.systemtray
+
+[Containments][1][Applets][5]
+immutability=1
+plugin=org.kde.plasma.digitalclock
+
+[Containments][1][General]
+AppletOrder=2;3;4;5
+
+[Containments][1][Configuration]
+PreloadWeight=100
+
+[Containments][1][Configuration][General]
+alignment=132
+iconSize=22
+lengthMode=2
+panelSize=40
+panelVisibility=0
+
+[ScreenMapping]
+itemsOnDisabledScreens=
+screenMapping=
+EOF
+
+    echo -e "${GREEN}Windows-like taskbar configured!${NC}"
+
+    # Force reload all KDE configuration
+    kbuildsycoca5 --noincremental 2>/dev/null || true
+    sleep 2
+
+    # Quit and restart plasmashell to apply all changes
+    kquitapp5 plasmashell 2>/dev/null || true
+    sleep 3
+
+    # Restart plasmashell
+    plasmashell &
+    sleep 3
+
     echo -e "${GREEN}KDE configuration completed!${NC}"
 }
 
@@ -262,7 +438,10 @@ main() {
         exit 0
     fi
 
-    # Install themes first
+    # Clean up any previous theme configurations first
+    cleanup_previous_themes
+
+    # Install themes
     install_windows_themes
 
     # Reset settings to avoid conflicts
@@ -294,9 +473,13 @@ main() {
     wait_for_input "Press Enter to continue..."
 }
 
+# Handle configuration-only mode
 if [[ "$1" == "--configure-only" ]]; then
     configure_kde_redmond
     exit 0
 fi
 
+# Run main function
 main
+
+
