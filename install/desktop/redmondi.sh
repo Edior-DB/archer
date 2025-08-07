@@ -70,45 +70,10 @@ install_qt_dependencies() {
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
 }
 
-# Install Windows-like KDE configuration
+# Configure KDE for Windows-like experience (configuration only - requires reboot)
 configure_kde_redmond() {
     echo -e "${BLUE}Configuring KDE for Windows-like experience...${NC}"
-
-    # Check if we're in a proper KDE session
-    if [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
-        echo -e "${RED}Error: No display server detected (neither X11 nor Wayland)${NC}"
-        echo -e "${YELLOW}This script should be run from within a KDE Plasma session.${NC}"
-        echo -e "${CYAN}Please log into KDE Plasma and run this script again.${NC}"
-        return 1
-    fi
-
-    # Check if KDE tools are available and working
-    if ! command -v kwriteconfig5 &> /dev/null; then
-        echo -e "${RED}Error: kwriteconfig5 not found. KDE Plasma may not be properly installed.${NC}"
-        return 1
-    fi
-
-    # Test if Qt/KDE commands work
-    echo -e "${BLUE}Testing KDE configuration access...${NC}"
-    if ! kwriteconfig5 --file test-config --group Test --key TestKey "test" 2>/dev/null; then
-        echo -e "${RED}Error: Cannot access KDE configuration system.${NC}"
-        echo -e "${YELLOW}Qt platform error detected. Possible causes:${NC}"
-        echo -e "${CYAN}  1. Not running in a KDE session${NC}"
-        echo -e "${CYAN}  2. Missing X11/Wayland libraries${NC}"
-        echo -e "${CYAN}  3. Session environment not properly set${NC}"
-        echo ""
-        echo -e "${YELLOW}Solutions to try:${NC}"
-        echo -e "${CYAN}  1. Log out and log into KDE Plasma session${NC}"
-        echo -e "${CYAN}  2. Run: export DISPLAY=:0 (if using X11)${NC}"
-        echo -e "${CYAN}  3. Install missing packages: sudo pacman -S libxcb xcb-util-cursor${NC}"
-        return 1
-    else
-        # Clean up test config
-        kwriteconfig5 --file test-config --group Test --key TestKey --delete 2>/dev/null || true
-        echo -e "${GREEN}✓ KDE configuration system accessible${NC}"
-    fi
-
-    sleep 3
+    echo -e "${YELLOW}⚠ This will configure the theme files only. A reboot is required to apply changes.${NC}"
 
     # Set a marker for Redmondi theme detection
     echo -e "${YELLOW}Setting Redmondi theme marker...${NC}"
@@ -185,53 +150,50 @@ configure_kde_redmond() {
         echo -e "${RED}✗ Failed to set Liberation Sans fonts${NC}"
     fi
 
-    # Panel: Windows-like taskbar (single panel)
-    echo -e "${YELLOW}Configuring Windows-like taskbar...${NC}"
+    # Panel configuration (Windows-like taskbar)
+    echo -e "${YELLOW}Writing Windows-like taskbar configuration...${NC}"
 
-    # Ensure all panels are removed first
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var allPanels = panels();
-        for (var i = 0; i < allPanels.length; ++i) {
-            allPanels[i].remove();
-        }
-    ' 2>/dev/null || echo "Could not remove existing panels"
+    # Create proper Windows-like panel configuration
+    python3 << 'EOF'
+import os
 
-    sleep 3
+# Create/modify panel configuration for Windows-like layout
+config_dir = os.path.expanduser("~/.config")
+plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
 
-    # Create single Windows-like taskbar
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var taskbar = new Panel;
-        if (taskbar) {
-            taskbar.location = "bottom";
-            taskbar.height = 40;
-            taskbar.lengthMode = "FitWidth";
-            taskbar.alignment = "left";
+# Ensure config directory exists
+os.makedirs(config_dir, exist_ok=True)
 
-            // Add start menu
-            taskbar.addWidget("org.kde.plasma.kickoff");
+# Create Windows-like panel configuration (desktop + single bottom taskbar)
+windows_config = """[ActionPlugins][0]
+RightButton;NoModifier=org.kde.contextmenu
 
-            // Add taskbar
-            var iconTasks = taskbar.addWidget("org.kde.plasma.icontasks");
-            if (iconTasks) {
-                iconTasks.currentConfigGroup = ["General"];
-                iconTasks.writeConfig("groupingStrategy", 1);
-                iconTasks.writeConfig("showOnlyCurrentDesktop", false);
-            }
-
-            // Add system tray
-            taskbar.addWidget("org.kde.plasma.systemtray");
-
-            // Add clock
-            taskbar.addWidget("org.kde.plasma.digitalclock");
-        }
-    ' 2>/dev/null || echo "Panel configuration failed, using fallback"
-
-    # Fallback: Create basic panel configuration file
-    cat > "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" << 'EOF'
-[ActionPlugins][0]
+[ActionPlugins][1]
 RightButton;NoModifier=org.kde.contextmenu
 
 [Containments][1]
+activityId=
+formfactor=0
+immutability=1
+lastScreen=0
+location=0
+plugin=org.kde.plasma.desktop
+wallpaperplugin=org.kde.image
+
+[Containments][1][ConfigDialog]
+DialogHeight=540
+DialogWidth=720
+
+[Containments][1][General]
+ToolBoxButtonState=topright
+ToolBoxButtonX=555
+ToolBoxButtonY=30
+
+[Containments][1][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/wallpapers/Flow/contents/images/2560x1600.png
+SlidePaths=/usr/share/wallpapers
+
+[Containments][2]
 activityId=
 formfactor=2
 immutability=1
@@ -240,44 +202,95 @@ location=4
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][1][Applets][2]
+[Containments][2][Applets][3]
 immutability=1
 plugin=org.kde.plasma.kickoff
 
-[Containments][1][Applets][3]
+[Containments][2][Applets][3][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][3][Configuration][General]
+icon=start-here-kde
+useCustomButtonImage=false
+
+[Containments][2][Applets][4]
 immutability=1
 plugin=org.kde.plasma.icontasks
 
-[Containments][1][Applets][4]
+[Containments][2][Applets][4][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][4][Configuration][General]
+groupingStrategy=1
+iconSpacing=2
+launchers=applications:systemsettings.desktop,applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop
+maxStripes=1
+showOnlyCurrentDesktop=false
+
+[Containments][2][Applets][5]
 immutability=1
 plugin=org.kde.plasma.systemtray
 
-[Containments][1][Applets][5]
+[Containments][2][Applets][5][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][6]
 immutability=1
 plugin=org.kde.plasma.digitalclock
 
-[Containments][1][General]
-AppletOrder=2;3;4;5
-
-[Containments][1][Configuration]
+[Containments][2][Applets][6][Configuration]
 PreloadWeight=100
 
-[Containments][1][Configuration][General]
+[Containments][2][Applets][6][Configuration][Appearance]
+showDate=true
+use24hFormat=2
+
+[Containments][2][General]
+AppletOrder=3;4;5;6
+
+[Containments][2][Configuration]
+PreloadWeight=100
+
+[Containments][2][Configuration][General]
 alignment=132
-iconSize=22
+iconSize=24
 lengthMode=2
 panelSize=40
 panelVisibility=0
+floating=0
 
 [ScreenMapping]
 itemsOnDisabledScreens=
-screenMapping=
+screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
+"""
+
+with open(plasma_config, 'w') as f:
+    f.write(windows_config)
+
+print("Windows-like configuration written (desktop + single bottom taskbar)")
 EOF
 
-    echo -e "${GREEN}Windows-like taskbar configured!${NC}"
+    echo -e "${GREEN}Windows-like taskbar configuration written!${NC}"
 
-    echo -e "${GREEN}KDE configuration completed!${NC}"
-    echo -e "${YELLOW}Note: Theme changes will take full effect after a reboot.${NC}"
+    # Desktop effects configuration (for smooth Windows-like experience)
+    echo -e "${YELLOW}Writing desktop effects configuration...${NC}"
+    kwriteconfig5 --file kwinrc --group Compositing --key Enabled "true" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Compositing --key AnimationSpeed "3" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Plugins --key slideEnabled "true" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Plugins --key kwin4_effect_fadeEnabled "true" 2>/dev/null || true
+
+    # Window behavior configuration (Windows-like)
+    echo -e "${YELLOW}Writing window behavior configuration...${NC}"
+    kwriteconfig5 --file kwinrc --group Windows --key FocusPolicy "ClickToFocus" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group MouseBindings --key CommandAllKey "Meta" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Windows --key BorderlessMaximizedWindows "false" 2>/dev/null || true
+
+    # Set Windows-like wallpaper configuration
+    echo -e "${YELLOW}Writing Windows-like wallpaper configuration...${NC}"
+    kwriteconfig5 --file kdeglobals --group Wallpaper --key Image "/usr/share/wallpapers/Flow/contents/images/2560x1600.png" 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Redmondi KDE configuration completed!${NC}"
+    echo -e "${YELLOW}⚠ All changes will take effect after reboot${NC}"
 }
 
 main() {
@@ -294,27 +307,26 @@ main() {
         exit 0
     fi
 
+    # Update system
+    update_system
+
+    # Reset settings to avoid conflicts
+    reset_kde_settings
+
     # Install Qt dependencies to prevent display errors
     install_qt_dependencies
 
     # Install themes
     install_windows_themes
 
-    # Reset settings to avoid conflicts
-    reset_kde_settings
+    # Configure (theme files only - no dynamic application)
+    configure_kde_redmond
 
-    # Only configure if in KDE session
-    if [[ "$XDG_CURRENT_DESKTOP" == "KDE" ]] && [[ -n "$DISPLAY" ]]; then
-        configure_kde_redmond
-    else
-        echo -e "${YELLOW}Configuration will be applied after login to KDE.${NC}"
-        create_autostart_entry "Redmondi" "$(readlink -f "$0") --configure-only" "$0"
-    fi
-
-    local completion_msg="🪟 Windows-like KDE Plasma Desktop Installed:
+    local completion_msg="🪟 Windows-like KDE Plasma Desktop Configured:
 - KDE Plasma 6 with Windows-like layout
 - Breeze theme and Windows 10 icons
-- Windows-like fonts and taskbar
+- Liberation Sans fonts and Windows-like taskbar
+- Single bottom taskbar with Windows-style widgets
 
 📋 Next Steps:
 1. Reboot to apply all theme changes completely
@@ -342,12 +354,6 @@ main() {
         wait_for_input "Press Enter to continue..."
     fi
 }
-
-# Handle configuration-only mode
-if [[ "$1" == "--configure-only" ]]; then
-    configure_kde_redmond
-    exit 0
-fi
 
 # Run main function
 main
