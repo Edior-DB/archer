@@ -52,45 +52,10 @@ install_qt_dependencies() {
     echo -e "${GREEN}Qt/X11 dependencies installed!${NC}"
 }
 
-# Configure KDE for default vanilla experience
+# Configure KDE for vanilla (default) experience (configuration only - requires reboot)
 configure_kde_vanilla() {
-    echo -e "${BLUE}Configuring KDE for default vanilla experience...${NC}"
-
-    # Check if we're in a proper KDE session
-    if [[ -z "$DISPLAY" ]] && [[ -z "$WAYLAND_DISPLAY" ]]; then
-        echo -e "${RED}Error: No display server detected (neither X11 nor Wayland)${NC}"
-        echo -e "${YELLOW}This script should be run from within a KDE Plasma session.${NC}"
-        echo -e "${CYAN}Please log into KDE Plasma and run this script again.${NC}"
-        return 1
-    fi
-
-    # Check if KDE tools are available and working
-    if ! command -v kwriteconfig5 &> /dev/null; then
-        echo -e "${RED}Error: kwriteconfig5 not found. KDE Plasma may not be properly installed.${NC}"
-        return 1
-    fi
-
-    # Test if Qt/KDE commands work
-    echo -e "${BLUE}Testing KDE configuration access...${NC}"
-    if ! kwriteconfig5 --file test-config --group Test --key TestKey "test" 2>/dev/null; then
-        echo -e "${RED}Error: Cannot access KDE configuration system.${NC}"
-        echo -e "${YELLOW}Qt platform error detected. Possible causes:${NC}"
-        echo -e "${CYAN}  1. Not running in a KDE session${NC}"
-        echo -e "${CYAN}  2. Missing X11/Wayland libraries${NC}"
-        echo -e "${CYAN}  3. Session environment not properly set${NC}"
-        echo ""
-        echo -e "${YELLOW}Solutions to try:${NC}"
-        echo -e "${CYAN}  1. Log out and log into KDE Plasma session${NC}"
-        echo -e "${CYAN}  2. Run: export DISPLAY=:0 (if using X11)${NC}"
-        echo -e "${CYAN}  3. Install missing packages: sudo pacman -S libxcb xcb-util-cursor${NC}"
-        return 1
-    else
-        # Clean up test config
-        kwriteconfig5 --file test-config --group Test --key TestKey --delete 2>/dev/null || true
-        echo -e "${GREEN}✓ KDE configuration system accessible${NC}"
-    fi
-
-    sleep 3
+    echo -e "${BLUE}Configuring KDE for vanilla (default) experience...${NC}"
+    echo -e "${YELLOW}⚠ This will configure the theme files only. A reboot is required to apply changes.${NC}"
 
     # Set a marker for Vanilla theme detection
     echo -e "${YELLOW}Setting Vanilla theme marker...${NC}"
@@ -164,59 +129,50 @@ configure_kde_vanilla() {
         echo -e "${RED}✗ Failed to set default fonts${NC}"
     fi
 
-    # Panel: Default KDE layout (single bottom panel)
-    echo -e "${YELLOW}Configuring default KDE panel layout...${NC}"
+    # Panel configuration (default KDE layout - single bottom panel)
+    echo -e "${YELLOW}Writing default KDE panel configuration...${NC}"
 
-    # Remove any existing panels first
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var allPanels = panels();
-        for (var i = 0; i < allPanels.length; ++i) {
-            allPanels[i].remove();
-        }
-    ' 2>/dev/null || echo "Could not remove existing panels"
+    # Create proper default KDE panel configuration
+    python3 << 'EOF'
+import os
 
-    sleep 3
+# Create/modify panel configuration for default KDE layout
+config_dir = os.path.expanduser("~/.config")
+plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
 
-    # Create default single bottom panel
-    qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
-        var panel = new Panel;
-        if (panel) {
-            panel.location = "bottom";
-            panel.height = 44;
-            panel.lengthMode = "FitWidth";
-            panel.alignment = "left";
+# Ensure config directory exists
+os.makedirs(config_dir, exist_ok=True)
 
-            // Add application launcher
-            panel.addWidget("org.kde.plasma.kickoff");
+# Create default KDE panel configuration (desktop + single bottom taskbar)
+default_config = """[ActionPlugins][0]
+RightButton;NoModifier=org.kde.contextmenu
 
-            // Add pager (virtual desktop indicator)
-            panel.addWidget("org.kde.plasma.pager");
-
-            // Add taskbar
-            var iconTasks = panel.addWidget("org.kde.plasma.icontasks");
-            if (iconTasks) {
-                iconTasks.currentConfigGroup = ["General"];
-                iconTasks.writeConfig("groupingStrategy", 1);
-                iconTasks.writeConfig("showOnlyCurrentDesktop", false);
-            }
-
-            // Add system tray
-            panel.addWidget("org.kde.plasma.systemtray");
-
-            // Add clock
-            panel.addWidget("org.kde.plasma.digitalclock");
-
-            // Add show desktop button
-            panel.addWidget("org.kde.plasma.showdesktop");
-        }
-    ' 2>/dev/null || echo "Panel configuration failed, using fallback"
-
-    # Fallback: Create basic default panel configuration file
-    cat > "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" << 'EOF'
-[ActionPlugins][0]
+[ActionPlugins][1]
 RightButton;NoModifier=org.kde.contextmenu
 
 [Containments][1]
+activityId=
+formfactor=0
+immutability=1
+lastScreen=0
+location=0
+plugin=org.kde.plasma.desktop
+wallpaperplugin=org.kde.image
+
+[Containments][1][ConfigDialog]
+DialogHeight=540
+DialogWidth=720
+
+[Containments][1][General]
+ToolBoxButtonState=topright
+ToolBoxButtonX=555
+ToolBoxButtonY=30
+
+[Containments][1][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/wallpapers/Next/contents/images/2560x1600.png
+SlidePaths=/usr/share/wallpapers
+
+[Containments][2]
 activityId=
 formfactor=2
 immutability=1
@@ -225,49 +181,89 @@ location=4
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][1][Applets][2]
+[Containments][2][Applets][3]
 immutability=1
 plugin=org.kde.plasma.kickoff
 
-[Containments][1][Applets][3]
+[Containments][2][Applets][3][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][3][Configuration][General]
+icon=start-here-kde
+useCustomButtonImage=false
+
+[Containments][2][Applets][4]
 immutability=1
 plugin=org.kde.plasma.pager
 
-[Containments][1][Applets][4]
+[Containments][2][Applets][4][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][5]
 immutability=1
 plugin=org.kde.plasma.icontasks
 
-[Containments][1][Applets][5]
+[Containments][2][Applets][5][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][5][Configuration][General]
+groupingStrategy=1
+iconSpacing=2
+launchers=applications:systemsettings.desktop,applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop
+maxStripes=1
+showOnlyCurrentDesktop=false
+
+[Containments][2][Applets][6]
 immutability=1
 plugin=org.kde.plasma.systemtray
 
-[Containments][1][Applets][6]
+[Containments][2][Applets][6][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][7]
 immutability=1
 plugin=org.kde.plasma.digitalclock
 
-[Containments][1][Applets][7]
+[Containments][2][Applets][7][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][7][Configuration][Appearance]
+showDate=true
+use24hFormat=2
+
+[Containments][2][Applets][8]
 immutability=1
 plugin=org.kde.plasma.showdesktop
 
-[Containments][1][General]
-AppletOrder=2;3;4;5;6;7
-
-[Containments][1][Configuration]
+[Containments][2][Applets][8][Configuration]
 PreloadWeight=100
 
-[Containments][1][Configuration][General]
+[Containments][2][General]
+AppletOrder=3;4;5;6;7;8
+
+[Containments][2][Configuration]
+PreloadWeight=100
+
+[Containments][2][Configuration][General]
 alignment=132
 iconSize=22
 lengthMode=2
 panelSize=44
 panelVisibility=0
+floating=0
 
 [ScreenMapping]
 itemsOnDisabledScreens=
-screenMapping=
+screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
+"""
+
+with open(plasma_config, 'w') as f:
+    f.write(default_config)
+
+print("Default KDE configuration written (desktop + single bottom taskbar)")
 EOF
 
-    echo -e "${GREEN}Default KDE panel layout configured!${NC}"
+    echo -e "${GREEN}Default KDE panel configuration written!${NC}"
 
     # Reset desktop effects to defaults
     echo -e "${YELLOW}Resetting desktop effects to defaults...${NC}"
@@ -282,13 +278,13 @@ EOF
     kwriteconfig5 --file kwinrc --group MouseBindings --key CommandAllKey "Meta"
     kwriteconfig5 --file kwinrc --group Windows --key BorderlessMaximizedWindows "false"
 
-    # Reset to default wallpaper
-    echo -e "${YELLOW}Setting default wallpaper...${NC}"
-    plasma-apply-wallpaperimage "/usr/share/wallpapers/Next/contents/images/2560x1600.png" 2>/dev/null || \
-    plasma-apply-wallpaperimage "/usr/share/wallpapers/Flow/contents/images/2560x1600.png" 2>/dev/null || true
+    # Reset to default wallpaper configuration
+    echo -e "${YELLOW}Writing default wallpaper configuration...${NC}"
+    kwriteconfig5 --file kdeglobals --group Wallpaper --key Image "/usr/share/wallpapers/Next/contents/images/2560x1600.png" 2>/dev/null || \
+    kwriteconfig5 --file kdeglobals --group Wallpaper --key Image "/usr/share/wallpapers/Flow/contents/images/2560x1600.png" 2>/dev/null || true
 
-    echo -e "${GREEN}KDE configuration completed!${NC}"
-    echo -e "${YELLOW}Note: Theme changes will take full effect after a reboot.${NC}"
+    echo -e "${GREEN}✓ Vanilla KDE configuration completed!${NC}"
+    echo -e "${YELLOW}⚠ All changes will take effect after reboot${NC}"
 }
 
 main() {
@@ -305,27 +301,26 @@ main() {
         exit 0
     fi
 
+    # Update system
+    update_system
+
+    # Reset settings to clean state
+    reset_kde_settings
+
     # Install Qt dependencies to prevent display errors
     install_qt_dependencies
 
     # Install default themes
     install_default_themes
 
-    # Reset settings to clean state
-    reset_kde_settings
-
-    # Only configure if in KDE session
-    if [[ "$XDG_CURRENT_DESKTOP" == "KDE" ]] && [[ -n "$DISPLAY" ]]; then
-        configure_kde_vanilla
-    else
-        echo -e "${YELLOW}Configuration will be applied after login to KDE.${NC}"
-        create_autostart_entry "Vanilla" "$(readlink -f "$0") --configure-only" "$0"
-    fi
+    # Configure (theme files only - no dynamic application)
+    configure_kde_vanilla
 
     local completion_msg="🐧 Default KDE Plasma Desktop Configured:
 - Clean vanilla KDE Plasma 6 layout
 - Default Breeze theme and icons
 - Standard KDE fonts and panel layout
+- Single bottom taskbar with standard widgets
 
 📋 Next Steps:
 1. Reboot to apply all theme changes completely
@@ -354,12 +349,6 @@ main() {
         wait_for_input "Press Enter to continue..."
     fi
 }
-
-# Handle configuration-only mode
-if [[ "$1" == "--configure-only" ]]; then
-    configure_kde_vanilla
-    exit 0
-fi
 
 # Run main function
 main
