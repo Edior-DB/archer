@@ -298,6 +298,44 @@ configure_kde() {
 
         sleep 3
 
+        # Create macOS-like top panel (menu bar)
+        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+            var topPanel = new Panel;
+            if (topPanel) {
+                topPanel.location = "top";
+                topPanel.height = 28;
+                topPanel.lengthMode = "FitWidth";
+                topPanel.alignment = "left";
+
+                // Add global menu (application menus)
+                var globalMenu = topPanel.addWidget("org.kde.plasma.appmenu");
+                if (globalMenu) {
+                    globalMenu.currentConfigGroup = ["General"];
+                    globalMenu.writeConfig("view", 0);
+                }
+
+                // Add spacer to push items to right
+                topPanel.addWidget("org.kde.plasma.panelspacer");
+
+                // Add system indicators
+                var systemTray = topPanel.addWidget("org.kde.plasma.systemtray");
+                if (systemTray) {
+                    systemTray.currentConfigGroup = ["General"];
+                    systemTray.writeConfig("scaleIconsToFit", true);
+                }
+
+                // Add digital clock
+                var clock = topPanel.addWidget("org.kde.plasma.digitalclock");
+                if (clock) {
+                    clock.currentConfigGroup = ["Appearance"];
+                    clock.writeConfig("showDate", false);
+                    clock.writeConfig("use24hFormat", 0);
+                }
+            }
+        ' 2>/dev/null || echo "Could not create top panel"
+
+        sleep 2
+
         # Create macOS-like dock panel - simplified approach
         qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
             var panel = new Panel;
@@ -320,12 +358,7 @@ configure_kde() {
                     taskManager.writeConfig("maxStripes", 1);
                 }
 
-                // Add system tray (minimized)
-                var systray = panel.addWidget("org.kde.plasma.systemtray");
-                if (systray) {
-                    systray.currentConfigGroup = ["General"];
-                    systray.writeConfig("scaleIconsToFit", true);
-                }
+                // No system tray in dock (moved to top panel)
             }
         ' 2>/dev/null || echo "qdbus panel configuration failed, using fallback"
     fi
@@ -343,7 +376,7 @@ plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsr
 # Ensure config directory exists
 os.makedirs(config_dir, exist_ok=True)
 
-# Create macOS-like dock configuration
+# Create macOS-like panel configuration (top menu bar + bottom dock)
 dock_config = """[ActionPlugins][0]
 RightButton;NoModifier=org.kde.contextmenu
 
@@ -355,35 +388,69 @@ activityId=
 formfactor=2
 immutability=1
 lastScreen=0
-location=4
+location=3
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
 [Containments][1][Applets][2]
 immutability=1
-plugin=org.kde.plasma.icontasks
+plugin=org.kde.plasma.appmenu
 
-[Containments][1][Applets][2][Configuration]
+[Containments][1][Applets][3]
+immutability=1
+plugin=org.kde.plasma.panelspacer
+
+[Containments][1][Applets][4]
+immutability=1
+plugin=org.kde.plasma.systemtray
+
+[Containments][1][Applets][5]
+immutability=1
+plugin=org.kde.plasma.digitalclock
+
+[Containments][1][General]
+AppletOrder=2;3;4;5
+
+[Containments][1][Configuration]
 PreloadWeight=100
 
-[Containments][1][Applets][2][Configuration][General]
+[Containments][1][Configuration][General]
+alignment=132
+iconSize=22
+lengthMode=2
+panelSize=28
+panelVisibility=0
+
+[Containments][2]
+activityId=
+formfactor=2
+immutability=1
+lastScreen=0
+location=4
+plugin=org.kde.panel
+wallpaperplugin=org.kde.image
+
+[Containments][2][Applets][6]
+immutability=1
+plugin=org.kde.plasma.icontasks
+
+[Containments][2][Applets][6][Configuration]
+PreloadWeight=100
+
+[Containments][2][Applets][6][Configuration][General]
 groupingStrategy=0
 iconSpacing=1
 launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop
 maxStripes=1
 showOnlyCurrentDesktop=false
 
-[Containments][1][General]
-AppletOrder=2
+[Containments][2][General]
+AppletOrder=6
 
-[Containments][1][ConfigDialog]
-DialogHeight=84
-DialogWidth=1920
-
-[Containments][1][Configuration]
+[Containments][2][Configuration]
 PreloadWeight=100
 
-[Containments][1][Configuration][General]
+[Containments][2][Configuration][General]
 alignment=132
 iconSize=48
 lengthMode=1
@@ -400,10 +467,10 @@ screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
 with open(plasma_config, 'w') as f:
     f.write(dock_config)
 
-print("macOS-like dock configuration written")
+print("macOS-like dual panel configuration written (top menu bar + bottom dock)")
 EOF
 
-    echo -e "${GREEN}macOS-like dock configured!${NC}"
+    echo -e "${GREEN}macOS-like dual panel layout configured!${NC}"
 
     # Desktop effects (for smooth animations like macOS)
     echo -e "${YELLOW}Configuring desktop effects...${NC}"
