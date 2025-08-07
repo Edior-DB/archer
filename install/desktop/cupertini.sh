@@ -85,6 +85,17 @@ install_themes() {
 
     install_aur_packages "${aur_themes[@]}"
 
+    # Try to install additional macOS-like window decorations
+    echo -e "${YELLOW}Installing additional macOS-like window decorations...${NC}"
+    local additional_decorations=(
+        "lightly-git" "sierra-breeze-enhanced-git"
+    )
+
+    for decoration in "${additional_decorations[@]}"; do
+        echo -e "${CYAN}Attempting to install $decoration...${NC}"
+        install_aur_packages "$decoration" || echo -e "${YELLOW}⚠ Could not install $decoration (may not be available)${NC}"
+    done
+
     # Verify theme installation
     echo -e "${YELLOW}Verifying McMojave theme installation...${NC}"
     local theme_dirs=(
@@ -233,11 +244,47 @@ configure_kde() {
         echo -e "${RED}✗ Failed to set plasma theme${NC}"
     fi
 
-    # Window decoration
-    echo -e "${YELLOW}Setting window decoration...${NC}"
-    if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae" 2>/dev/null && \
-       kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave" 2>/dev/null; then
-        echo -e "${GREEN}✓ Window decoration set${NC}"
+    # Window decoration (macOS-like)
+    echo -e "${YELLOW}Setting macOS-like window decoration...${NC}"
+
+    # First try McMojave window decoration if available
+    local window_decoration_set=false
+
+    # Check if McMojave window decoration exists
+    if [[ -d "/usr/share/aurorae/themes/mcmojave" ]] || [[ -d "$HOME/.local/share/aurorae/themes/mcmojave" ]]; then
+        echo -e "${CYAN}Using McMojave window decoration...${NC}"
+        if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.kwin.aurorae" 2>/dev/null && \
+           kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "__aurorae__svg__mcmojave" 2>/dev/null; then
+            window_decoration_set=true
+            echo -e "${GREEN}✓ McMojave window decoration set${NC}"
+        fi
+    fi
+
+    # Fallback to Breeze with macOS-like configuration
+    if [[ "$window_decoration_set" != "true" ]]; then
+        echo -e "${YELLOW}McMojave decoration not found, using Breeze with macOS-like settings...${NC}"
+        if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null && \
+           kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze" 2>/dev/null; then
+            echo -e "${GREEN}✓ Breeze window decoration set${NC}"
+            window_decoration_set=true
+        fi
+    fi
+
+    # Configure macOS-like window button layout (close, minimize, maximize on left)
+    echo -e "${YELLOW}Setting macOS-like window button layout...${NC}"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft "XIA" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "H" 2>/dev/null || true
+
+    # Configure window behavior for macOS-like experience
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ShowToolTips "false" 2>/dev/null || true
+
+    # Set window decoration colors to match macOS
+    kwriteconfig5 --file breezerc --group Common --key OutlineCloseButton "true" 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key DrawBackgroundGradient "false" 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key DrawTitleBarSeparator "false" 2>/dev/null || true
+
+    if [[ "$window_decoration_set" == "true" ]]; then
+        echo -e "${GREEN}✓ macOS-like window decoration configured${NC}"
     else
         echo -e "${RED}✗ Failed to set window decoration${NC}"
     fi

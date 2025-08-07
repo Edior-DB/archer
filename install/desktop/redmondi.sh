@@ -23,6 +23,17 @@ install_windows_themes() {
     echo -e "${YELLOW}Installing Windows 10 icon theme...${NC}"
     install_aur_packages windows10-icon-theme
 
+    # Try to install Windows-like window decorations
+    echo -e "${YELLOW}Installing Windows-like window decorations...${NC}"
+    local windows_decorations=(
+        "lightly-git" "breeze-enhanced-git"
+    )
+
+    for decoration in "${windows_decorations[@]}"; do
+        echo -e "${CYAN}Attempting to install $decoration...${NC}"
+        install_aur_packages "$decoration" || echo -e "${YELLOW}⚠ Could not install $decoration (may not be available)${NC}"
+    done
+
     echo -e "${GREEN}Windows-like themes installed!${NC}"
 }
 
@@ -123,18 +134,40 @@ configure_kde_redmond() {
         echo -e "${RED}✗ Failed to set theme marker${NC}"
     fi
 
-    # Window decoration - set to Breeze (Windows-like)
+    # Window decoration (Windows-like)
     echo -e "${YELLOW}Setting Windows-like window decoration...${NC}"
+
+    # Use Breeze decoration for Windows-like experience
     if kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null && \
        kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key theme "Breeze" 2>/dev/null; then
-        echo -e "${GREEN}✓ Window decoration set to Breeze${NC}"
+        echo -e "${GREEN}✓ Breeze window decoration set${NC}"
     else
         echo -e "${RED}✗ Failed to set window decoration${NC}"
     fi
 
-    # Reset any McMojave window decoration settings
-    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft "" 2>/dev/null || true
+    # Configure Windows-like window button layout (minimize, maximize, close on right)
+    echo -e "${YELLOW}Setting Windows-like window button layout...${NC}"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnLeft "M" 2>/dev/null || true
     kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ButtonsOnRight "IAX" 2>/dev/null || true
+
+    # Configure window behavior for Windows-like experience
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key ShowToolTips "true" 2>/dev/null || true
+
+    # Set Breeze decoration settings for Windows-like appearance
+    kwriteconfig5 --file breezerc --group Common --key OutlineCloseButton "false" 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key DrawBackgroundGradient "true" 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key DrawTitleBarSeparator "true" 2>/dev/null || true
+    kwriteconfig5 --file breezerc --group Windeco --key TitleAlignment "1" 2>/dev/null || true  # Left alignment like Windows
+
+    # Configure window shadows for Windows-like effect
+    kwriteconfig5 --file kwinrc --group Effect-kwin4_effect_shadow --key ShadowColor "0,0,0" 2>/dev/null || true
+    kwriteconfig5 --file kwinrc --group Effect-kwin4_effect_shadow --key ShadowStrength "25" 2>/dev/null || true
+
+    # Clear any McMojave window decoration settings
+    echo -e "${YELLOW}Clearing macOS-specific window settings...${NC}"
+    kwriteconfig5 --file kwinrc --group org.kde.kdecoration2 --key library "org.kde.breeze.decoration" 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Windows-like window decoration configured${NC}"
 
     echo -e "${YELLOW}Setting Windows 10 icon theme...${NC}"
     if kwriteconfig5 --file kdeglobals --group Icons --key Theme "Windows10" 2>/dev/null; then
