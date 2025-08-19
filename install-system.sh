@@ -41,51 +41,46 @@ background_checks() {
     fi
 }
 
-# Enhanced selection function using gum if available
+# Classic select_option (arrow keys, no gum)
 select_option() {
     local options=("$@")
+    local num_options=${#options[@]}
+    local selected=0
+    local last_selected=-1
 
-    if command -v gum >/dev/null 2>&1; then
-        gum choose "${options[@]}"
-    else
-        # Fallback to arrow navigation
-        local num_options=${#options[@]}
-        local selected=0
-        local last_selected=-1
+    while true; do
+        # Move cursor up to the start of the menu
+        if [ $last_selected -ne -1 ]; then
+            echo -ne "\033[${num_options}A"
+        fi
 
-        while true; do
-            if [ $last_selected -ne -1 ]; then
-                echo -ne "\033[${num_options}A"
+        if [ $last_selected -eq -1 ]; then
+            echo "Please select an option using the arrow keys and Enter:"
+        fi
+        for i in "${!options[@]}"; do
+            if [ "$i" -eq $selected ]; then
+                echo "> ${options[$i]}"
+            else
+                echo "  ${options[$i]}"
             fi
-
-            if [ $last_selected -eq -1 ]; then
-                echo "Please select an option using the arrow keys and Enter:"
-            fi
-            for i in "${!options[@]}"; do
-                if [ "$i" -eq $selected ]; then
-                    echo "> ${options[$i]}"
-                else
-                    echo "  ${options[$i]}"
-                fi
-            done
-
-            last_selected=$selected
-
-            read -rsn1 key
-            case $key in
-                $'\x1b')
-                    read -rsn2 -t 0.1 key
-                    case $key in
-                        '[A') ((selected--)); [ $selected -lt 0 ] && selected=$((num_options - 1));;
-                        '[B') ((selected++)); [ $selected -ge $num_options ] && selected=0;;
-                    esac
-                    ;;
-                '') break;;
-            esac
         done
 
-        echo "${options[$selected]}"
-    fi
+        last_selected=$selected
+
+        # Read user input
+        read -rsn1 key
+        case $key in
+            $'\x1b') # ESC sequence
+                read -rsn2 -t 0.1 key
+                case $key in
+                    '[A') ((selected--)); [ $selected -lt 0 ] && selected=$((num_options - 1));;
+                    '[B') ((selected++)); [ $selected -ge $num_options ] && selected=0;;
+                esac
+                ;;
+            '') break;;
+        esac
+    done
+    echo ${options[$selected]}
 }
 
 
@@ -198,16 +193,11 @@ userinfo_collection() {
 
     # Username
     while true; do
-        echo -e "${CYAN}Enter your username:${NC}"
-        username=$(gum input --placeholder "e.g., john, alice, user123")
-
-        # Check if username is empty
+        read -rp "${CYAN}Enter your username: ${NC}" username
         if [[ -z "$username" ]]; then
             echo -e "${RED}ERROR! Username cannot be empty.${NC}"
             continue
         fi
-
-        # Check username format and length
         if [[ "$username" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*$ ]] && [[ ${#username} -le 32 ]]; then
             break
         fi
@@ -218,11 +208,8 @@ userinfo_collection() {
 
     # Password
     while true; do
-        echo -e "${CYAN}Enter your password:${NC}"
-        PASSWORD1=$(gum input --password --placeholder "Password...")
-        echo -e "${CYAN}Re-enter your password:${NC}"
-        PASSWORD2=$(gum input --password --placeholder "Confirm password...")
-
+        read -rsp "${CYAN}Enter your password: ${NC}" PASSWORD1; echo
+        read -rsp "${CYAN}Re-enter your password: ${NC}" PASSWORD2; echo
         if [[ "$PASSWORD1" == "$PASSWORD2" ]]; then
             break
         else
@@ -233,9 +220,7 @@ userinfo_collection() {
 
     # Hostname
     while true; do
-        echo -e "${CYAN}Enter machine name (hostname):${NC}"
-        name_of_machine=$(gum input --placeholder "e.g., archlinux, mycomputer, workstation")
-
+        read -rp "${CYAN}Enter machine name (hostname): ${NC}" name_of_machine
         if [[ -n "$name_of_machine" ]] && [[ ${#name_of_machine} -le 63 ]]; then
             break
         fi
@@ -249,16 +234,15 @@ filesystem_selection() {
     echo -e "${CYAN}========== Filesystem Selection ===========${NC}"
     echo -e "${CYAN}Please select your file system for both boot and root${NC}"
     options=("btrfs" "ext4" "luks" "exit")
-    selection=$(select_option "${options[@]}")
-
-    case "$selection" in
-        "btrfs") export FS=btrfs;;
-        "ext4") export FS=ext4;;
-        "luks")
+    select_option "${options[@]}"
+    case $? in
+        0) export FS=btrfs;;
+        1) export FS=ext4;;
+        2)
             set_luks_password
             export FS=luks
             ;;
-        "exit") exit 0;;
+        3) exit 0;;
         *) echo -e "${RED}Invalid selection${NC}"; filesystem_selection;;
     esac
 }
@@ -266,11 +250,8 @@ filesystem_selection() {
 # Set LUKS password
 set_luks_password() {
     while true; do
-        echo -e "${CYAN}Enter LUKS encryption password:${NC}"
-        password1=$(gum input --password --placeholder "Strong password for disk encryption...")
-        echo -e "${CYAN}Re-enter LUKS encryption password:${NC}"
-        password2=$(gum input --password --placeholder "Confirm encryption password...")
-
+        read -rsp "${CYAN}Enter LUKS encryption password: ${NC}" password1; echo
+        read -rsp "${CYAN}Re-enter LUKS encryption password: ${NC}" password2; echo
         if [[ "$password1" == "$password2" ]]; then
             export LUKS_PASSWORD="$password1"
             break
@@ -285,13 +266,12 @@ timezone_selection() {
     echo -e "${CYAN}========== Timezone Configuration ===========${NC}"
     time_zone="$(curl --fail https://ipapi.co/timezone 2>/dev/null || echo 'UTC')"
     echo -e "${CYAN}System detected your timezone to be '${time_zone}'${NC}"
-
-    if gum confirm "Is this timezone correct: ${time_zone}?"; then
-        export TIMEZONE=$time_zone
-    else
-        echo -e "${CYAN}Enter your timezone:${NC}"
-        new_timezone=$(gum input --placeholder "e.g., Europe/London, America/New_York, Asia/Tokyo")
+    read -rp "Is this timezone correct? (Y/n): " tz_confirm
+    if [[ "$tz_confirm" =~ ^[Nn] ]]; then
+        read -rp "${CYAN}Enter your timezone (e.g., Europe/London, America/New_York, Asia/Tokyo): ${NC}" new_timezone
         export TIMEZONE=$new_timezone
+    else
+        export TIMEZONE=$time_zone
     fi
     echo -e "${GREEN}Timezone set to: ${TIMEZONE}${NC}"
 }
@@ -300,7 +280,8 @@ timezone_selection() {
 keymap_selection() {
     echo -e "${CYAN}========== Keyboard Layout ===========${NC}"
     options=(us by ca cf cz de dk es et fa fi fr gr hu il it lt lv mk nl no pl ro ru se sg ua uk)
-    keymap=$(select_option "${options[@]}")
+    select_option "${options[@]}"
+    keymap=${options[$?]}
     echo -e "${GREEN}Keyboard layout: ${keymap}${NC}"
     export KEYMAP=$keymap
 }
@@ -309,11 +290,10 @@ keymap_selection() {
 ssd_check() {
     echo -e "${CYAN}Is this an SSD?${NC}"
     options=("Yes" "No")
-    selection=$(select_option "${options[@]}")
-
-    case "$selection" in
-        "Yes") export MOUNT_OPTIONS="noatime,compress=zstd,ssd,commit=120";;
-        "No") export MOUNT_OPTIONS="noatime,compress=zstd,commit=120";;
+    select_option "${options[@]}"
+    case $? in
+        0) export MOUNT_OPTIONS="noatime,compress=zstd,ssd,commit=120";;
+        1) export MOUNT_OPTIONS="noatime,compress=zstd,commit=120";;
     esac
 }
 
@@ -337,10 +317,8 @@ disk_selection() {
     fi
 
     echo -e "${CYAN}Select the disk to install on:${NC}"
-    selected_disk=$(select_option "${disk_options[@]}")
-
-    # Extract disk path from selection
-    disk=$(echo "$selected_disk" | cut -d' ' -f1)
+    select_option "${disk_options[@]}"
+    disk=$(echo "${disk_options[$?]}" | cut -d' ' -f1)
     echo -e "${GREEN}${disk} selected${NC}"
     export DISK=$disk
 
