@@ -349,11 +349,15 @@ install_aur_helper() {
     fi
 
 
-    # Ensure sudo timestamp is refreshed and archer_timestamp is present
-    if [[ ! -f /etc/sudoers.d/archer_timestamp ]]; then
-        echo -e "${YELLOW}Warning: /etc/sudoers.d/archer_timestamp not found. You may be prompted for your password during yay install.${NC}"
+
+    # Temporarily enable passwordless sudo for yay install
+    SUDO_NP_FILE="/etc/sudoers.d/archer_nopasswd"
+    if [[ $EUID -ne 0 ]]; then
+        echo -e "${YELLOW}Switching to sudo for temporary NOPASSWD setup...${NC}"
+        sudo bash -c 'echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/archer_nopasswd && chmod 440 /etc/sudoers.d/archer_nopasswd'
+    else
+        echo "%wheel ALL=(ALL) NOPASSWD: ALL" > "$SUDO_NP_FILE" && chmod 440 "$SUDO_NP_FILE"
     fi
-    sudo -v
 
     cd /tmp
     git clone https://aur.archlinux.org/yay.git
@@ -361,6 +365,13 @@ install_aur_helper() {
     makepkg -si --noconfirm
     cd "$HOME"
     rm -rf /tmp/yay
+
+    # Remove temporary passwordless sudo
+    if [[ $EUID -ne 0 ]]; then
+        sudo rm -f /etc/sudoers.d/archer_nopasswd
+    else
+        rm -f "$SUDO_NP_FILE"
+    fi
 
     if command -v yay >/dev/null 2>&1; then
         echo -e "${GREEN}yay installed successfully${NC}"
