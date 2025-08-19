@@ -204,14 +204,29 @@ check_internet() {
 install_kde_minimal() {
     echo -e "${BLUE}Installing minimal KDE Plasma 6 desktop...${NC}"
     local kde_packages=(
-        "plasma"
+        # Core Plasma desktop
+        "plasma-desktop"
+        "plasma-workspace"
+        "plasma-wayland-session"
+        "plasma-x11-session"
+        "plasma-discover"
+        "packagekit-qt6"
+        "kde-cli-tools"
+        "kconfig5"
+        "konsole"
         "sddm"
         "xorg"
         "xorg-server"
-        "konsole"
-        "kde-cli-tools"
-        "kconfig5"
-        "plasma-x11-session"  # X11 session support for theme compatibility
+        # Optional but recommended for a full experience
+        "breeze"
+        "breeze-gtk"
+        "breeze-icons"
+        "kde-gtk-config"
+        "systemsettings"
+        "dolphin"
+        "ark"
+        "kwalletmanager"
+        "kdeplasma-addons"
     )
     install_with_retries "${kde_packages[@]}"
     sudo systemctl enable sddm
