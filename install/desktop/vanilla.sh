@@ -3,7 +3,24 @@
 # Vanilla Theme Installer - Default KDE Plasma 6 Theme
 # Part of Archer - Arch Linux Home PC Transformation Suite
 
+
 set -e
+
+# Check for required tools
+for tool in kwriteconfig5 python3; do
+    if ! command -v "$tool" &>/dev/null; then
+        echo "\033[0;31mERROR: Required tool '$tool' is not installed.\033[0m"
+        exit 1
+    fi
+done
+
+# Warn if running inside a Plasma session
+if [[ $XDG_CURRENT_DESKTOP == *KDE* ]] || pgrep -x plasmashell &>/dev/null; then
+    echo -e "\033[1;33mWARNING: You appear to be running inside a Plasma session.\033[0m"
+    echo -e "\033[1;33mIt's recommended to run this script from a TTY with Plasma fully stopped (log out of KDE, press Ctrl+Alt+F3, log in, then run the script).\033[0m"
+    read -p "Continue anyway? [y/N]: " resp
+    [[ $resp =~ ^[Yy]$ ]] || exit 1
+fi
 
 # Source common functions
 source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
@@ -247,6 +264,13 @@ main() {
         exit 0
     fi
 
+    # Stop plasmashell if running (for config reliability)
+    if pgrep -x plasmashell &>/dev/null; then
+        echo -e "${YELLOW}Stopping plasmashell for reliable configuration...${NC}"
+        killall plasmashell
+        sleep 2
+    fi
+
     # Update system
     update_system
 
@@ -261,6 +285,13 @@ main() {
 
     # Configure (theme files only - no dynamic application)
     configure_kde_vanilla
+
+    # Restart plasmashell if X11 session detected
+    if [[ $XDG_SESSION_TYPE == x11 ]] && command -v plasmashell &>/dev/null; then
+        echo -e "${YELLOW}Restarting plasmashell...${NC}"
+        nohup plasmashell >/dev/null 2>&1 &
+        sleep 3
+    fi
 
     local completion_msg="🐧 Default KDE Plasma Desktop Configured:
 - Clean vanilla KDE Plasma 6 layout
