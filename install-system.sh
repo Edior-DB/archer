@@ -167,7 +167,8 @@ show_logo() {
 ██║  ██║██║  ██║╚██████╗██║  ██║███████╗██║  ██║
 ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 
-       Arch Linux System Installer (Live ISO)
+       Arch Linux System Installer (Live ISO) originally (and essentially) by Chris Titus
+       (https://github.com/ChrisTitusTech/linutil)
 LOGOEOF
     echo -e "${NC}"
 }
