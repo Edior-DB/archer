@@ -129,27 +129,18 @@ configure_kde_vanilla() {
         echo -e "${RED}✗ Failed to set default fonts${NC}"
     fi
 
+
     # Panel configuration (default KDE layout - single bottom panel)
     echo -e "${YELLOW}Writing default KDE panel configuration...${NC}"
-
-    # Create proper default KDE panel configuration
     python3 << 'EOF'
 import os
-
-# Create/modify panel configuration for default KDE layout
 config_dir = os.path.expanduser("~/.config")
 plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
-
-# Ensure config directory exists
 os.makedirs(config_dir, exist_ok=True)
-
-# Create default KDE panel configuration (desktop + single bottom taskbar)
 default_config = """[ActionPlugins][0]
 RightButton;NoModifier=org.kde.contextmenu
-
 [ActionPlugins][1]
 RightButton;NoModifier=org.kde.contextmenu
-
 [Containments][1]
 activityId=
 formfactor=0
@@ -158,20 +149,16 @@ lastScreen=0
 location=0
 plugin=org.kde.plasma.desktop
 wallpaperplugin=org.kde.image
-
 [Containments][1][ConfigDialog]
 DialogHeight=540
 DialogWidth=720
-
 [Containments][1][General]
 ToolBoxButtonState=topright
 ToolBoxButtonX=555
 ToolBoxButtonY=30
-
 [Containments][1][Wallpaper][org.kde.image][General]
 Image=file:///usr/share/wallpapers/Next/contents/images/2560x1600.png
 SlidePaths=/usr/share/wallpapers
-
 [Containments][2]
 activityId=
 formfactor=2
@@ -180,30 +167,23 @@ lastScreen=0
 location=4
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
-
 [Containments][2][Applets][5]
 immutability=1
 plugin=org.kde.plasma.icontasks
-
 [Containments][2][Applets][5][Configuration]
 PreloadWeight=100
-
 [Containments][2][Applets][5][Configuration][General]
 groupingStrategy=1
 iconSpacing=2
 launchers=applications:systemsettings.desktop,applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop
 maxStripes=1
 showOnlyCurrentDesktop=false
-
 [Containments][2][General]
 AppletOrder=5
-
 [Containments][2][General]
 AppletOrder=3;4;5;6;7;8
-
 [Containments][2][Configuration]
 PreloadWeight=100
-
 [Containments][2][Configuration][General]
 alignment=132
 iconSize=22
@@ -211,17 +191,23 @@ lengthMode=2
 panelSize=44
 panelVisibility=0
 floating=0
-
 [ScreenMapping]
 itemsOnDisabledScreens=
 screenMapping=desktop:/home,0,desktop:/Downloads,0,desktop:/tmp,0
 """
-
 with open(plasma_config, 'w') as f:
     f.write(default_config)
-
-print("Default KDE configuration written (desktop + single bottom taskbar)")
 EOF
+
+    # Robustness: ensure appletsrc exists and is non-empty, else let Plasma regenerate
+    APPLETSRC="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    if [[ ! -s "$APPLETSRC" ]]; then
+        echo -e "${YELLOW}Appletsrc missing or empty, letting Plasma regenerate...${NC}"
+        rm -f "$APPLETSRC"
+        killall plasmashell 2>/dev/null
+        (sleep 2 && plasmashell --replace &) &
+        sleep 5
+    fi
 
     echo -e "${GREEN}Default KDE panel configuration written!${NC}"
 
