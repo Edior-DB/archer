@@ -66,7 +66,17 @@ main() {
         sleep 1
         echo -e "\033[1;34mLogging out in 1 second...\033[0m"
         sleep 1
-        loginctl terminate-user "$USER"
+        # Try graceful Plasma logout first
+        if command -v qdbus &>/dev/null && qdbus org.kde.ksmserver /KSMServer logout 0 0 0; then
+            echo -e "\033[1;32mRequested Plasma logout.\033[0m"
+        else
+            echo -e "\033[1;33mPlasma logout failed or not available, forcing logout...\033[0m"
+            if [[ -n "$XDG_SESSION_ID" ]]; then
+                loginctl terminate-session "$XDG_SESSION_ID"
+            else
+                loginctl terminate-user "$USER"
+            fi
+        fi
     else
         wait_for_input "Press Enter to continue..."
     fi
