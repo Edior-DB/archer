@@ -36,18 +36,42 @@ main() {
         sleep 2
     fi
 
-    BACKUP_DIR="$HOME/.config/kde_backup_$(date +%Y%m%d_%H%M%S)"
-    mkdir -p "$BACKUP_DIR"
-    echo -e "\033[1;34mMoving KDE/Plasma config files to $BACKUP_DIR\033[0m"
 
-    for f in plasma* kdeglobals kwinrc kscreenlockerrc ksmserverrc breezerc dolphinrc systemsettingsrc; do
+    BACKUP_ROOT="$HOME/.kde_plasma_backup_$(date +%Y%m%d_%H%M%S)"
+    mkdir -p "$BACKUP_ROOT"
+    echo -e "\033[1;34mBacking up and removing all user KDE/Plasma config and cache...\033[0m"
+
+    # Backup and remove ~/.config KDE/Plasma files
+    for f in plasma* kdeglobals kwinrc kscreenlockerrc ksmserverrc breezerc dolphinrc systemsettingsrc autostart; do
         if [ -e "$HOME/.config/$f" ]; then
-            mv "$HOME/.config/$f" "$BACKUP_DIR/"
+            mv "$HOME/.config/$f" "$BACKUP_ROOT/"
         fi
     done
 
-    echo -e "\033[1;34mClearing KDE/Plasma cache...\033[0m"
-    rm -rf "$HOME/.cache/*"
+    # Backup and remove ~/.local/share KDE/Plasma files
+    for d in plasma kactivitymanagerd user-places.xbel kxmlgui5 knewstuff3; do
+        if [ -e "$HOME/.local/share/$d" ]; then
+            mv "$HOME/.local/share/$d" "$BACKUP_ROOT/"
+        fi
+    done
+
+    # Backup and remove ~/.cache KDE/Plasma files
+    for d in kactivitymanagerd plasma*; do
+        if [ -e "$HOME/.cache/$d" ]; then
+            mv "$HOME/.cache/$d" "$BACKUP_ROOT/"
+        fi
+    done
+
+    # Legacy ~/.kde4
+    if [ -d "$HOME/.kde4" ]; then
+        mv "$HOME/.kde4" "$BACKUP_ROOT/"
+    fi
+
+    # Optionally reinstall core Plasma packages
+    if confirm_action "Do you want to reinstall core Plasma packages to ensure a clean system?"; then
+        echo -e "\033[1;34mReinstalling core Plasma packages...\033[0m"
+        sudo pacman -S --noconfirm --needed plasma-desktop plasma-workspace plasma-x11-session kde-cli-tools systemsettings dolphin konsole sddm xorg xorg-server breeze breeze-gtk breeze-icons kde-gtk-config ark kwalletmanager kdeplasma-addons xdg-utils qt5-tools
+    fi
 
     if command -v kbuildsycoca6 &>/dev/null; then
         echo -e "\033[1;34mRebuilding KDE config cache...\033[0m"
