@@ -170,7 +170,8 @@ userinfo_collection() {
 
     # Username
     while true; do
-        read -rp "${CYAN}Enter your username: ${NC}" username
+        printf "%b" "${CYAN}Enter your username: ${NC}" > /dev/tty
+        read username < /dev/tty
         if [[ -z "$username" ]]; then
             echo -e "${RED}ERROR! Username cannot be empty.${NC}"
             continue
@@ -185,8 +186,16 @@ userinfo_collection() {
 
     # Password
     while true; do
-        read -rsp "${CYAN}Enter your password: ${NC}" PASSWORD1; echo
-        read -rsp "${CYAN}Re-enter your password: ${NC}" PASSWORD2; echo
+        printf "%b" "${CYAN}Enter your password: ${NC}" > /dev/tty
+        stty -echo < /dev/tty
+        read PASSWORD1 < /dev/tty
+        stty echo < /dev/tty
+        echo > /dev/tty
+        printf "%b" "${CYAN}Re-enter your password: ${NC}" > /dev/tty
+        stty -echo < /dev/tty
+        read PASSWORD2 < /dev/tty
+        stty echo < /dev/tty
+        echo > /dev/tty
         if [[ "$PASSWORD1" == "$PASSWORD2" ]]; then
             break
         else
@@ -197,7 +206,8 @@ userinfo_collection() {
 
     # Hostname
     while true; do
-        read -rp "${CYAN}Enter machine name (hostname): ${NC}" name_of_machine
+        printf "%b" "${CYAN}Enter machine name (hostname): ${NC}" > /dev/tty
+        read name_of_machine < /dev/tty
         if [[ -n "$name_of_machine" ]] && [[ ${#name_of_machine} -le 63 ]]; then
             break
         fi
