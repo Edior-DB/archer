@@ -18,6 +18,9 @@ EOF
     echo -e "\033[0m"
 }
 
+# Source common functions
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
+
 main() {
     show_logo
     echo -e "\033[1;33mThis will reset your KDE Plasma desktop to a true fresh state (like a new user).\033[0m"
@@ -51,28 +54,23 @@ main() {
         kbuildsycoca6 --noincremental
     fi
 
+
     echo -e "\033[1;32mKDE Plasma user config reset complete!\033[0m"
     echo -e "\033[1;33mLog out and log back in (or reboot) to experience a true fresh KDE desktop.\033[0m"
     echo -e "\033[1;34mYour old configs are backed up in: $BACKUP_DIR\033[0m"
-}
 
-main
-    echo -e "${YELLOW}⚠ Theme changes require a reboot to take full effect.${NC}"
-    echo ""
-
-    if confirm_action "Would you like to reboot now to apply all theme changes?"; then
-        echo -e "${BLUE}Rebooting in 3 seconds...${NC}"
+    if confirm_action "Would you like to log out now to apply the reset?"; then
+        echo -e "\033[1;34mLogging out in 3 seconds...\033[0m"
         sleep 1
-        echo -e "${BLUE}Rebooting in 2 seconds...${NC}"
+        echo -e "\033[1;34mLogging out in 2 seconds...\033[0m"
         sleep 1
-        echo -e "${BLUE}Rebooting in 1 second...${NC}"
+        echo -e "\033[1;34mLogging out in 1 second...\033[0m"
         sleep 1
-        sudo reboot
+        loginctl terminate-user "$USER"
     else
-        echo -e "${CYAN}Remember to reboot later to apply all theme changes completely.${NC}"
         wait_for_input "Press Enter to continue..."
     fi
 }
 
-# Run main function
 main
+
