@@ -207,9 +207,8 @@ install_kde_minimal() {
         # Core Plasma desktop
         "plasma-desktop"
         "plasma-workspace"
-        "plasma-wayland-session"
         "plasma-x11-session"
-        "plasma-discover"
+        "discover"
         "packagekit-qt6"
         "kde-cli-tools"
         "kconfig5"
