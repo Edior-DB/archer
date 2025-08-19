@@ -47,15 +47,16 @@ select_option() {
     local num_options=${#options[@]}
     local choice
     while true; do
-        echo "Please select an option by number:" >&2
+        echo "Please select an option by number:" > /dev/tty
         for i in "${!options[@]}"; do
-            printf "  %d) %s\n" $((i+1)) "${options[$i]}" >&2
+            printf "  %d) %s\n" $((i+1)) "${options[$i]}" > /dev/tty
         done
-        read -rp "Enter choice [1-${num_options}]: " choice
+        printf "Enter choice [1-%d]: " "$num_options" > /dev/tty
+        read choice < /dev/tty
         if [[ $choice =~ ^[1-9][0-9]*$ ]] && (( choice >= 1 && choice <= num_options )); then
             return $((choice-1))
         else
-            echo "Invalid selection. Please enter a number between 1 and $num_options." >&2
+            echo "Invalid selection. Please enter a number between 1 and $num_options." > /dev/tty
         fi
     done
 }
