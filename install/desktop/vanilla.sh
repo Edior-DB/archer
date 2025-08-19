@@ -37,35 +37,25 @@ main() {
     fi
 
 
-    BACKUP_ROOT="$HOME/.kde_plasma_backup_$(date +%Y%m%d_%H%M%S)"
-    mkdir -p "$BACKUP_ROOT"
-    echo -e "\033[1;34mBacking up and removing all user KDE/Plasma config and cache...\033[0m"
+    echo -e "\033[1;34mRemoving all user KDE/Plasma config and cache for a true fresh start...\033[0m"
 
-    # Backup and remove ~/.config KDE/Plasma files
+    # Remove ~/.config KDE/Plasma files
     for f in plasma* kdeglobals kwinrc kscreenlockerrc ksmserverrc breezerc dolphinrc systemsettingsrc autostart; do
-        if [ -e "$HOME/.config/$f" ]; then
-            mv "$HOME/.config/$f" "$BACKUP_ROOT/"
-        fi
+        rm -rf "$HOME/.config/$f"
     done
 
-    # Backup and remove ~/.local/share KDE/Plasma files
+    # Remove ~/.local/share KDE/Plasma files
     for d in plasma kactivitymanagerd user-places.xbel kxmlgui5 knewstuff3; do
-        if [ -e "$HOME/.local/share/$d" ]; then
-            mv "$HOME/.local/share/$d" "$BACKUP_ROOT/"
-        fi
+        rm -rf "$HOME/.local/share/$d"
     done
 
-    # Backup and remove ~/.cache KDE/Plasma files
+    # Remove ~/.cache KDE/Plasma files
     for d in kactivitymanagerd plasma*; do
-        if [ -e "$HOME/.cache/$d" ]; then
-            mv "$HOME/.cache/$d" "$BACKUP_ROOT/"
-        fi
+        rm -rf "$HOME/.cache/$d"
     done
 
-    # Legacy ~/.kde4
-    if [ -d "$HOME/.kde4" ]; then
-        mv "$HOME/.kde4" "$BACKUP_ROOT/"
-    fi
+    # Remove legacy ~/.kde4
+    rm -rf "$HOME/.kde4"
 
     # Optionally reinstall core Plasma packages
     if confirm_action "Do you want to reinstall core Plasma packages to ensure a clean system?"; then
