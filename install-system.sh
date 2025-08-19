@@ -238,8 +238,16 @@ filesystem_selection() {
 # Set LUKS password
 set_luks_password() {
     while true; do
-        read -rsp "${CYAN}Enter LUKS encryption password: ${NC}" password1; echo
-        read -rsp "${CYAN}Re-enter LUKS encryption password: ${NC}" password2; echo
+        printf "%b" "${CYAN}Enter LUKS encryption password: ${NC}" > /dev/tty
+        stty -echo < /dev/tty
+        read password1 < /dev/tty
+        stty echo < /dev/tty
+        echo > /dev/tty
+        printf "%b" "${CYAN}Re-enter LUKS encryption password: ${NC}" > /dev/tty
+        stty -echo < /dev/tty
+        read password2 < /dev/tty
+        stty echo < /dev/tty
+        echo > /dev/tty
         if [[ "$password1" == "$password2" ]]; then
             export LUKS_PASSWORD="$password1"
             break
@@ -254,9 +262,11 @@ timezone_selection() {
     echo -e "${CYAN}========== Timezone Configuration ===========${NC}"
     time_zone="$(curl --fail https://ipapi.co/timezone 2>/dev/null || echo 'UTC')"
     echo -e "${CYAN}System detected your timezone to be '${time_zone}'${NC}"
-    read -rp "Is this timezone correct? (Y/n): " tz_confirm
+    printf "%b" "Is this timezone correct? (Y/n): " > /dev/tty
+    read tz_confirm < /dev/tty
     if [[ "$tz_confirm" =~ ^[Nn] ]]; then
-        read -rp "${CYAN}Enter your timezone (e.g., Europe/London, America/New_York, Asia/Tokyo): ${NC}" new_timezone
+        printf "%b" "${CYAN}Enter your timezone (e.g., Europe/London, America/New_York, Asia/Tokyo): ${NC}" > /dev/tty
+        read new_timezone < /dev/tty
         export TIMEZONE=$new_timezone
     else
         export TIMEZONE=$time_zone
@@ -306,7 +316,8 @@ disk_selection() {
 
     echo -e "${CYAN}Select the disk to install on:${NC}"
     select_option "${disk_options[@]}"
-    disk=$(echo "${disk_options[$?]}" | cut -d' ' -f1)
+    selected_index=$?
+    disk=$(echo "${disk_options[$selected_index]}" | cut -d' ' -f1)
     echo -e "${GREEN}${disk} selected${NC}"
     export DISK=$disk
 
