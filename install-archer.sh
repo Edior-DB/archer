@@ -348,7 +348,13 @@ install_aur_helper() {
         return
     fi
 
-    # Install yay
+
+    # Ensure sudo timestamp is refreshed and archer_timestamp is present
+    if [[ ! -f /etc/sudoers.d/archer_timestamp ]]; then
+        echo -e "${YELLOW}Warning: /etc/sudoers.d/archer_timestamp not found. You may be prompted for your password during yay install.${NC}"
+    fi
+    sudo -v
+
     cd /tmp
     git clone https://aur.archlinux.org/yay.git
     cd yay
