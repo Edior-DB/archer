@@ -181,24 +181,6 @@ location=4
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][2][Applets][3]
-immutability=1
-plugin=org.kde.plasma.kickoff
-
-[Containments][2][Applets][3][Configuration]
-PreloadWeight=100
-
-[Containments][2][Applets][3][Configuration][General]
-icon=start-here-kde
-useCustomButtonImage=false
-
-[Containments][2][Applets][4]
-immutability=1
-plugin=org.kde.plasma.pager
-
-[Containments][2][Applets][4][Configuration]
-PreloadWeight=100
-
 [Containments][2][Applets][5]
 immutability=1
 plugin=org.kde.plasma.icontasks
@@ -213,30 +195,8 @@ launchers=applications:systemsettings.desktop,applications:org.kde.dolphin.deskt
 maxStripes=1
 showOnlyCurrentDesktop=false
 
-[Containments][2][Applets][6]
-immutability=1
-plugin=org.kde.plasma.systemtray
-
-[Containments][2][Applets][6][Configuration]
-PreloadWeight=100
-
-[Containments][2][Applets][7]
-immutability=1
-plugin=org.kde.plasma.digitalclock
-
-[Containments][2][Applets][7][Configuration]
-PreloadWeight=100
-
-[Containments][2][Applets][7][Configuration][Appearance]
-showDate=true
-use24hFormat=2
-
-[Containments][2][Applets][8]
-immutability=1
-plugin=org.kde.plasma.showdesktop
-
-[Containments][2][Applets][8][Configuration]
-PreloadWeight=100
+[Containments][2][General]
+AppletOrder=5
 
 [Containments][2][General]
 AppletOrder=3;4;5;6;7;8

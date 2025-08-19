@@ -287,52 +287,24 @@ location=3
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][2][Applets][7]
+[Containments][2][Applets][12]
 immutability=1
-plugin=org.kde.plasma.kickoff
+plugin=org.kde.plasma.icontasks
 
-[Containments][2][Applets][7][Configuration]
+[Containments][2][Applets][12][Configuration]
 PreloadWeight=100
 
-[Containments][2][Applets][7][Configuration][General]
-icon=applications-system
-useCustomButtonImage=false
-
-[Containments][2][Applets][8]
-immutability=1
-plugin=org.kde.plasma.appmenu
-
-[Containments][2][Applets][8][Configuration]
-PreloadWeight=100
-
-[Containments][2][Applets][8][Configuration][General]
-view=0
-compactView=false
-
-[Containments][2][Applets][9]
-immutability=1
-plugin=org.kde.plasma.panelspacer
-
-[Containments][2][Applets][10]
-immutability=1
-plugin=org.kde.plasma.systemtray
-
-[Containments][2][Applets][10][Configuration]
-PreloadWeight=100
-
-[Containments][2][Applets][11]
-immutability=1
-plugin=org.kde.plasma.digitalclock
-
-[Containments][2][Applets][11][Configuration]
-PreloadWeight=100
-
-[Containments][2][Applets][11][Configuration][Appearance]
-showDate=false
-use24hFormat=0
+[Containments][2][Applets][12][Configuration][General]
+groupingStrategy=0
+iconSpacing=3
+launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop,applications:org.kde.kate.desktop
+maxStripes=1
+showOnlyCurrentDesktop=false
+indicateAudioStreams=false
+fill=true
 
 [Containments][2][General]
-AppletOrder=7;8;9;10;11
+AppletOrder=12
 
 [Containments][2][Configuration]
 PreloadWeight=100
