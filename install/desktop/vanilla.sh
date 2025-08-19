@@ -39,6 +39,7 @@ main() {
 
     echo -e "\033[1;34mRemoving all user KDE/Plasma config and cache for a true fresh start...\033[0m"
 
+
     # Remove ~/.config KDE/Plasma files
     for f in plasma* kdeglobals kwinrc kscreenlockerrc ksmserverrc breezerc dolphinrc systemsettingsrc autostart; do
         rm -rf "$HOME/.config/$f"
@@ -56,6 +57,16 @@ main() {
 
     # Remove legacy ~/.kde4
     rm -rf "$HOME/.kde4"
+
+    # Restore original default appletsrc if available
+    DEFAULT_APPLETSRC="/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    if [ -f "$DEFAULT_APPLETSRC" ]; then
+        mkdir -p "$HOME/.config"
+        cp "$DEFAULT_APPLETSRC" "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+        echo -e "\033[1;32mRestored default Plasma layout from $DEFAULT_APPLETSRC\033[0m"
+    else
+        echo -e "\033[1;33mWarning: No system default plasma-org.kde.plasma.desktop-appletsrc found in /etc/skel. Plasma will regenerate a new one.\033[0m"
+    fi
 
     # Optionally reinstall core Plasma packages
     if confirm_action "Do you want to reinstall core Plasma packages to ensure a clean system?"; then
