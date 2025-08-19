@@ -443,10 +443,49 @@ check_theme_installed() {
     return 1
 }
 
+
+# Ensure golden KDE config backup exists, or prompt user to log in to DE first
+ensure_golden_kde_config() {
+    GOLDEN_CONFIG_DIR="${ARCHER_DIR:-$HOME/.local/share/archer}/defaults/.config"
+    if [ -d "$GOLDEN_CONFIG_DIR" ] && [ -f "$GOLDEN_CONFIG_DIR/plasma-org.kde.plasma.desktop-appletsrc" ]; then
+        return 0
+    fi
+
+    # Check if user is in a graphical session
+    if [[ -z "$DISPLAY" && -z "$WAYLAND_DISPLAY" ]]; then
+        echo -e "${RED}Cannot create golden KDE config: Not in a graphical session (TTY detected).${NC}"
+        echo -e "${YELLOW}Please log in to KDE Plasma at least once, then re-run this command.${NC}"
+        return 1
+    fi
+
+    # Try to create golden config if possible
+    if [ -d "$HOME/.config" ] && [ -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" ]; then
+        mkdir -p "$GOLDEN_CONFIG_DIR"
+        cp -a "$HOME/.config/"* "$GOLDEN_CONFIG_DIR/"
+        echo -e "${GREEN}Golden KDE Plasma config saved to $GOLDEN_CONFIG_DIR${NC}"
+        return 0
+    else
+        echo -e "${RED}KDE config not found in ~/.config. Please log in to KDE Plasma first.${NC}"
+        return 1
+    fi
+}
+
 # Switch between desktop themes
 switch_theme() {
     local target_theme="$1"
     local current_theme=$(detect_current_theme)
+
+    # Enforce golden KDE config backup before switching theme
+    if ! ensure_golden_kde_config; then
+        echo -e "${RED}Theme switching aborted: Golden KDE config backup is required.${NC}"
+        echo -e "${YELLOW}Before you can switch or set up a KDE theme, you must first log in to KDE Plasma at least once so that your user configuration is created.${NC}"
+        echo -e "${CYAN}To proceed:${NC}"
+        echo -e "  1. Log out of this TTY or terminal session."
+        echo -e "  2. Log in to your KDE Plasma desktop environment and let it fully load."
+        echo -e "  3. Log out of KDE Plasma, return to a terminal, and re-run this command."
+        echo -e "${YELLOW}This ensures a clean backup of your default KDE configuration is made for safe theme switching and resets.${NC}"
+        return 1
+    fi
 
     echo -e "${BLUE}Theme Switcher${NC}"
     echo -e "${CYAN}===============================================${NC}"
