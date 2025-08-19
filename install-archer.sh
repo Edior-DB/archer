@@ -234,6 +234,21 @@ install_kde_minimal() {
     install_with_retries "${kde_packages[@]}"
     sudo systemctl enable sddm
     echo -e "${GREEN}Minimal KDE Plasma desktop installed!${NC}"
+
+    # Create golden KDE Plasma config backup if not already present
+    GOLDEN_CONFIG_DIR="${ARCHER_DIR:-$HOME/.local/share/archer}/defaults/.config"
+    if [ ! -d "$GOLDEN_CONFIG_DIR" ]; then
+        echo -e "${CYAN}Creating golden KDE Plasma config backup for future resets...${NC}"
+        mkdir -p "$GOLDEN_CONFIG_DIR"
+        # Wait for user to log in and Plasma to generate configs
+        echo -e "${YELLOW}Please log in to KDE Plasma at least once before running a reset!${NC}"
+        if [ -d "$HOME/.config" ]; then
+            cp -a "$HOME/.config/"* "$GOLDEN_CONFIG_DIR/"
+            echo -e "${GREEN}Golden KDE Plasma config saved to $GOLDEN_CONFIG_DIR${NC}"
+        else
+            echo -e "${RED}Warning: ~/.config not found. Golden config not created.${NC}"
+        fi
+    fi
 }
 
 # Install essential packages

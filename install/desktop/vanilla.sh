@@ -58,14 +58,14 @@ main() {
     # Remove legacy ~/.kde4
     rm -rf "$HOME/.kde4"
 
-    # Restore original default appletsrc if available
-    DEFAULT_APPLETSRC="/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc"
-    if [ -f "$DEFAULT_APPLETSRC" ]; then
+    # Restore golden default configs if available
+    GOLDEN_CONFIG_DIR="${ARCHER_DIR:-$HOME/.local/share/archer}/defaults/.config"
+    if [ -d "$GOLDEN_CONFIG_DIR" ]; then
+        echo -e "\033[1;34mRestoring golden KDE Plasma config from $GOLDEN_CONFIG_DIR\033[0m"
         mkdir -p "$HOME/.config"
-        cp "$DEFAULT_APPLETSRC" "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
-        echo -e "\033[1;32mRestored default Plasma layout from $DEFAULT_APPLETSRC\033[0m"
+        cp -a "$GOLDEN_CONFIG_DIR/"* "$HOME/.config/"
     else
-        echo -e "\033[1;33mWarning: No system default plasma-org.kde.plasma.desktop-appletsrc found in /etc/skel. Plasma will regenerate a new one.\033[0m"
+        echo -e "\033[1;33mWarning: No golden KDE Plasma config found in $GOLDEN_CONFIG_DIR. Plasma will regenerate new defaults.\033[0m"
     fi
 
     # Optionally reinstall core Plasma packages
