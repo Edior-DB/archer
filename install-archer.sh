@@ -82,7 +82,7 @@ install_with_retries() {
     fi
 
     local retry_count=0
-    local max_retries=3
+    local max_retries=7
 
     while [ $retry_count -lt $max_retries ]; do
         echo -e "${CYAN}Installing: ${filtered_packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
