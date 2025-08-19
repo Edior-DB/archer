@@ -219,7 +219,7 @@ install_kde_minimal() {
         "xorg-server"
         # XDG menu support (for applications.menu)
         "xdg-utils"
-        "xdg-menu"
+        #"xdg-menu"
         # Optional but recommended for a full experience
         "breeze"
         "breeze-gtk"
