@@ -84,7 +84,7 @@ install_with_retries() {
     fi
 
     local retry_count=0
-    local max_retries=3
+    local max_retries=7
 
     while [ $retry_count -lt $max_retries ]; do
         echo -e "${CYAN}Installing: ${packages[*]} - Attempt $((retry_count + 1)) of $max_retries...${NC}"
@@ -128,20 +128,27 @@ install_with_retries() {
         else
             echo -e "${RED}ERROR: Installation failed after $max_retries attempts!${NC}"
             echo -e "${RED}Please check your network connection.${NC}"
-            if command -v gum >/dev/null 2>&1 && gum confirm "Would you like to try installing again?"; then
-                retry_count=0
-                echo -e "${CYAN}Retrying installation...${NC}"
-                if [[ "$command_type" == "pacstrap" ]]; then
-                    pacman -Sy --noconfirm
-                elif [[ "$command_type" == "pacman" ]]; then
-                    pacman -Sy --noconfirm
+            while true; do
+                printf "%b" "Would you like to try installing again? (Y/n): " > /dev/tty
+                read retry_ans < /dev/tty
+                if [[ -z "$retry_ans" || "$retry_ans" =~ ^[Yy]$ ]]; then
+                    retry_count=0
+                    echo -e "${CYAN}Retrying installation...${NC}"
+                    if [[ "$command_type" == "pacstrap" ]]; then
+                        pacman -Sy --noconfirm
+                    elif [[ "$command_type" == "pacman" ]]; then
+                        pacman -Sy --noconfirm
+                    else
+                        "$command_type" -Sy --noconfirm
+                    fi
+                    break
+                elif [[ "$retry_ans" =~ ^[Nn]$ ]]; then
+                    echo -e "${RED}Installation cannot continue without these packages: ${packages[*]}${NC}"
+                    exit 1
                 else
-                    "$command_type" -Sy --noconfirm
+                    echo "Please answer Y or n." > /dev/tty
                 fi
-            else
-                echo -e "${RED}Installation cannot continue without these packages: ${packages[*]}${NC}"
-                exit 1
-            fi
+            done
         fi
     done
 }
@@ -527,14 +534,21 @@ while [ \$retry_count -lt \$max_retries ]; do
         pacman -Sy --noconfirm
     else
         echo -e "${RED}ERROR: Network setup failed after \$max_retries attempts${NC}"
-        if gum confirm "Would you like to try installing network packages again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying network packages installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without network packages (you may need to install them manually later)${NC}"
-            break
-        fi
+        while true; do
+            printf "%b" "Would you like to try installing network packages again? (Y/n): " > /dev/tty
+            read retry_ans < /dev/tty
+            if [[ -z \"$retry_ans\" || \"$retry_ans\" =~ ^[Yy]$ ]]; then
+                retry_count=0  # Reset retry counter
+                echo -e "${CYAN}Retrying network packages installation...${NC}"
+                pacman -Sy --noconfirm
+                break
+            elif [[ \"$retry_ans\" =~ ^[Nn]$ ]]; then
+                echo -e "${YELLOW}Continuing without network packages (you may need to install them manually later)${NC}"
+                break
+            else
+                echo "Please answer Y or n." > /dev/tty
+            fi
+        done
     fi
 done
 
@@ -558,14 +572,21 @@ while [ \$retry_count -lt \$max_retries ]; do
         pacman -Sy --noconfirm
     else
         echo -e "${RED}ERROR: Essential packages installation failed after \$max_retries attempts${NC}"
-        if gum confirm "Would you like to try installing essential packages again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying essential packages installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without some essential packages (you may need to install them manually later)${NC}"
-            break
-        fi
+        while true; do
+            printf "%b" "Would you like to try installing essential packages again? (Y/n): " > /dev/tty
+            read retry_ans < /dev/tty
+            if [[ -z \"$retry_ans\" || \"$retry_ans\" =~ ^[Yy]$ ]]; then
+                retry_count=0  # Reset retry counter
+                echo -e "${CYAN}Retrying essential packages installation...${NC}"
+                pacman -Sy --noconfirm
+                break
+            elif [[ \"$retry_ans\" =~ ^[Nn]$ ]]; then
+                echo -e "${YELLOW}Continuing without some essential packages (you may need to install them manually later)${NC}"
+                break
+            else
+                echo "Please answer Y or n." > /dev/tty
+            fi
+        done
     fi
 done
 
@@ -611,13 +632,22 @@ if grep -q "GenuineIntel" /proc/cpuinfo; then
             echo -e "${YELLOW}Microcode installation failed, retrying...${NC}"
             sleep 2
             pacman -Sy --noconfirm
-        elif gum confirm "Intel microcode installation failed. Would you like to try again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying Intel microcode installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without Intel microcode (you may install it manually later)${NC}"
-            break
+        elif true; then
+            while true; do
+                printf "%b" "Intel microcode installation failed. Would you like to try again? (Y/n): " > /dev/tty
+                read retry_ans < /dev/tty
+                if [[ -z \"$retry_ans\" || \"$retry_ans\" =~ ^[Yy]$ ]]; then
+                    retry_count=0  # Reset retry counter
+                    echo -e "${CYAN}Retrying Intel microcode installation...${NC}"
+                    pacman -Sy --noconfirm
+                    break
+                elif [[ \"$retry_ans\" =~ ^[Nn]$ ]]; then
+                    echo -e "${YELLOW}Continuing without Intel microcode (you may install it manually later)${NC}"
+                    break
+                else
+                    echo "Please answer Y or n." > /dev/tty
+                fi
+            done
         fi
     done
 elif grep -q "AuthenticAMD" /proc/cpuinfo; then
@@ -633,13 +663,22 @@ elif grep -q "AuthenticAMD" /proc/cpuinfo; then
             echo -e "${YELLOW}Microcode installation failed, retrying...${NC}"
             sleep 2
             pacman -Sy --noconfirm
-        elif gum confirm "AMD microcode installation failed. Would you like to try again?"; then
-            retry_count=0  # Reset retry counter
-            echo -e "${CYAN}Retrying AMD microcode installation...${NC}"
-            pacman -Sy --noconfirm
-        else
-            echo -e "${YELLOW}Continuing without AMD microcode (you may install it manually later)${NC}"
-            break
+        elif true; then
+            while true; do
+                printf "%b" "AMD microcode installation failed. Would you like to try again? (Y/n): " > /dev/tty
+                read retry_ans < /dev/tty
+                if [[ -z \"$retry_ans\" || \"$retry_ans\" =~ ^[Yy]$ ]]; then
+                    retry_count=0  # Reset retry counter
+                    echo -e "${CYAN}Retrying AMD microcode installation...${NC}"
+                    pacman -Sy --noconfirm
+                    break
+                elif [[ \"$retry_ans\" =~ ^[Nn]$ ]]; then
+                    echo -e "${YELLOW}Continuing without AMD microcode (you may install it manually later)${NC}"
+                    break
+                else
+                    echo "Please answer Y or n." > /dev/tty
+                fi
+            done
         fi
     done
 fi
@@ -756,7 +795,8 @@ EOF
     echo -e "${CYAN} 3. Run: curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-archer.sh | bash${NC}"
     echo ""
 
-    gum confirm "Press Enter to continue..."
+    printf "%b" "Press Enter to continue..." > /dev/tty
+    read _ < /dev/tty
 }
 
 # Main execution
