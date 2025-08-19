@@ -210,6 +210,7 @@ install_kde_minimal() {
         "plasma-x11-session"
         "discover"
         "packagekit-qt6"
+        "qt6-tools"
         "kde-cli-tools"
         "kconfig5"
         "konsole"
