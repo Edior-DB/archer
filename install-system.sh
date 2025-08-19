@@ -365,7 +365,9 @@ run_installation() {
 
     # Ask user if they want to use local mirrors
     echo -e "${CYAN}Detected country: $iso${NC}"
-    if gum confirm "Use $iso mirrors for faster downloads? (Choose 'No' to keep default mirrors)"; then
+    printf "%b" "Use $iso mirrors for faster downloads? (Y/n): " > /dev/tty
+    read use_mirror < /dev/tty
+    if [[ ! "$use_mirror" =~ ^[Nn] ]]; then
         echo -e "${CYAN}Setting up $iso mirrors for faster downloads${NC}"
         if ! reflector -a 48 -c "$iso" --score 5 -f 5 -l 20 --sort rate --save /etc/pacman.d/mirrorlist; then
             echo -e "${YELLOW}$iso mirrors failed, trying worldwide mirrors...${NC}"
