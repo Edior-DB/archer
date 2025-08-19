@@ -72,13 +72,10 @@ detect_environment() {
 
 # Interactive mode for direct execution
 interactive_mode() {
-    # Install gum for better UX across all environments
-    echo -e "${CYAN}Installing gum for better user experience...${NC}"
-    if grep -q "archiso" /proc/cmdline 2>/dev/null; then
-        # Live ISO - use pacman directly
-        pacman -Sy --noconfirm gum 2>/dev/null || echo -e "${YELLOW}Gum not available, using fallback interface${NC}"
-    elif [[ -f /etc/arch-release ]]; then
+    # Install gum only for post-install environments, not in archiso mode
+    if [[ -f /etc/arch-release ]] && ! grep -q "archiso" /proc/cmdline 2>/dev/null; then
         # Installed Arch - check sudo access first
+        echo -e "${CYAN}Installing gum for better user experience...${NC}"
         if ! sudo -n true 2>/dev/null; then
             echo -e "${YELLOW}This script requires sudo access.${NC}"
             echo -e "${CYAN}Please enter your password when prompted, or run as root.${NC}"
@@ -101,16 +98,18 @@ interactive_mode() {
         # Install gum from extra repository
         echo -e "${CYAN}Installing gum...${NC}"
         sudo pacman -S --noconfirm gum
+        echo ""
     fi
-    echo ""
 
     # Show environment detection first
     detect_environment
     echo ""
 
     if grep -q "archiso" /proc/cmdline 2>/dev/null && [[ "$EUID" -eq 0 ]]; then
-        # Live ISO as root - offer system installation
-        if gum confirm "Do you want to proceed with Arch Linux system installation?"; then
+        # Live ISO as root - offer system installation (no gum)
+        printf "%b" "Do you want to proceed with Arch Linux system installation? (Y/n): " > /dev/tty
+        read proceed < /dev/tty
+        if [[ ! "$proceed" =~ ^[Nn] ]]; then
             echo -e "${CYAN}Downloading and running system installer...${NC}"
             curl -fsSL "$REPO_RAW_URL/install-system.sh" | bash
         else
@@ -119,6 +118,13 @@ interactive_mode() {
 
     elif [[ -f /etc/arch-release ]] && [[ "$EUID" -ne 0 ]]; then
         # Installed Arch as user - offer post-installation setup
+        if ! command -v gum >/dev/null 2>&1; then
+            echo -e "${YELLOW}gum not found. Installing gum...${NC}"
+            if ! sudo pacman -S --noconfirm gum; then
+                echo -e "${RED}Failed to install gum. Please install it manually and re-run this script.${NC}"
+                exit 1
+            fi
+        fi
         if gum confirm "Do you want to proceed with Archer post-installation setup?"; then
             echo -e "${CYAN}Downloading and running post-installation setup...${NC}"
             curl -fsSL "$REPO_RAW_URL/install-archer.sh" | bash
