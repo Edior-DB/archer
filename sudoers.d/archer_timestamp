@@ -1,0 +1,2 @@
+# Extend sudo timestamp timeout for Archer installer
+Defaults timestamp_timeout=90

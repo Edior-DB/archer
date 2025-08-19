@@ -494,6 +494,12 @@ run_installation() {
 
     # Note: GRUB installation will be handled from chroot for both BIOS and UEFI systems
 
+    # Set sudo timestamp timeout for Archer installer (90 minutes)
+    echo "# Extend sudo timestamp timeout for Archer installer" > /mnt/etc/sudoers.d/archer_timestamp
+    echo "Defaults timestamp_timeout=90" >> /mnt/etc/sudoers.d/archer_timestamp
+    chmod 440 /mnt/etc/sudoers.d/archer_timestamp
+    echo -e "${GREEN}Sudo timestamp timeout set to 90 minutes for Archer installer (in /etc/sudoers.d/archer_timestamp)${NC}"
+
     # Check for low memory and add swap if needed
     TOTAL_MEM=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')
     if [[ $TOTAL_MEM -lt 8000000 ]]; then
@@ -795,6 +801,10 @@ EOF
     echo -e "${CYAN} 2. Login as ${USERNAME}${NC}"
     echo -e "${CYAN} 3. Run: curl -fsSL https://raw.githubusercontent.com/Edior-DB/archer/master/install-archer.sh | bash${NC}"
     echo ""
+
+    echo -e "${YELLOW}NOTE:${NC} Archer enables a long sudo timestamp for convenience during setup.\nTo disable it after setup, run:"
+    echo -e "  sudo rm -f /etc/sudoers.d/archer_timestamp"
+    echo -e "Or, for advanced use, you can have your post-install scripts enable it at start and remove it at exit."
 
     printf "%b" "Press Enter to continue..." > /dev/tty
     read _ < /dev/tty
