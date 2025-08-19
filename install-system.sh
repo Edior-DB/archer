@@ -45,42 +45,19 @@ background_checks() {
 select_option() {
     local options=("$@")
     local num_options=${#options[@]}
-    local selected=0
-    local last_selected=-1
-
+    local choice
     while true; do
-        # Move cursor up to the start of the menu
-        if [ $last_selected -ne -1 ]; then
-            echo -ne "\033[${num_options}A"
-        fi
-
-        if [ $last_selected -eq -1 ]; then
-            echo "Please select an option using the arrow keys and Enter:"
-        fi
+        echo "Please select an option by number:" >&2
         for i in "${!options[@]}"; do
-            if [ "$i" -eq $selected ]; then
-                echo "> ${options[$i]}"
-            else
-                echo "  ${options[$i]}"
-            fi
+            printf "  %d) %s\n" $((i+1)) "${options[$i]}" >&2
         done
-
-        last_selected=$selected
-
-        # Read user input
-        read -rsn1 key
-        case $key in
-            $'\x1b') # ESC sequence
-                read -rsn2 -t 0.1 key
-                case $key in
-                    '[A') ((selected--)); [ $selected -lt 0 ] && selected=$((num_options - 1));;
-                    '[B') ((selected++)); [ $selected -ge $num_options ] && selected=0;;
-                esac
-                ;;
-            '') break;;
-        esac
+        read -rp "Enter choice [1-${num_options}]: " choice
+        if [[ $choice =~ ^[1-9][0-9]*$ ]] && (( choice >= 1 && choice <= num_options )); then
+            return $((choice-1))
+        else
+            echo "Invalid selection. Please enter a number between 1 and $num_options." >&2
+        fi
     done
-    echo ${options[$selected]}
 }
 
 
