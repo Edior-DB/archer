@@ -80,8 +80,8 @@ main() {
         sleep 1
         echo -e "\033[1;34mLogging out in 1 second...\033[0m"
         sleep 1
-        # Try graceful Plasma logout first
-        if command -v qdbus &>/dev/null && qdbus org.kde.ksmserver /KSMServer logout 0 0 0; then
+        # Try Plasma 6 logout via qdbus Shutdown interface
+        if command -v qdbus &>/dev/null && qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout; then
             echo -e "\033[1;32mRequested Plasma logout.\033[0m"
         else
             echo -e "\033[1;33mPlasma logout failed or not available, forcing logout...\033[0m"
