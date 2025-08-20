@@ -51,13 +51,9 @@ location=3
 plugin=org.kde.panel
 [Containments][2][Applets][12]
 immutability=1
-plugin=org.kde.plasma.icontasks
+plugin=org.kde.plasma.taskmanager
 [Containments][2][Applets][12][Configuration][General]
-iconSpacing=3
 launchers=applications:org.kde.dolphin.desktop,applications:firefox.desktop,applications:org.kde.konsole.desktop
-maxStripes=1
-showOnlyCurrentDesktop=false
-fill=true
 [Containments][2][General]
 AppletOrder=12
 [Containments][2][Configuration][General]
