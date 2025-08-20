@@ -839,6 +839,10 @@ show_theme_debug() {
 # Handle command line arguments
 handle_args() {
     case "$1" in
+        "--restore-kde")
+            run_script "$INSTALL_DIR/system/kde-cleaner.sh"
+            exit 0
+            ;;
         "--gpu")
             run_script "$INSTALL_DIR/system/gpu-drivers.sh"
             exit 0
