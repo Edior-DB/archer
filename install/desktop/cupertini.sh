@@ -29,12 +29,9 @@ main() {
     [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
 
     # Write a standard macOS-like layout (top bar + dock) to plasma config
-    python3 << 'EOF'
-import os
-config_dir = os.path.expanduser("~/.config")
-plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
-os.makedirs(config_dir, exist_ok=True)
-macos_layout = '''[Containments][1]
+    mkdir -p "$HOME/.config"
+    cat > "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" <<'EOL'
+[Containments][1]
 activityId=
 formfactor=0
 immutability=1
@@ -62,11 +59,8 @@ lengthMode=fill
 panelSize=28
 panelVisibility=NormalPanel
 floating=0
-'''
-with open(plasma_config, 'w') as f:
-    f.write(macos_layout)
-print("macOS-like layout written (top bar + dock)")
-EOF
+EOL
+    echo "macOS-like layout written (top bar + dock)"
     echo -e "\033[32mCupertini (macOS-like) layout applied! Please log out and back in to see changes.\033[0m"
 }
 

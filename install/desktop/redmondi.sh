@@ -29,12 +29,9 @@ main() {
     [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
 
     # Write a standard Windows-like layout (bottom taskbar) to plasma config
-    python3 << 'EOF'
-import os
-config_dir = os.path.expanduser("~/.config")
-plasma_config = os.path.join(config_dir, "plasma-org.kde.plasma.desktop-appletsrc")
-os.makedirs(config_dir, exist_ok=True)
-windows_layout = '''[Containments][1]
+    mkdir -p "$HOME/.config"
+    cat > "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" <<'EOL'
+[Containments][1]
 activityId=
 formfactor=0
 immutability=1
@@ -62,11 +59,8 @@ lengthMode=2
 panelSize=40
 panelVisibility=0
 floating=0
-'''
-with open(plasma_config, 'w') as f:
-    f.write(windows_layout)
-print("Windows-like layout written (bottom taskbar)")
-EOF
+EOL
+    echo "Windows-like layout written (bottom taskbar)"
     echo -e "\033[32mRedmondi (Windows-like) layout applied! Please log out and back in to see changes.\033[0m"
 }
 
