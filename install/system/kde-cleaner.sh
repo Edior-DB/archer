@@ -70,6 +70,23 @@ main() {
 
     clean
     restore_kde
+
+    if command -v qdbus &>/dev/null; then
+        read -p "Would you like to log out now to apply the reset? [y/N]: " logout_resp
+        if [[ $logout_resp =~ ^[Yy]$ ]]; then
+
+            if qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout; then
+                echo -e "\033[1;32mRequested Plasma logout.\033[0m"
+            else
+                echo -e "\033[1;33mPlasma logout failed or not available, forcing logout...\033[0m"
+                if [[ -n "$XDG_SESSION_ID" ]]; then
+                    loginctl terminate-session "$XDG_SESSION_ID"
+                else
+                    loginctl terminate-user "$USER"
+                fi
+            fi
+        fi
+    fi
 }
 
 main
