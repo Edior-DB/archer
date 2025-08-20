@@ -30,6 +30,16 @@ main() {
     read -p "Continue? [y/N]: " confirm
     [[ "$confirm" =~ ^[Yy]$ ]] || exit 0
 
+    # Backup old config
+    if [ -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" ]; then
+        mv "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc.bak.$(date +%s)"
+        echo -e "\033[36mBacked up old plasma-org.kde.plasma.desktop-appletsrc\033[0m"
+    fi
+
+    # Clean Plasma cache and session data
+    echo -e "\033[36mCleaning Plasma cache and session data...\033[0m"
+    rm -rf "$HOME/.cache/plasmashell" "$HOME/.cache/org.kde.plasma*" "$HOME/.config/session/" "$HOME/.local/share/kscreen/" "$HOME/.local/share/plasma*" 2>/dev/null || true
+
     # Write a standard macOS-like layout (top bar + dock) to plasma config
     mkdir -p "$HOME/.config"
     cat > "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" <<'EOL'
