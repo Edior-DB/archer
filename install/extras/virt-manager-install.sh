@@ -3,13 +3,21 @@
 set -e
 
 
-# Ensure iptables-nft is used and remove legacy iptables if present
-if pacman -Q iptables &>/dev/null && ! pacman -Q iptables-nft &>/dev/null; then
-	echo -e "\033[33mRemoving legacy iptables in favor of iptables-nft (required for dependencies)...\033[0m"
-	sudo pacman -R --noconfirm iptables
+# Install iptables-nft alongside iptables if possible
+if ! pacman -Q iptables-nft &>/dev/null; then
+	if sudo pacman -S --noconfirm iptables-nft; then
+		echo -e "\033[32miptables-nft installed alongside iptables.\033[0m"
+	else
+		echo -e "\033[31mFailed to install iptables-nft. Please resolve any conflicts manually.\033[0m"
+		exit 1
+	fi
 fi
 
-sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat iptables-nft
+# Install virt-manager and dependencies
+if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
+	echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
+	exit 1
+fi
 
 # Enable and start libvirtd
 sudo systemctl enable --now libvirtd
