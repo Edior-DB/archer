@@ -20,6 +20,8 @@ EOF
     echo -e "\033[0m"
 }
 
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
+
 main() {
     show_logo
     echo -e "\033[1;33mThis will reset your KDE Plasma layout to a clean Windows-like (Redmondi) layout.\033[0m"

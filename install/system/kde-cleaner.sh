@@ -1,3 +1,4 @@
+source "$(dirname "${BASH_SOURCE[0]}")/common-funcs.sh"
 #!/bin/bash
 # Archer KDE/Plasma Cleaner Script
 # Removes all user KDE/Plasma config, cache, and local data for a true fresh start
@@ -15,7 +16,7 @@ LOGOEOF
     echo -e "\033[0m"
 }
 
-
+source "$(dirname "${BASH_SOURCE[0]}")/common-funcs.sh"
 
 clean() {
     echo -e "\033[1;34mRemoving all user KDE/Plasma config and cache for a true fresh start...\033[0m"
@@ -58,8 +59,9 @@ main() {
     echo -e "\033[1;33mThis will remove all user KDE/Plasma config, cache, and local data for a true fresh start, then restore from the golden config.\033[0m"
     echo -e "\033[1;33mYour configs will be lost unless you have a backup!\033[0m"
     echo
-    read -p "Continue? [y/N]: " resp
-    [[ $resp =~ ^[Yy]$ ]] || exit 0
+    if ! confirm_action "Continue?"; then
+        exit 0
+    fi
 
     # Stop plasmashell if running
     if pgrep -x plasmashell &>/dev/null; then
@@ -72,9 +74,7 @@ main() {
     restore_kde
 
     if command -v qdbus &>/dev/null; then
-        read -p "Would you like to log out now to apply the reset? [y/N]: " logout_resp
-        if [[ $logout_resp =~ ^[Yy]$ ]]; then
-
+        if confirm_action "Would you like to log out now to apply the reset?"; then
             if qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout; then
                 echo -e "\033[1;32mRequested Plasma logout.\033[0m"
             else
