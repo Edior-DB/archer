@@ -9,32 +9,41 @@ source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-f
 
 
 
-# Check for legacy iptables
+# Check for iptables and backend type
 if pacman -Q iptables &>/dev/null; then
-	echo -e "${YELLOW}Legacy iptables is installed.${NC}"
-	echo "This will cause a conflict with ebtables (which requires iptables-nft)."
-	options=(
-		"Install virt-manager and dependencies WITHOUT ebtables (limited networking features)"
-		"Remove iptables manually and rerun this script (NOT recommended, may break base/networking)"
-		"Exit and wait for Arch to resolve the conflict in the repositories"
-	)
-	choice=$(select_option "${options[@]}")
-	if [[ "$choice" == *WITHOUT* ]]; then
-		echo -e "${YELLOW}Installing without ebtables... Some networking features may not work.${NC}"
-		if ! sudo pacman -S --noconfirm virt-manager qemu vde2 dnsmasq bridge-utils openbsd-netcat; then
-			echo -e "${RED}Failed to install virt-manager or dependencies.${NC}"
+	# Check if iptables is using the legacy backend
+	if iptables --version 2>&1 | grep -q 'legacy'; then
+		echo -e "${YELLOW}Legacy iptables is installed.${NC}"
+		echo "This will cause a conflict with ebtables (which requires iptables-nft)."
+		options=(
+			"Install virt-manager and dependencies WITHOUT ebtables (limited networking features)"
+			"Remove iptables manually and rerun this script (NOT recommended, may break base/networking)"
+			"Exit and wait for Arch to resolve the conflict in the repositories"
+		)
+		choice=$(select_option "${options[@]}")
+		if [[ "$choice" == *WITHOUT* ]]; then
+			echo -e "${YELLOW}Installing without ebtables... Some networking features may not work.${NC}"
+			if ! sudo pacman -S --noconfirm virt-manager qemu vde2 dnsmasq bridge-utils openbsd-netcat; then
+				echo -e "${RED}Failed to install virt-manager or dependencies.${NC}"
+				exit 1
+			fi
+		elif [[ "$choice" == *Remove* ]]; then
+			echo -e "${RED}Please remove iptables manually with 'sudo pacman -Rs iptables' and rerun this script.${NC}"
+			echo -e "${RED}WARNING: Removing iptables might break iproute2, base, netctl, and networkmanager.${NC}"
+			exit 1
+		else
+			echo -e "${YELLOW}Exiting. Wait for Arch Linux to resolve the iptables/ebtables conflict.${NC}"
 			exit 1
 		fi
-	elif [[ "$choice" == *Remove* ]]; then
-		echo -e "${RED}Please remove iptables manually with 'sudo pacman -Rs iptables' and rerun this script.${NC}"
-		echo -e "${RED}WARNING: Removing iptables might break iproute2, base, netctl, and networkmanager.${NC}"
-		exit 1
 	else
-		echo -e "${YELLOW}Exiting. Wait for Arch Linux to resolve the iptables/ebtables conflict.${NC}"
-		exit 1
+		# iptables is present but using nft backend, proceed as normal
+		if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
+			echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
+			exit 1
+		fi
 	fi
 else
-	# No legacy iptables, proceed as normal
+	# No iptables at all, proceed as normal
 	if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
 		echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
 		exit 1
