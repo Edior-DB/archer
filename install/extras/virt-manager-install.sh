@@ -2,7 +2,14 @@
 # Install virt-manager on Arch Linux
 set -e
 
-sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat
+
+# Ensure iptables-nft is used and remove legacy iptables if present
+if pacman -Q iptables &>/dev/null && ! pacman -Q iptables-nft &>/dev/null; then
+	echo -e "\033[33mRemoving legacy iptables in favor of iptables-nft (required for dependencies)...\033[0m"
+	sudo pacman -R --noconfirm iptables
+fi
+
+sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat iptables-nft
 
 # Enable and start libvirtd
 sudo systemctl enable --now libvirtd
