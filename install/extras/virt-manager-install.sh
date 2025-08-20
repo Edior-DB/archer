@@ -4,12 +4,41 @@ set -e
 
 
 
-# Note: virt-manager and its dependencies do not require iptables-nft. If you have a conflict between iptables and iptables-nft, resolve it manually before running this script.
 
-# Install virt-manager and dependencies
-if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
-	echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
-	exit 1
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
+
+
+
+# Check for legacy iptables
+if pacman -Q iptables &>/dev/null; then
+	echo -e "${YELLOW}Legacy iptables is installed.${NC}"
+	echo "This will cause a conflict with ebtables (which requires iptables-nft)."
+	options=(
+		"Install virt-manager and dependencies WITHOUT ebtables (limited networking features)"
+		"Remove iptables manually and rerun this script (NOT recommended, may break base/networking)"
+		"Exit and wait for Arch to resolve the conflict in the repositories"
+	)
+	choice=$(select_option "${options[@]}")
+	if [[ "$choice" == *WITHOUT* ]]; then
+		echo -e "${YELLOW}Installing without ebtables... Some networking features may not work.${NC}"
+		if ! sudo pacman -S --noconfirm virt-manager qemu vde2 dnsmasq bridge-utils openbsd-netcat; then
+			echo -e "${RED}Failed to install virt-manager or dependencies.${NC}"
+			exit 1
+		fi
+	elif [[ "$choice" == *Remove* ]]; then
+		echo -e "${RED}Please remove iptables manually with 'sudo pacman -Rs iptables' and rerun this script.${NC}"
+		echo -e "${RED}WARNING: Removing iptables might break iproute2, base, netctl, and networkmanager.${NC}"
+		exit 1
+	else
+		echo -e "${YELLOW}Exiting. Wait for Arch Linux to resolve the iptables/ebtables conflict.${NC}"
+		exit 1
+	fi
+else
+	# No legacy iptables, proceed as normal
+	if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
+		echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
+		exit 1
+	fi
 fi
 
 # Enable and start libvirtd
