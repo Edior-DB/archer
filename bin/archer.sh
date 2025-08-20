@@ -462,7 +462,9 @@ ensure_golden_kde_config() {
     if [ -d "$HOME/.config" ] && [ -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" ]; then
         mkdir -p "$GOLDEN_CONFIG_DIR"
         cp -a "$HOME/.config/"* "$GOLDEN_CONFIG_DIR/"
-        echo -e "${GREEN}Golden KDE Plasma config saved to $GOLDEN_CONFIG_DIR${NC}"
+        # Make the golden config folder and its contents read-only
+        chmod -R a-w "$GOLDEN_CONFIG_DIR"
+        echo -e "${GREEN}Golden KDE Plasma config saved to $GOLDEN_CONFIG_DIR and set to read-only${NC}"
         return 0
     else
         echo -e "${RED}KDE config not found in ~/.config. Please log in to KDE Plasma first.${NC}"
