@@ -125,10 +125,10 @@ show_menu() {
     echo "  1) GPU Drivers Installation"
     echo "  2) WiFi Setup & Network Configuration"
     echo ""
-    echo -e "${GREEN}Desktop Environments:${NC}"
-    echo "  3) KDE Plasma (macOS-like)"
-    echo "  4) KDE Plasma (Windows-like)"
-    echo "  5) Switch Desktop Theme (Cupertini ↔ Redmondi ↔ Vanilla)"
+    echo -e "${GREEN}Software Installations:${NC}"
+    echo "  3) Firefox Browser Installation"
+    echo "  4) Brave Browser Installation"
+    echo "  5) Virt-Manager Installation"
     echo ""
     echo -e "${GREEN}Development:${NC}"
     echo "  6) Development Tools & Languages"
@@ -950,9 +950,9 @@ main() {
         options=(
             "1) GPU Drivers Installation"
             "2) WiFi Setup & Network Configuration"
-            "3) KDE Plasma (macOS-like)"
-            "4) KDE Plasma (Windows-like)"
-            "5) Switch Desktop Theme (Cupertini ↔ Redmondi)"
+            "3) Firefox Browser Installation"
+            "4) Brave Browser Installation"
+            "5) Virt-Manager Installation"
             "6) Development Tools & Languages"
             "7) Code Editors & IDEs"
             "8) Gaming Setup (Steam, Lutris, Wine)"
@@ -989,9 +989,9 @@ main() {
         case $choice in
             1)  run_script "$INSTALL_DIR/system/gpu-drivers.sh" ;;
             2)  run_script "$INSTALL_DIR/network/wifi-setup.sh" ;;
-            3)  run_script "$INSTALL_DIR/desktop/cupertini.sh" ;;
-            4)  run_script "$INSTALL_DIR/desktop/redmondi.sh" ;;
-            5)  switch_theme ;;
+            3)  run_script "$INSTALL_DIR/extras/firefox-install.sh" ;;
+            4)  run_script "$INSTALL_DIR/extras/brave-install.sh" ;;
+            5)  run_script "$INSTALL_DIR/extras/virt-manager-install.sh" ;;
             6)  run_script "$INSTALL_DIR/development/dev-tools.sh" ;;
             7)  run_script "$INSTALL_DIR/development/editors.sh" ;;
             8)  run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
