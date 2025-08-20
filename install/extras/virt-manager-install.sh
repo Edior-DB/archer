@@ -3,15 +3,8 @@
 set -e
 
 
-# Install iptables-nft alongside iptables if possible
-if ! pacman -Q iptables-nft &>/dev/null; then
-	if sudo pacman -S --noconfirm iptables-nft; then
-		echo -e "\033[32miptables-nft installed alongside iptables.\033[0m"
-	else
-		echo -e "\033[31mFailed to install iptables-nft. Please resolve any conflicts manually.\033[0m"
-		exit 1
-	fi
-fi
+
+# Note: virt-manager and its dependencies do not require iptables-nft. If you have a conflict between iptables and iptables-nft, resolve it manually before running this script.
 
 # Install virt-manager and dependencies
 if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
