@@ -32,10 +32,10 @@ main() {
     # Use lookandfeeltool for global theme (if you have a matching theme, e.g., org.kde.breeze)
     # lookandfeeltool -a org.kde.breeze
 
-    # Use D-Bus to load the vanilla layout from Archer configs
+    # Use D-Bus to evaluate a vanilla layout script from Archer configs (Plasma 6 compatible)
     LAYOUT_PATH="${ARCHER_DIR:-$HOME/.local/share/archer}/configs/vanilla-layout.js"
     if [ -f "$LAYOUT_PATH" ]; then
-        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.loadLayout "$LAYOUT_PATH"
+        qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript < "$LAYOUT_PATH"
         echo -e "\033[32mVanilla KDE Plasma layout applied using KDE API!\033[0m"
         echo -e "\033[33mIf you just applied a new layout, log out and back in for changes to take full effect.\033[0m"
     else
