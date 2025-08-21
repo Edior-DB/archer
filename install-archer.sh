@@ -256,6 +256,14 @@ setup_archer_repo() {
     # Create .local/share directory if it doesn't exist
     mkdir -p "$(dirname "$ARCHER_DIR")"
 
+
+    # Here, we need to check if the $HOME/.local/share/archer}/defaults/ directory exists;
+    # If yes, change permissions to make it (and its content) writable
+    if [ -d "$HOME/.local/share/archer/defaults/" ]; then
+        echo -e "${YELLOW}Making defaults directory writable...${NC}"
+        sudo chmod -R a+w "$HOME/.local/share/archer/defaults/"
+    fi
+
     # Remove existing archer directory if it exists
     if [[ -d "$ARCHER_DIR" ]]; then
         echo -e "${YELLOW}Removing existing archer directory...${NC}"
@@ -264,12 +272,7 @@ setup_archer_repo() {
 
     # Clone fresh repository
     echo -e "${YELLOW}Cloning Archer repository...${NC}"
-    # Here, we need to check if the $HOME/.local/share/archer}/defaults/ directory exists;
-    # If yes, change permissions to make it (and its content) writable
-    if [ -d "$HOME/.local/share/archer/defaults/" ]; then
-        echo -e "${YELLOW}Making defaults directory writable...${NC}"
-        sudo chmod -R +w "$HOME/.local/share/archer/defaults/"
-    fi
+
     if git clone "$REPO_URL" "$ARCHER_DIR"; then
         echo -e "${GREEN}Archer repository cloned successfully${NC}"
     else
