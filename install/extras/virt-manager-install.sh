@@ -37,6 +37,7 @@ if pacman -Q iptables &>/dev/null; then
 		fi
 	else
 		# iptables is present but using nft backend, proceed as normal
+    echo -e "${YELLOW}Installing everything${NC}"
 		if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
 			echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
 			exit 1
