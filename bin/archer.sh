@@ -461,7 +461,31 @@ ensure_golden_kde_config() {
     # Try to create golden config if possible
     if [ -d "$HOME/.config" ] && [ -f "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" ]; then
         mkdir -p "$GOLDEN_CONFIG_DIR"
-        cp -a "$HOME/.config/"* "$GOLDEN_CONFIG_DIR/"
+        # Only copy relevant KDE/Plasma config files
+        KDE_CONFIGS=(
+            "plasma*"
+            "kdeglobals"
+            "kwinrc"
+            "kscreenlockerrc"
+            "ksmserverrc"
+            "breezerc"
+            "dolphinrc"
+            "systemsettingsrc"
+            "autostart"
+            "plasmarc"
+            "kglobalshortcutsrc"
+            "krunnerrc"
+            "khotkeysrc"
+            "kcminputrc"
+            "kcminputrc"
+            "kaccessrc"
+            "kactivitymanagerdrc"
+        )
+        for f in "${KDE_CONFIGS[@]}"; do
+            for match in $HOME/.config/$f; do
+                [ -e "$match" ] && cp -a "$match" "$GOLDEN_CONFIG_DIR/"
+            done
+        done
         # Make the golden config folder and its contents read-only
         chmod -R a-w "$GOLDEN_CONFIG_DIR"
         echo -e "${GREEN}Golden KDE Plasma config saved to $GOLDEN_CONFIG_DIR and set to read-only${NC}"
