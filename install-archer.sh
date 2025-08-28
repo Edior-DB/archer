@@ -201,41 +201,62 @@ check_internet() {
 }
 
 
+
+# NOTE: For API consistency, the function is still called install_kde_minimal,
+# but it now installs a full-featured KDE Plasma desktop (including network, display, and audio management).
+# The name will be updated in a future refactor.
+
+# NOTE: For API consistency, the function is still called install_kde_minimal.
+# As of 2025, we now install the full KDE Plasma desktop using the plasma-meta package.
+# The previous explicit package list is kept below (commented out) for reference and future customization.
 install_kde_minimal() {
-    echo -e "${BLUE}Installing minimal KDE Plasma 6 desktop...${NC}"
-    local kde_packages=(
-        # Core Plasma desktop
-        "plasma-desktop"
-        "plasma-workspace"
-        "plasma-x11-session"
-        "discover"
-        "packagekit-qt6"
-        "qt5-tools"
-        "kde-cli-tools"
-        "kconfig5"
-        "konsole"
-        "sddm"
-        "xorg"
-        "xorg-server"
-        # XDG menu support (for applications.menu)
-        "xdg-utils"
-        #"xdg-menu"
-        # Optional but recommended for a full experience
-        "breeze"
-        "breeze-gtk"
-        "breeze-icons"
-        "kde-gtk-config"
-        "systemsettings"
-        "dolphin"
-        "ark"
-        "kwalletmanager"
-        "kdeplasma-addons"
-    )
-    install_with_retries "${kde_packages[@]}"
+    echo -e "${BLUE}Installing full KDE Plasma 6 desktop using plasma-meta (see comment above for naming)...${NC}"
+    # Previous explicit package list (for reference):
+    # local kde_packages=(
+    #     "plasma-desktop"
+    #     "plasma-workspace"
+    #     "plasma-x11-session"
+    #     "discover"
+    #     "packagekit-qt6"
+    #     "qt5-tools"
+    #     "kde-cli-tools"
+    #     "kconfig5"
+    #     "konsole"
+    #     "sddm"
+    #     "xorg"
+    #     "xorg-server"
+    #     # XDG menu support (for applications.menu)
+    #     "xdg-utils"
+    #     #"xdg-menu"
+    #     # Full experience: add network, display, audio, power, bluetooth, printing, etc.
+    #     "breeze"
+    #     "breeze-gtk"
+    #     "breeze-icons"
+    #     "kde-gtk-config"
+    #     "systemsettings"
+    #     "dolphin"
+    #     "ark"
+    #     "kwalletmanager"
+    #     "kdeplasma-addons"
+    #     # Network management
+    #     "networkmanager"
+    #     "plasma-nm"
+    #     # Display management
+    #     "kscreen"
+    #     # Audio management
+    #     "plasma-pa"
+    #     "pavucontrol"
+    #     # Power management
+    #     "powerdevil"
+    #     # Bluetooth
+    #     "bluedevil"
+    #     # Printing
+    #     "print-manager"
+    # )
+    # install_with_retries "${kde_packages[@]}"
+    install_with_retries plasma-meta
     sudo systemctl enable sddm
-    echo -e "${GREEN}Minimal KDE Plasma desktop installed!${NC}"
-
-
+    echo -e "${GREEN}Full KDE Plasma desktop installed!${NC}"
 }
 
 # Install essential packages
