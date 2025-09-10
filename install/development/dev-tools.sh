@@ -213,25 +213,43 @@ install_scripting_web() {
 
     # Install via Mise
     echo -e "${YELLOW}Installing languages via Mise...${NC}"
-    mise plugin add nodejs && mise install nodejs@latest
-    mise plugin add ruby && mise install ruby@latest
-    mise plugin add php && mise install php@latest
-    mise plugin add perl && mise install perl@latest
+
+    if confirm_action "Install Node.js via Mise?"; then
+        mise plugin add nodejs && mise install nodejs@latest
+    fi
+
+    if confirm_action "Install Ruby via Mise?"; then
+        mise plugin add ruby && mise install ruby@latest
+    fi
+
+    if confirm_action "Install PHP via Mise?"; then
+        mise plugin add php && mise install php@latest
+    fi
+
+    if confirm_action "Install Perl via Mise?"; then
+        mise plugin add perl && mise install perl@latest
+    fi
 
     # Raku (community plugin)
-    mise plugin add raku && mise install raku@latest || echo -e "${YELLOW}Raku plugin not available${NC}"
+    if confirm_action "Install Raku (Perl 6) via Mise?"; then
+        mise plugin add raku && mise install raku@latest || echo -e "${YELLOW}Raku plugin not available${NC}"
+    fi
 
     # Elixir/Erlang
-    mise plugin add erlang && mise install erlang@latest
-    mise plugin add elixir && mise install elixir@latest
+    if confirm_action "Install Elixir/Erlang via Mise?"; then
+        mise plugin add erlang && mise install erlang@latest
+        mise plugin add elixir && mise install elixir@latest
+    fi
 
     # TypeScript via npm (after Node.js)
-    if command -v npm &> /dev/null; then
+    if confirm_action "Install TypeScript globally via npm?" && command -v npm &> /dev/null; then
         npm install -g typescript ts-node
     fi
 
     # System packages for web development
-    install_with_retries lua luarocks
+    if confirm_action "Install Lua and LuaRocks?"; then
+        install_with_retries lua luarocks
+    fi
 
     echo -e "${GREEN}Scripting & web programming languages installed!${NC}"
 }
@@ -241,28 +259,43 @@ install_devops_mobile() {
     echo -e "${BLUE}Installing DevOps/Mobile development tools...${NC}"
 
     # DevOps tools
-    packages=(
-        "docker" "docker-compose" "podman"
-        "kubectl" "helm" "terraform"
-        "ansible"
-    )
+    if confirm_action "Install container and orchestration tools (Docker, Podman, Kubernetes)?"; then
+        container_packages=("docker" "docker-compose" "podman" "kubectl" "helm")
 
-    # Try pacman first, fallback to AUR
-    for package in "${packages[@]}"; do
-        if ! pacman -Q "$package" &>/dev/null; then
-            if pacman -Si "$package" &>/dev/null; then
-                install_with_retries "$package"
+        # Try pacman first, fallback to AUR
+        for package in "${container_packages[@]}"; do
+            if ! pacman -Q "$package" &>/dev/null; then
+                if pacman -Si "$package" &>/dev/null; then
+                    install_with_retries "$package"
+                else
+                    install_with_retries yay "$package"
+                fi
             else
-                install_with_retries yay "$package"
+                echo -e "${GREEN}$package is already installed${NC}"
             fi
-        else
-            echo -e "${GREEN}$package is already installed${NC}"
-        fi
-    done
+        done
 
-    # Enable Docker service
-    sudo systemctl enable docker
-    sudo usermod -aG docker $USER
+        # Enable Docker service
+        sudo systemctl enable docker
+        sudo usermod -aG docker $USER
+    fi
+
+    # Infrastructure as Code tools
+    if confirm_action "Install Infrastructure as Code tools (Terraform, Ansible)?"; then
+        iac_packages=("terraform" "ansible")
+
+        for package in "${iac_packages[@]}"; do
+            if ! pacman -Q "$package" &>/dev/null; then
+                if pacman -Si "$package" &>/dev/null; then
+                    install_with_retries "$package"
+                else
+                    install_with_retries yay "$package"
+                fi
+            else
+                echo -e "${GREEN}$package is already installed${NC}"
+            fi
+        done
+    fi
 
     # Mobile development
     if confirm_action "Install Flutter/Dart?"; then
@@ -281,7 +314,9 @@ install_database_tools() {
     echo -e "${BLUE}Installing Database tools...${NC}"
 
     # SQL clients
-    install_with_retries sqlite postgresql-libs mariadb-clients
+    if confirm_action "Install SQL clients (SQLite, PostgreSQL libs, MariaDB clients)?"; then
+        install_with_retries sqlite postgresql-libs mariadb-clients
+    fi
 
     # Offer Docker-based database installation
     if confirm_action "Set up databases via Docker containers?"; then
@@ -299,58 +334,61 @@ install_dev_tools() {
     echo -e "${BLUE}Installing development tools...${NC}"
 
     # Version control and tools
-    dev_packages=(
-        "git"
-        "git-lfs"
-        "github-cli"
-        "tig"
-        "diff-so-fancy"
+    if confirm_action "Install version control tools (Git, GitHub CLI, etc.)?"; then
+        git_packages=("git" "git-lfs" "github-cli" "tig" "diff-so-fancy")
+        install_with_retries "${git_packages[@]}"
+    fi
 
-        # Build tools
-        "cmake"
-        "ninja"
-        "meson"
-        "autoconf"
-        "automake"
-        "libtool"
+    # Build tools
+    if confirm_action "Install build tools (CMake, Ninja, Meson, Autotools)?"; then
+        build_packages=("cmake" "ninja" "meson" "autoconf" "automake" "libtool")
+        install_with_retries "${build_packages[@]}"
+    fi
 
-        # Databases
-        "sqlite"
-        "postgresql"
-        "mariadb"
-        "redis"
+    # Network tools
+    if confirm_action "Install network/API tools (curl, wget, HTTPie, Postman)?"; then
+        network_packages=("curl" "wget" "httpie")
+        install_with_retries "${network_packages[@]}"
+        # Postman might be AUR only
+        install_with_retries yay postman-bin
+    fi
 
-        # Network tools
-        "curl"
-        "wget"
-        "httpie"
-        "postman-bin"
+    # Text processing tools
+    if confirm_action "Install modern text processing tools (ripgrep, fd, bat, jq)?"; then
+        text_packages=("jq" "yq" "ripgrep" "fd" "bat" "exa")
+        install_with_retries "${text_packages[@]}"
+    fi
 
-        # Text processing
-        "jq"
-        "yq"
-        "ripgrep"
-        "fd"
-        "bat"
-        "exa"
+    # System monitoring
+    if confirm_action "Install system monitoring tools (htop, btop, glances)?"; then
+        monitor_packages=("htop" "btop" "glances")
+        install_with_retries "${monitor_packages[@]}"
+    fi
 
-        # Monitoring
-        "htop"
-        "btop"
-        "glances"
+    # Terminal multiplexers
+    if confirm_action "Install terminal multiplexers (tmux, screen)?"; then
+        terminal_packages=("tmux" "screen")
+        install_with_retries "${terminal_packages[@]}"
+    fi
 
-        # Terminal multiplexer
-        "tmux"
-        "screen"
-    )
-
-    for package in "${dev_packages[@]}"; do
-        if pacman -Si "$package" &> /dev/null; then
-            sudo pacman -S --noconfirm "$package"
-        else
-            yay -S --noconfirm "$package" || echo -e "${YELLOW}Failed to install $package${NC}"
+    # Modern terminal emulators
+    if confirm_action "Install modern terminal emulators?"; then
+        if confirm_action "Install Alacritty (GPU-accelerated, minimal terminal)?"; then
+            bash "${ARCHER_DIR}/install/development/terminal-alacritty.sh"
         fi
-    done
+
+        if confirm_action "Install Kitty (fast, feature-rich terminal)?"; then
+            bash "${ARCHER_DIR}/install/development/terminal-kitty.sh"
+        fi
+
+        if confirm_action "Install WezTerm (Rust-based terminal with advanced features)?"; then
+            bash "${ARCHER_DIR}/install/development/terminal-wezterm.sh"
+        fi
+
+        if confirm_action "Install Hyper (Electron-based terminal with plugins)?"; then
+            bash "${ARCHER_DIR}/install/development/terminal-hyper.sh"
+        fi
+    fi
 }
 
 # Database setup

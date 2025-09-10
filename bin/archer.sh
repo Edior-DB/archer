@@ -140,15 +140,16 @@ show_menu() {
     echo ""
     echo -e "${GREEN}Office & Productivity:${NC}"
     echo " 10) Office Suite Installation"
+    echo " 11) Font Collections (Nerd Fonts, Google, Apple, etc.)"
     echo ""
     echo -e "${GREEN}System Tools:${NC}"
-    echo " 11) AUR Helper Setup"
-    echo " 12) System Utilities"
+    echo " 12) AUR Helper Setup"
+    echo " 13) System Utilities"
     echo ""
     echo -e "${YELLOW}Quick Profiles:${NC}"
-    echo " 13) Complete Gaming Workstation"
-    echo " 14) Complete Development Environment"
-    echo " 15) Complete Multimedia Setup"
+    echo " 14) Complete Gaming Workstation"
+    echo " 15) Complete Development Environment"
+    echo " 16) Complete Multimedia Setup"
     echo ""
     echo " 0) Exit"
     echo ""
@@ -984,11 +985,12 @@ main() {
             "8) Gaming Setup (Steam, Lutris, Wine)"
             "9) Multimedia Applications"
             "10) Office Suite Installation"
-            "11) AUR Helper Setup"
-            "12) System Utilities"
-            "13) Complete Gaming Workstation"
-            "14) Complete Development Environment"
-            "15) Complete Multimedia Setup"
+            "11) Font Collections (Nerd Fonts, Google, Apple, etc.)"
+            "12) AUR Helper Setup"
+            "13) System Utilities"
+            "14) Complete Gaming Workstation"
+            "15) Complete Development Environment"
+            "16) Complete Multimedia Setup"
             "0) Exit"
         )
 
@@ -999,7 +1001,7 @@ main() {
             echo -e "${GREEN}Your selection: ${selection}${NC}"
         else
             # Fallback: use gum input for manual entry
-            choice=$(gum input --placeholder "Select an option [0-15]: " --width=20)
+            choice=$(gum input --placeholder "Select an option [0-16]: " --width=20)
             if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
                 selection_error=true
             fi
@@ -1023,11 +1025,12 @@ main() {
             8)  run_script "$INSTALL_DIR/multimedia/gaming.sh" ;;
             9)  run_script "$INSTALL_DIR/multimedia/media-apps.sh" ;;
             10) run_script "$INSTALL_DIR/desktop/office-tools/office-suite.sh" ;;
-            11) run_script "$INSTALL_DIR/extras/aur-helper.sh" ;;
-            12) run_script "$INSTALL_DIR/system/system-utilities.sh" ;;
-            13) install_profile "gaming" ;;
-            14) install_profile "development" ;;
-            15) install_profile "multimedia" ;;
+            11) run_script "$INSTALL_DIR/desktop/fonts.sh" ;;
+            12) run_script "$INSTALL_DIR/extras/aur-helper.sh" ;;
+            13) run_script "$INSTALL_DIR/system/system-utilities.sh" ;;
+            14) install_profile "gaming" ;;
+            15) install_profile "development" ;;
+            16) install_profile "multimedia" ;;
             0)
                 echo -e "${GREEN}Thank you for using Archer!${NC}"
                 exit 0
