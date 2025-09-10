@@ -1,3 +1,7 @@
 # Ignore memo files
 *.memo
 notes/*
+
+# Ignore private development notes
+.archer-prompts/private/
+.archer-prompts/*.private.md
