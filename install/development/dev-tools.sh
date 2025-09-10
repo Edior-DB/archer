@@ -2,6 +2,7 @@
 
 # Development Tools Installation Script
 # Installs programming languages, tools, and development environment
+# Following modern language management practices (2025)
 
 set -e
 
@@ -18,141 +19,279 @@ fi
 
 # Programming Languages Selection
 select_languages() {
-    echo -e "${BLUE}Select programming languages to install:${NC}"
-    echo "1. Python (recommended)"
-    echo "2. Node.js & npm"
-    echo "3. Rust"
-    echo "4. Go"
-    echo "5. Java (OpenJDK)"
-    echo "6. C/C++ (already installed with base-devel)"
-    echo "7. PHP"
-    echo "8. Ruby"
-    echo "9. All of the above"
+    echo -e "${BLUE}Select programming language categories to install:${NC}"
+    echo "1. System Programming (C/C++, Rust, Go, Nim, D, Zig, V)"
+    echo "2. Numerical Computing (Fortran, Julia, R, Octave, Haskell, Anaconda)"
+    echo "3. Scripting & Web (Node.js, Ruby, PHP, Perl, Raku, Elixir, TypeScript)"
+    echo "4. DevOps/Mobile (Docker, Kubernetes, Dart/Flutter, Kotlin)"
+    echo "5. Database Tools (SQL clients, Docker databases)"
+    echo "6. All categories"
     echo "0. Skip language installation"
     echo ""
 
-    lang_choice=$(get_input "Enter your choice (1-9, or multiple separated by spaces):" "1 2 3")
+    lang_choice=$(get_input "Enter your choice (1-6, or multiple separated by spaces):" "1 2 3")
 
-    # Install selected languages
-    if [[ "$lang_choice" == *"1"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_python
+    # Install Mise first (required for many language installations)
+    install_mise
+
+    # Install selected categories
+    if [[ "$lang_choice" == *"1"* ]] || [[ "$lang_choice" == "6" ]]; then
+        install_system_programming
     fi
 
-    if [[ "$lang_choice" == *"2"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_nodejs
+    if [[ "$lang_choice" == *"2"* ]] || [[ "$lang_choice" == "6" ]]; then
+        install_numerical_computing
     fi
 
-    if [[ "$lang_choice" == *"3"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_rust
+    if [[ "$lang_choice" == *"3"* ]] || [[ "$lang_choice" == "6" ]]; then
+        install_scripting_web
     fi
 
-    if [[ "$lang_choice" == *"4"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_go
+    if [[ "$lang_choice" == *"4"* ]] || [[ "$lang_choice" == "6" ]]; then
+        install_devops_mobile
     fi
 
-    if [[ "$lang_choice" == *"5"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_java
-    fi
-
-    if [[ "$lang_choice" == *"7"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_php
-    fi
-
-    if [[ "$lang_choice" == *"8"* ]] || [[ "$lang_choice" == "9" ]]; then
-        install_ruby
+    if [[ "$lang_choice" == *"5"* ]] || [[ "$lang_choice" == "6" ]]; then
+        install_database_tools
     fi
 }
 
-# Python installation
-install_python() {
-    echo -e "${BLUE}Installing Python development environment...${NC}"
+# Install Mise for language management
+install_mise() {
+    echo -e "${BLUE}Installing Mise (language version manager)...${NC}"
 
+    if command -v mise &> /dev/null; then
+        echo -e "${GREEN}Mise is already installed${NC}"
+        return
+    fi
+
+    # Install mise via package manager or curl
+    if ! pacman -Q mise &>/dev/null; then
+        if ! install_with_retries mise; then
+            curl https://mise.run | sh
+            echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+        fi
+    else
+        echo -e "${GREEN}Mise is already installed${NC}"
+    fi
+
+    # Initialize mise for current session
+    eval "$(mise activate bash)"
+
+    echo -e "${GREEN}Mise installed successfully!${NC}"
+}
+
+# System Programming Languages
+install_system_programming() {
+    echo -e "${BLUE}Installing System Programming languages...${NC}"
+
+    # C/C++ with both GCC and Clang (LLVM)
+    if confirm_action "Install C/C++ compilers (GCC + Clang/LLVM)?"; then
+        packages=(
+            "gcc" "glibc" "make" "cmake" "ninja"
+            "clang" "llvm" "lld"
+        )
+
+        install_with_retries "${packages[@]}"
+    fi
+
+    # D language: both DMD and LDC (LLVM)
+    if confirm_action "Install D language compilers (DMD + LDC)?"; then
+        install_with_retries yay dmd ldc
+    fi
+
+    # Install via Mise
+    echo -e "${YELLOW}Installing languages via Mise...${NC}"
+
+    if confirm_action "Install Rust via Mise?"; then
+        mise plugin add rust && mise install rust@latest
+    fi
+
+    if confirm_action "Install Go via Mise?"; then
+        mise plugin add go && mise install go@latest
+    fi
+
+    if confirm_action "Install Nim via Mise?"; then
+        mise plugin add nim && mise install nim@latest
+    fi
+
+    if confirm_action "Install Zig via Mise?"; then
+        mise plugin add zig && mise install zig@latest
+    fi
+
+    # V language (manual install)
+    if confirm_action "Install V language?"; then
+        cd /tmp
+        git clone https://github.com/vlang/v
+        cd v && make
+        sudo cp v /usr/local/bin/
+        cd ~ && rm -rf /tmp/v
+    fi
+
+    echo -e "${GREEN}System programming languages installed!${NC}"
+}
+
+# Numerical Computing / Scientific
+install_numerical_computing() {
+    echo -e "${BLUE}Installing Numerical Computing tools...${NC}"
+
+    # Fortran: GFortran and LFortran
+    if confirm_action "Install Fortran compilers (GFortran + LFortran)?"; then
+        packages=(
+            "gcc-fortran"
+            "openblas" "lapack"
+        )
+
+        install_with_retries "${packages[@]}"
+
+        # Install LFortran from AUR
+        install_with_retries yay lfortran-git
+    fi
+
+    # R statistical computing
+    if confirm_action "Install R statistical computing?"; then
+        install_with_retries r
+    fi
+
+    # Octave (MATLAB alternative)
+    if confirm_action "Install Octave (MATLAB alternative)?"; then
+        install_with_retries octave
+    fi
+
+    # Haskell
+    if confirm_action "Install Haskell (GHC + Cabal + Stack)?"; then
+        install_with_retries ghc cabal-install stack
+    fi
+
+    # Julia via Mise or official installer
+    if confirm_action "Install Julia programming language?"; then
+        mise plugin add julia && mise install julia@latest || {
+            echo -e "${YELLOW}Installing Julia via official installer...${NC}"
+            curl -fsSL https://install.julialang.org | sh
+        }
+    fi
+
+    # Spack package manager for scientific computing
+    if confirm_action "Install Spack package manager for HPC/scientific computing?"; then
+        cd /opt
+        sudo git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+        sudo chown -R $USER:$USER /opt/spack
+        echo -e "${GREEN}Spack installed to /opt/spack${NC}"
+        echo -e "${YELLOW}Add this to your shell profile to use Spack:${NC}"
+        echo -e "${CYAN}export SPACK_ROOT=/opt/spack${NC}"
+        echo -e "${CYAN}source \$SPACK_ROOT/share/spack/setup-env.sh${NC}"
+
+        # Optionally add to bashrc
+        if confirm_action "Add Spack to your ~/.bashrc automatically?"; then
+            echo "" >> ~/.bashrc
+            echo "# Spack package manager" >> ~/.bashrc
+            echo "export SPACK_ROOT=/opt/spack" >> ~/.bashrc
+            echo "source \$SPACK_ROOT/share/spack/setup-env.sh" >> ~/.bashrc
+            echo -e "${GREEN}Spack configuration added to ~/.bashrc${NC}"
+        fi
+    fi
+
+    # Anaconda for Python scientific computing
+    if confirm_action "Install Anaconda for Python scientific computing?"; then
+        install_with_retries yay anaconda || {
+            echo -e "${YELLOW}Installing Anaconda via official installer...${NC}"
+            cd /tmp
+            wget https://repo.anaconda.com/archive/Anaconda3-2025.09-Linux-x86_64.sh
+            bash Anaconda3-2025.09-Linux-x86_64.sh -b
+            echo 'export PATH="$HOME/anaconda3/bin:$PATH"' >> ~/.bashrc
+        }
+    fi
+
+    echo -e "${GREEN}Numerical computing tools installed!${NC}"
+}
+
+# Scripting & Web Programming
+install_scripting_web() {
+    echo -e "${BLUE}Installing Scripting & Web Programming languages...${NC}"
+
+    # Note: Python managed via Anaconda, shells already installed during main setup
+
+    # Install via Mise
+    echo -e "${YELLOW}Installing languages via Mise...${NC}"
+    mise plugin add nodejs && mise install nodejs@latest
+    mise plugin add ruby && mise install ruby@latest
+    mise plugin add php && mise install php@latest
+    mise plugin add perl && mise install perl@latest
+
+    # Raku (community plugin)
+    mise plugin add raku && mise install raku@latest || echo -e "${YELLOW}Raku plugin not available${NC}"
+
+    # Elixir/Erlang
+    mise plugin add erlang && mise install erlang@latest
+    mise plugin add elixir && mise install elixir@latest
+
+    # TypeScript via npm (after Node.js)
+    if command -v npm &> /dev/null; then
+        npm install -g typescript ts-node
+    fi
+
+    # System packages for web development
+    install_with_retries lua luarocks
+
+    echo -e "${GREEN}Scripting & web programming languages installed!${NC}"
+}
+
+# DevOps/Mobile Development
+install_devops_mobile() {
+    echo -e "${BLUE}Installing DevOps/Mobile development tools...${NC}"
+
+    # DevOps tools
     packages=(
-        "python"
-        "python-pip"
-        "python-pipenv"
-        "python-virtualenv"
-        "python-poetry"
-        "ipython"
-        "jupyter-notebook"
+        "docker" "docker-compose" "podman"
+        "kubectl" "helm" "terraform"
+        "ansible"
     )
 
+    # Try pacman first, fallback to AUR
     for package in "${packages[@]}"; do
-        sudo pacman -S --noconfirm "$package" || echo -e "${YELLOW}$package not available in repos${NC}"
+        if ! pacman -Q "$package" &>/dev/null; then
+            if pacman -Si "$package" &>/dev/null; then
+                install_with_retries "$package"
+            else
+                install_with_retries yay "$package"
+            fi
+        else
+            echo -e "${GREEN}$package is already installed${NC}"
+        fi
     done
 
-    # Popular Python packages
-    echo -e "${YELLOW}Installing popular Python packages...${NC}"
-    pip install --user --upgrade pip setuptools wheel
-    pip install --user requests numpy pandas matplotlib flask django fastapi
+    # Enable Docker service
+    sudo systemctl enable docker
+    sudo usermod -aG docker $USER
 
-    echo -e "${GREEN}Python environment installed!${NC}"
+    # Mobile development
+    if confirm_action "Install Flutter/Dart?"; then
+        mise plugin add flutter && mise install flutter@latest
+    fi
+
+    if confirm_action "Install Kotlin?"; then
+        install_with_retries yay kotlin
+    fi
+
+    echo -e "${GREEN}DevOps/Mobile tools installed!${NC}"
 }
 
-# Node.js installation
-install_nodejs() {
-    echo -e "${BLUE}Installing Node.js development environment...${NC}"
+# Database Tools
+install_database_tools() {
+    echo -e "${BLUE}Installing Database tools...${NC}"
 
-    sudo pacman -S --noconfirm nodejs npm yarn
+    # SQL clients
+    install_with_retries sqlite postgresql-libs mariadb-clients
 
-    # Global npm packages
-    echo -e "${YELLOW}Installing useful global npm packages...${NC}"
-    npm install -g @angular/cli create-react-app vue-cli typescript ts-node nodemon eslint prettier
+    # Offer Docker-based database installation
+    if confirm_action "Set up databases via Docker containers?"; then
+        setup_docker_databases
+    else
+        # Traditional installation
+        setup_native_databases
+    fi
 
-    echo -e "${GREEN}Node.js environment installed!${NC}"
-}
-
-# Rust installation
-install_rust() {
-    echo -e "${BLUE}Installing Rust development environment...${NC}"
-
-    sudo pacman -S --noconfirm rustup
-    rustup install stable
-    rustup default stable
-    rustup component add rust-src rust-analyzer clippy rustfmt
-
-    echo -e "${GREEN}Rust environment installed!${NC}"
-}
-
-# Go installation
-install_go() {
-    echo -e "${BLUE}Installing Go development environment...${NC}"
-
-    sudo pacman -S --noconfirm go
-
-    # Set up Go environment
-    echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-    echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc
-
-    echo -e "${GREEN}Go environment installed!${NC}"
-}
-
-# Java installation
-install_java() {
-    echo -e "${BLUE}Installing Java development environment...${NC}"
-
-    sudo pacman -S --noconfirm jdk-openjdk openjdk-doc gradle maven
-
-    echo -e "${GREEN}Java environment installed!${NC}"
-}
-
-# PHP installation
-install_php() {
-    echo -e "${BLUE}Installing PHP development environment...${NC}"
-
-    sudo pacman -S --noconfirm php php-apache composer
-
-    echo -e "${GREEN}PHP environment installed!${NC}"
-}
-
-# Ruby installation
-install_ruby() {
-    echo -e "${BLUE}Installing Ruby development environment...${NC}"
-
-    sudo pacman -S --noconfirm ruby rubygems
-    gem install bundler rails
-
-    echo -e "${GREEN}Ruby environment installed!${NC}"
+    echo -e "${GREEN}Database tools installed!${NC}"
 }
 
 # Development tools
@@ -215,10 +354,59 @@ install_dev_tools() {
 }
 
 # Database setup
-setup_databases() {
-    echo -e "${BLUE}Setting up databases...${NC}"
+setup_docker_databases() {
+    echo -e "${BLUE}Setting up Docker-based databases...${NC}"
+
+    # Create docker-compose.yml for databases
+    mkdir -p ~/dev-databases
+    cat > ~/dev-databases/docker-compose.yml << 'EOF'
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: devdb
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: devdb
+      MYSQL_USER: devuser
+      MYSQL_PASSWORD: devpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  mariadb_data:
+  redis_data:
+EOF
+
+    echo -e "${GREEN}Docker database setup created in ~/dev-databases/${NC}"
+    echo -e "${YELLOW}Run 'cd ~/dev-databases && docker-compose up -d' to start databases${NC}"
+}
+
+setup_native_databases() {
+    echo -e "${BLUE}Setting up native databases...${NC}"
 
     if confirm_action "Initialize PostgreSQL?"; then
+        install_with_retries postgresql
         sudo -u postgres initdb -D /var/lib/postgres/data
         sudo systemctl enable postgresql
         sudo systemctl start postgresql
@@ -226,6 +414,7 @@ setup_databases() {
     fi
 
     if confirm_action "Initialize MariaDB?"; then
+        install_with_retries mariadb
         sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
         sudo systemctl enable mariadb
         sudo systemctl start mariadb
@@ -234,6 +423,7 @@ setup_databases() {
     fi
 
     if confirm_action "Enable Redis?"; then
+        install_with_retries redis
         sudo systemctl enable redis
         sudo systemctl start redis
         echo -e "${GREEN}Redis enabled and started${NC}"
@@ -254,12 +444,21 @@ install_dev_editors() {
     for editor in "${editors[@]}"; do
         if confirm_action "Install $editor?"; then
             if pacman -Si "$editor" &> /dev/null; then
-                sudo pacman -S "$editor"
+                install_with_retries "$editor"
             else
-                yay -S "$editor" || echo -e "${YELLOW}Failed to install $editor${NC}"
+                install_with_retries yay "$editor"
             fi
         fi
     done
+
+    # VS Code and VSCodium using dedicated scripts
+    if confirm_action "Install Visual Studio Code?"; then
+        bash "${ARCHER_DIR}/install/development/app-vscode.sh"
+    fi
+
+    if confirm_action "Install VSCodium (open-source VS Code)?"; then
+        bash "${ARCHER_DIR}/install/development/app-vscodium.sh"
+    fi
 }
 
 # Git configuration
@@ -302,8 +501,8 @@ main() {
     # Configure Git
     configure_git
 
-    # Setup databases
-    setup_databases
+    # Setup database tools
+    install_database_tools
 
     # Install additional editors
     install_dev_editors
@@ -314,20 +513,25 @@ main() {
 =========================================================================
 
 Installed tools:
-- Version control (Git, GitHub CLI)
-- Build tools (CMake, Ninja, Meson)
-- Text processing tools (jq, ripgrep, bat)
-- Database systems (PostgreSQL, MariaDB, Redis)
-- Terminal tools (tmux, htop, btop)
+- Mise (language version manager)
+- System Programming: C/C++ (GCC+Clang), Rust, Go, Nim, D (DMD+LDC), Zig, V
+- Numerical Computing: Fortran (GFortran+LFortran), Julia, R, Octave, Haskell
+- Scripting & Web: Node.js, Ruby, PHP, Perl, Raku, Elixir, TypeScript, Lua
+- DevOps/Mobile: Docker, Kubernetes, Ansible, Terraform, Flutter/Dart, Kotlin
+- Database tools and clients
+- Scientific Python via Anaconda (if selected)
 
-Programming languages and their package managers have been installed
-based on your selections.
+Language management:
+- Use 'mise' to manage language versions per project
+- Python scientific computing via Anaconda
+- System Python for system scripts only
 
 Next steps:
 - Restart your terminal or run 'source ~/.bashrc'
+- Run 'mise --help' to learn about language management
+- Set up project-specific language versions with '.tool-versions' files
 - Configure your preferred code editor
-- Set up your development projects
-- Consider running the editors installation script
+- For databases: check ~/dev-databases/ if Docker option was selected
 
 ${NC}"
 
