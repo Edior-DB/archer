@@ -60,6 +60,9 @@ install_nerd_fonts() {
         return 0
     fi
 
+    # Ensure fonts directory exists
+    mkdir -p ~/.local/share/fonts/
+
     echo -e "${GREEN}Installing selected fonts...${NC}"
 
     for font in "${selected_fonts[@]}"; do
@@ -82,6 +85,10 @@ install_nerd_fonts() {
     done
 
     echo -e "${GREEN}Nerd Fonts installation completed!${NC}"
+
+    # Update font cache
+    echo -e "${CYAN}Updating font cache...${NC}"
+    fc-cache -fv ~/.local/share/fonts/ >/dev/null 2>&1
 
     # Set default monospace font if requested
     if confirm_action "Set JetBrains Mono Nerd Font as default monospace font?"; then

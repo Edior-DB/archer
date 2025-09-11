@@ -16,21 +16,36 @@ install_microsoft_fonts() {
     # Core Windows fonts
     if confirm_action "Install Core Windows fonts (Arial, Times New Roman, etc.)?"; then
         echo -e "${CYAN}Installing Core Windows fonts...${NC}"
-        if install_with_retries yay ttf-ms-fonts; then
-            echo -e "${GREEN}✓ Core Windows fonts installed${NC}"
-        else
-            echo -e "${YELLOW}Attempting alternative installation...${NC}"
+
+        # Check if AUR helper is available
+        if ! check_aur_helper; then
+            echo -e "${YELLOW}AUR helper not found. Installing Microsoft-compatible alternatives...${NC}"
             install_core_windows_fonts_manual
+        else
+            if install_with_retries yay ttf-ms-fonts; then
+                echo -e "${GREEN}✓ Core Windows fonts installed${NC}"
+            else
+                echo -e "${YELLOW}Core Windows fonts not available, installing alternatives...${NC}"
+                install_core_windows_fonts_manual
+            fi
         fi
     fi
 
     # Segoe UI (Modern Windows system font)
     if confirm_action "Install Segoe UI (Windows 10/11 system font)?"; then
         echo -e "${CYAN}Installing Segoe UI...${NC}"
-        if install_with_retries yay ttf-segoe-ui-variable; then
-            echo -e "${GREEN}✓ Segoe UI installed from AUR${NC}"
-        else
+
+        # Check if AUR helper is available
+        if ! check_aur_helper; then
+            echo -e "${YELLOW}AUR helper not found. Installing DejaVu as alternative...${NC}"
             install_segoe_ui_manual
+        else
+            if install_with_retries yay ttf-segoe-ui-variable; then
+                echo -e "${GREEN}✓ Segoe UI installed from AUR${NC}"
+            else
+                echo -e "${YELLOW}Segoe UI not available, installing alternative...${NC}"
+                install_segoe_ui_manual
+            fi
         fi
     fi
 
@@ -47,11 +62,21 @@ install_microsoft_fonts() {
     # Calibri and modern Office fonts
     if confirm_action "Install Microsoft Office fonts (Calibri, Cambria, etc.)?"; then
         echo -e "${CYAN}Installing Office fonts...${NC}"
-        if install_with_retries yay ttf-office-2007-fonts; then
-            echo -e "${GREEN}✓ Office fonts installed${NC}"
+
+        # Check if AUR helper is available
+        if ! check_aur_helper; then
+            echo -e "${YELLOW}AUR helper not found. Office fonts require AUR access.${NC}"
+            echo -e "${CYAN}Installing Liberation fonts as alternatives...${NC}"
+            install_with_retries ttf-liberation
         else
-            echo -e "${YELLOW}Office fonts not available via AUR${NC}"
-            echo -e "${CYAN}Note: These fonts require a Windows/Office license${NC}"
+            if install_with_retries yay ttf-office-2007-fonts; then
+                echo -e "${GREEN}✓ Office fonts installed${NC}"
+            else
+                echo -e "${YELLOW}Office fonts not available via AUR${NC}"
+                echo -e "${CYAN}Note: These fonts require a Windows/Office license${NC}"
+                echo -e "${CYAN}Installing Liberation fonts as alternatives...${NC}"
+                install_with_retries ttf-liberation
+            fi
         fi
     fi
 
@@ -67,6 +92,10 @@ install_microsoft_fonts() {
     fi
 
     echo -e "${GREEN}Microsoft Fonts installation completed!${NC}"
+
+    # Update font cache
+    echo -e "${CYAN}Updating font cache...${NC}"
+    fc-cache -fv >/dev/null 2>&1
 
     # Set Windows-like fonts if requested
     if confirm_action "Set Segoe UI as default system font (Windows-like)?"; then

@@ -49,6 +49,10 @@ install_adobe_fonts() {
 
     echo -e "${GREEN}Adobe Source Fonts installation completed!${NC}"
 
+    # Update font cache
+    echo -e "${CYAN}Updating font cache...${NC}"
+    fc-cache -fv >/dev/null 2>&1
+
     # Set Source Sans Pro as system font if requested
     if confirm_action "Set Source Sans Pro as default system font?"; then
         if command -v gsettings &> /dev/null; then

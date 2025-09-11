@@ -21,8 +21,8 @@ install_system_fonts() {
         "ttf-liberation"          # Microsoft-compatible fonts
         "noto-fonts"              # Google's comprehensive Unicode fonts
         "noto-fonts-emoji"        # Emoji support
-        "ttf-opensans"            # Modern web font
-        "ttf-droid"               # Android fonts
+        "ttf-open-sans"           # Modern web font (fixed package name)
+        "ttf-droid-fonts"         # Android fonts (fixed package name)
         "cantarell-fonts"         # GNOME default
     )
 
@@ -41,8 +41,6 @@ install_system_fonts() {
         local intl_fonts=(
             "noto-fonts-cjk"         # Chinese, Japanese, Korean
             "noto-fonts-extra"       # Additional scripts
-            "ttf-arphic-uming"       # Chinese
-            "ttf-baekmuk"            # Korean
             "adobe-source-han-sans-fonts"  # CJK sans
             "adobe-source-han-serif-fonts" # CJK serif
         )
@@ -62,9 +60,7 @@ install_system_fonts() {
 
         local math_fonts=(
             "texlive-fontsextra"     # LaTeX math fonts
-            "ttf-computer-modern-fonts" # TeX Computer Modern
             "otf-latin-modern"       # Modern LaTeX fonts
-            "otf-stix"               # Scientific fonts
         )
 
         for font in "${math_fonts[@]}"; do
@@ -138,6 +134,10 @@ EOF
     fi
 
     echo -e "${GREEN}System enhancement fonts installation completed!${NC}"
+
+    # Update font cache
+    echo -e "${CYAN}Updating font cache...${NC}"
+    fc-cache -fv >/dev/null 2>&1
 
     # Set improved default fonts
     if confirm_action "Set Noto fonts as system defaults?"; then
