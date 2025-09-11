@@ -5,3 +5,4 @@ notes/*
 # Ignore private development notes
 .archer-prompts/private/
 .archer-prompts/*.private.md
+bin/__pycache__/

@@ -14,7 +14,8 @@ from typing import Dict, List, Optional, Tuple
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn, MofNCompleteColumn, TaskProgressColumn
+from rich.live import Live
 from rich.prompt import Prompt, Confirm
 from rich.text import Text
 from rich.align import Align
@@ -114,48 +115,299 @@ class ArcherUI:
         }
         return icons.get(action, '⚙️')
 
-    def show_progress(self, description: str, command: str) -> bool:
-        """Show progress while executing a command"""
+    def show_multi_package_progress(self, description: str, packages: List[str], command_template: str) -> bool:
+        """Show nala-style multi-package installation progress"""
+        self.console.print(f"\n[bold blue]📦 {description}[/bold blue]")
+        self.console.print(f"[dim]Installing {len(packages)} packages[/dim]\n")
+
+        # Create nala-style multi-progress display
         with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(bar_width=30),
+            TaskProgressColumn(),
+            TextColumn("•"),
             TimeElapsedColumn(),
+            TextColumn("•"),
+            TextColumn("[cyan]{task.fields[status]}"),
             console=self.console,
-            transient=True
+            transient=False,
+            expand=False
         ) as progress:
 
-            task = progress.add_task(description, total=100)
+            # Overall progress
+            overall_task = progress.add_task(
+                f"[bold]{description}",
+                total=len(packages),
+                status="Starting..."
+            )
 
-            # Start the subprocess
+            success_count = 0
+            failed_packages = []
+
+            for i, package in enumerate(packages, 1):
+                # Create task for this package
+                package_task = progress.add_task(
+                    f"  [{i}/{len(packages)}] {package}",
+                    total=100,
+                    status="Queued"
+                )
+
+                # Execute package installation
+                command = command_template.format(package=package)
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True
+                )
+
+                progress.update(package_task, completed=10, status="Downloading")
+
+                output_lines = []
+                package_progress = 10
+
+                while True:
+                    output = process.stdout.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+
+                    if output:
+                        line = output.strip()
+                        output_lines.append(line)
+                        line_lower = line.lower()
+
+                        # Update progress based on output
+                        if 'downloading' in line_lower:
+                            package_progress = min(package_progress + 5, 40)
+                            progress.update(package_task, completed=package_progress, status="Downloading")
+                        elif 'installing' in line_lower:
+                            package_progress = min(package_progress + 10, 80)
+                            progress.update(package_task, completed=package_progress, status="Installing")
+                        elif 'configuring' in line_lower:
+                            package_progress = min(package_progress + 5, 90)
+                            progress.update(package_task, completed=package_progress, status="Configuring")
+
+                return_code = process.poll()
+
+                if return_code == 0:
+                    progress.update(
+                        package_task,
+                        completed=100,
+                        status="✓ Installed"
+                    )
+                    success_count += 1
+                else:
+                    progress.update(
+                        package_task,
+                        completed=package_progress,
+                        status="✗ Failed"
+                    )
+                    failed_packages.append(package)
+
+                # Update overall progress
+                progress.update(
+                    overall_task,
+                    completed=i,
+                    status=f"Processing ({success_count}/{i} successful)"
+                )
+
+                time.sleep(0.1)  # Brief pause between packages
+
+            # Final status
+            if success_count == len(packages):
+                progress.update(
+                    overall_task,
+                    status=f"✓ All {len(packages)} packages installed"
+                )
+                self.console.print(f"\n[bold green]✓ All packages installed successfully![/bold green]")
+                return True
+            else:
+                progress.update(
+                    overall_task,
+                    status=f"⚠ {success_count}/{len(packages)} successful"
+                )
+                self.console.print(f"\n[bold yellow]⚠ {success_count}/{len(packages)} packages installed[/bold yellow]")
+                if failed_packages:
+                    self.console.print(f"[red]Failed packages: {', '.join(failed_packages)}[/red]")
+                return success_count > 0
+
+    def show_progress(self, description: str, command: str) -> bool:
+        """Show progress while executing a command with nala-style interface"""
+        self.console.print(f"\n[bold blue]� {description}[/bold blue]")
+        self.console.print(f"[dim]Command: {command}[/dim]\n")
+
+        # Create nala-style progress display
+        with Progress(
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(bar_width=40),
+            TaskProgressColumn(),
+            TextColumn("•"),
+            TimeElapsedColumn(),
+            TextColumn("•"),
+            TextColumn("[cyan]{task.fields[status]}"),
+            console=self.console,
+            transient=False,
+            expand=False
+        ) as progress:
+
+            # Main task for overall progress
+            main_task = progress.add_task(
+                f"[bold]{description}",
+                total=100,
+                status="Initializing..."
+            )
+
+            # Subtask for current operation
+            sub_task = progress.add_task(
+                "  └─ Preparing...",
+                total=100,
+                status="Starting"
+            )
+
+            # Start the subprocess with real-time output
             process = subprocess.Popen(
                 command,
                 shell=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
             )
 
-            # Simulate progress (in real implementation, you'd parse actual progress)
-            while process.poll() is None:
-                progress.advance(task, 2)
-                time.sleep(0.1)
-                if progress.tasks[0].completed >= 100:
-                    progress.reset(task)
+            # Progress tracking variables
+            output_lines = []
+            main_progress = 0
+            sub_progress = 0
+            current_operation = "Starting"
+            operations_seen = set()
+
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+
+                if output:
+                    line = output.strip()
+                    output_lines.append(line)
+
+                    # Keep only last 50 lines
+                    if len(output_lines) > 50:
+                        output_lines = output_lines[-25:]
+
+                    # Parse different types of operations for progress estimation
+                    line_lower = line.lower()
+
+                    # Detect different phases
+                    if any(keyword in line_lower for keyword in ['downloading', 'download']):
+                        if 'downloading' not in operations_seen:
+                            operations_seen.add('downloading')
+                            main_progress = min(main_progress + 20, 90)
+                        current_operation = "Downloading"
+                        sub_progress = min(sub_progress + 15, 100)
+
+                    elif any(keyword in line_lower for keyword in ['installing', 'install']):
+                        if 'installing' not in operations_seen:
+                            operations_seen.add('installing')
+                            main_progress = min(main_progress + 25, 90)
+                        current_operation = "Installing"
+                        sub_progress = min(sub_progress + 20, 100)
+
+                    elif any(keyword in line_lower for keyword in ['building', 'compiling', 'compile']):
+                        if 'building' not in operations_seen:
+                            operations_seen.add('building')
+                            main_progress = min(main_progress + 30, 90)
+                        current_operation = "Building"
+                        sub_progress = min(sub_progress + 10, 100)
+
+                    elif any(keyword in line_lower for keyword in ['configuring', 'configure']):
+                        if 'configuring' not in operations_seen:
+                            operations_seen.add('configuring')
+                            main_progress = min(main_progress + 15, 90)
+                        current_operation = "Configuring"
+                        sub_progress = min(sub_progress + 25, 100)
+
+                    elif any(keyword in line_lower for keyword in ['extracting', 'extract']):
+                        if 'extracting' not in operations_seen:
+                            operations_seen.add('extracting')
+                            main_progress = min(main_progress + 10, 90)
+                        current_operation = "Extracting"
+                        sub_progress = min(sub_progress + 30, 100)
+
+                    elif any(keyword in line_lower for keyword in ['processing', 'process']):
+                        current_operation = "Processing"
+                        sub_progress = min(sub_progress + 5, 100)
+
+                    elif any(keyword in line_lower for keyword in ['complete', 'finished', 'done', 'success']):
+                        current_operation = "Completing"
+                        main_progress = min(main_progress + 10, 100)
+                        sub_progress = 100
+
+                    # Update progress bars
+                    progress.update(
+                        main_task,
+                        completed=main_progress,
+                        status=f"{current_operation}..."
+                    )
+
+                    # Show current package/file being processed
+                    if len(line) > 0:
+                        # Extract package name or file name if visible
+                        display_line = line[:50] + "..." if len(line) > 50 else line
+                        progress.update(
+                            sub_task,
+                            description=f"  └─ {current_operation}: {display_line}",
+                            completed=sub_progress,
+                            status="Active"
+                        )
+
+                    # Small delay to make progress visible
+                    time.sleep(0.05)
 
             # Complete the progress
-            progress.update(task, completed=100)
+            return_code = process.poll()
 
-            # Get the result
-            stdout, stderr = process.communicate()
+            if return_code == 0:
+                progress.update(
+                    main_task,
+                    completed=100,
+                    status="✓ Completed"
+                )
+                progress.update(
+                    sub_task,
+                    description="  └─ Installation successful",
+                    completed=100,
+                    status="✓ Done"
+                )
+                time.sleep(0.5)  # Brief pause to show completion
 
-            if process.returncode == 0:
-                self.console.print(f"[green]✓ {description} completed successfully[/green]")
+                self.console.print(f"\n[bold green]✓ {description} completed successfully![/bold green]")
                 return True
             else:
-                self.console.print(f"[red]✗ {description} failed[/red]")
-                if stderr:
-                    self.console.print(f"[red]Error: {stderr.strip()}[/red]")
+                progress.update(
+                    main_task,
+                    completed=main_progress,
+                    status="✗ Failed"
+                )
+                progress.update(
+                    sub_task,
+                    description="  └─ Installation failed",
+                    completed=sub_progress,
+                    status="✗ Error"
+                )
+                time.sleep(0.5)
+
+                self.console.print(f"\n[bold red]✗ {description} failed (exit code: {return_code})[/bold red]")
+
+                # Show last few lines of output for debugging
+                if output_lines:
+                    self.console.print("\n[yellow]Last output:[/yellow]")
+                    for line in output_lines[-5:]:  # Show last 5 lines
+                        self.console.print(f"  [dim]{line}[/dim]")
+
                 return False
 
     def confirm_action(self, message: str) -> bool:
@@ -407,6 +659,14 @@ class ArcherMenu:
         """Execute a script with progress indication"""
         script_name = option['display']
 
+        # Show script info
+        self.ui.display_info(
+            f"About to execute: {script_name}",
+            f"Script location: {script_path}\n"
+            f"This will install/configure: {script_name}\n\n"
+            f"⚠️  Some installations may require sudo privileges"
+        )
+
         if not self.ui.confirm_action(f"Execute {script_name}?"):
             self.ui.console.print("[yellow]Operation cancelled[/yellow]")
             return
@@ -417,9 +677,13 @@ class ArcherMenu:
             return
 
         # Make the script executable
-        os.chmod(script_path, 0o755)
+        try:
+            os.chmod(script_path, 0o755)
+        except PermissionError:
+            self.ui.display_error(f"Cannot make script executable: {script_path}")
+            return
 
-        # Execute with progress
+        # Execute with progress and real-time feedback
         success = self.ui.show_progress(
             f"Installing {script_name}",
             f"cd '{self.archer_dir}' && bash '{script_path}'"
@@ -427,8 +691,33 @@ class ArcherMenu:
 
         if success:
             self.ui.display_success(f"{script_name} installed successfully!")
+
+            # Offer to view installation log if available
+            log_files = [
+                os.path.join(self.archer_dir, 'logs', f"{script_name.lower().replace(' ', '_')}.log"),
+                f"/tmp/archer_{script_name.lower().replace(' ', '_')}.log"
+            ]
+
+            for log_file in log_files:
+                if os.path.exists(log_file):
+                    if self.ui.confirm_action(f"View installation log?"):
+                        with open(log_file, 'r') as f:
+                            log_content = f.read()
+                            self.ui.display_info("Installation Log", log_content[-2000:])  # Last 2000 chars
+                    break
         else:
             self.ui.display_error(f"Failed to install {script_name}")
+
+            # Offer troubleshooting suggestions
+            self.ui.display_info(
+                "Troubleshooting",
+                "Common solutions:\n"
+                "• Check internet connection\n"
+                "• Ensure you have sufficient disk space\n"
+                "• Try running with sudo if permission errors occurred\n"
+                "• Check if the package repository is available\n"
+                f"• Manually run: bash '{script_path}' for detailed output"
+            )
 
         # Wait for user to continue
         Prompt.ask("\n[dim]Press Enter to continue[/dim]", default="")
