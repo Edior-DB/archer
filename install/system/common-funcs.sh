@@ -87,6 +87,7 @@ check_toml_requirements() {
 # Parse TOML menu configuration
 parse_menu_toml() {
     local toml_file="$1"
+    local script_dir="$(dirname "${BASH_SOURCE[0]}")"
     local temp_script="/tmp/archer_toml_$$"
 
     if [[ ! -f "$toml_file" ]]; then
@@ -99,66 +100,8 @@ parse_menu_toml() {
         return 1
     fi
 
-    # Convert TOML to bash variables
-    python3 -c "
-import tomllib
-import sys
-import os
-
-def escape_bash_string(s):
-    # Escape single quotes for bash
-    return s.replace(\"'\", \"'\\\"'\\\"'\")
-
-try:
-    with open('$toml_file', 'rb') as f:
-        config = tomllib.load(f)
-
-    # Get header information
-    print(f\"MENU_NAME='{escape_bash_string(config.get('description', 'Unknown Menu'))}'\")
-    print(f\"MENU_DESCRIPTION='{escape_bash_string(config.get('description', ''))}'\")
-    print(f\"MENU_ICON='📁'\")
-    print(f\"MENU_LEVEL='main'\")
-
-def escape_bash_string(s):
-    # Escape single quotes for bash
-    return s.replace(\"'\", \"'\\\"'\\\"'\")
-
-    # Parse menu_items array
-    menu_items = config.get('menu_items', [])
-    for i, item in enumerate(menu_items):
-        name = item.get('name', f'Item {i}')
-        description = item.get('description', '')
-        action_type = item.get('action_type', 'unknown')
-
-        # Handle different action types
-        if action_type == 'submenu':
-            target = item.get('submenu_path', '')
-        elif action_type == 'script':
-            target = item.get('script_path', '')
-        elif action_type == 'multiselect':
-            target = 'multiselect'
-        else:
-            target = item.get('target', '')
-
-        # Create option variable
-        print(f\"OPTION_{i}='{name}|{action_type}|{target}')\")
-
-    # Parse quick_actions array
-    quick_actions = config.get('quick_actions', [])
-    if quick_actions:
-        print(f\"QUICK_ACTIONS_AVAILABLE='true')\")
-        for i, action in enumerate(quick_actions):
-            name = action.get('name', f'Action {i}')
-            description = action.get('description', '')
-            command = action.get('command', '')
-            print(f\"QUICK_ACTION_{i}='{name}|{description}|{command}')\")
-
-except Exception as e:
-    print(f\"echo 'Error parsing TOML: {e}' >&2; exit 1\", file=sys.stderr)
-    sys.exit(1)
-" > "$temp_script"
-
-    if [[ $? -eq 0 ]]; then
+    # Parse TOML using external Python script and source the output
+    if python3 "$script_dir/parse_toml.py" "$toml_file" > "$temp_script" 2>/dev/null; then
         source "$temp_script"
         rm -f "$temp_script"
         return 0
@@ -167,6 +110,8 @@ except Exception as e:
         return 1
     fi
 }
+
+
 
 # Discover TOML menus in directory
 discover_toml_menus() {
@@ -208,49 +153,68 @@ execute_custom_action() {
     local toml_file="$2"
     local menu_path="$3"
 
-    # Parse quick_actions from TOML
-    local action_items
-    action_items=$(python3 -c "
-import tomllib
-try:
-    with open('$toml_file', 'rb') as f:
-        config = tomllib.load(f)
-    quick_actions = config.get('quick_actions', {})
-    if '$action_name' in quick_actions:
-        for item in quick_actions['$action_name']:
-            print(item)
-except Exception:
-    pass
-")
+    # Parse the TOML file using external script
+    local script_dir="$(dirname "${BASH_SOURCE[0]}")"
+    local temp_script="/tmp/archer_quick_actions_$$"
 
-    if [[ -z "$action_items" ]]; then
-        echo -e "${RED}Custom action '$action_name' not defined${NC}"
+    if ! python3 "$script_dir/parse_toml.py" "$toml_file" > "$temp_script" 2>/dev/null; then
+        echo -e "${RED}Failed to parse TOML file for quick actions${NC}"
+        rm -f "$temp_script"
+        wait_for_input
+        return 1
+    fi
+
+    # Source the parsed variables
+    source "$temp_script"
+    rm -f "$temp_script"
+
+    # Check if quick actions are available
+    if [[ "$QUICK_ACTIONS_AVAILABLE" != "true" ]]; then
+        echo -e "${RED}No quick actions available in this menu${NC}"
+        wait_for_input
+        return 1
+    fi
+
+    # Find the action by name
+    local action_found=false
+    local action_command=""
+    for ((i=0; i<QUICK_ACTIONS_COUNT; i++)); do
+        local var_name="QUICK_ACTION_$i"
+        local action_data="${!var_name}"
+        if [[ -n "$action_data" ]]; then
+            local name="${action_data%%|*}"
+            local rest="${action_data#*|}"
+            local description="${rest%%|*}"
+            local command="${rest#*|}"
+
+            if [[ "$name" == "$action_name" ]]; then
+                action_found=true
+                action_command="$command"
+                break
+            fi
+        fi
+    done
+
+    if [[ "$action_found" != "true" ]]; then
+        echo -e "${RED}Custom action '$action_name' not found${NC}"
         wait_for_input
         return 1
     fi
 
     echo -e "${BLUE}Executing custom action: $action_name${NC}"
+    echo -e "${CYAN}Command: $action_command${NC}"
 
-    while IFS= read -r item; do
-        if [[ -n "$item" ]]; then
-            if [[ "$ARCHER_VERBOSE" == "true" ]]; then
-                echo -e "${CYAN}Processing: $item${NC}"
-            fi
+    # Execute the command
+    if [[ "$ARCHER_VERBOSE" == "true" ]]; then
+        echo -e "${CYAN}Running: $action_command${NC}"
+    fi
 
-            # Try to install as package first, then as script
-            if ! install_with_retries "$item"; then
-                local script_path="$menu_path/${item}.sh"
-                if [[ -f "$script_path" ]]; then
-                    echo -e "${YELLOW}Running script: $item${NC}"
-                    bash "$script_path"
-                else
-                    echo -e "${YELLOW}⚠ Could not find package or script: $item${NC}"
-                fi
-            fi
-        fi
-    done <<< "$action_items"
+    if eval "$action_command"; then
+        echo -e "${GREEN}✓ Custom action completed successfully${NC}"
+    else
+        echo -e "${RED}✗ Custom action failed${NC}"
+    fi
 
-    echo -e "${GREEN}✓ Custom action completed${NC}"
     wait_for_input "Press Enter to return to menu..."
 }
 
