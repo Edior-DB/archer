@@ -18,8 +18,8 @@ install_adobe_fonts() {
         "adobe-source-sans-fonts"     # Sans-serif family
         "adobe-source-serif-fonts"    # Serif family
         "adobe-source-code-pro-fonts" # Monospace (if not already installed)
-        "adobe-source-han-sans-fonts" # CJK support
-        "adobe-source-han-serif-fonts" # CJK serif
+        "adobe-source-han-sans-otc-fonts" # CJK support (CORRECTED NAME)
+        "adobe-source-han-serif-otc-fonts" # CJK serif (CORRECTED NAME)
     )
 
     echo -e "${YELLOW}Installing Adobe Source font families...${NC}"

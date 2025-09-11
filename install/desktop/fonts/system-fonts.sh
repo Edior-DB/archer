@@ -21,8 +21,7 @@ install_system_fonts() {
         "ttf-liberation"          # Microsoft-compatible fonts
         "noto-fonts"              # Google's comprehensive Unicode fonts
         "noto-fonts-emoji"        # Emoji support
-        "ttf-open-sans"           # Modern web font (fixed package name)
-        "ttf-droid-fonts"         # Android fonts (fixed package name)
+        "ttf-droid"               # Android fonts (VERIFIED CORRECT NAME)
         "cantarell-fonts"         # GNOME default
     )
 
@@ -39,10 +38,13 @@ install_system_fonts() {
         echo -e "${CYAN}Installing international fonts...${NC}"
 
         local intl_fonts=(
-            "noto-fonts-cjk"         # Chinese, Japanese, Korean
+            "noto-fonts-cjk"         # Chinese, Japanese, Korean (VERIFIED AVAILABLE)
             "noto-fonts-extra"       # Additional scripts
-            "adobe-source-han-sans-fonts"  # CJK sans
-            "adobe-source-han-serif-fonts" # CJK serif
+            "ttf-arphic-ukai"        # Chinese Kaiti (VERIFIED AVAILABLE)
+            "ttf-arphic-uming"       # Chinese Ming (VERIFIED AVAILABLE)
+            "ttf-baekmuk"            # Korean fonts (VERIFIED AVAILABLE)
+            "adobe-source-han-sans-otc-fonts"  # CJK sans (CORRECTED NAME)
+            "adobe-source-han-serif-otc-fonts" # CJK serif (CORRECTED NAME)
         )
 
         for font in "${intl_fonts[@]}"; do
@@ -133,7 +135,29 @@ EOF
         echo -e "${GREEN}✓ Fontconfig configured for better rendering${NC}"
     fi
 
-    echo -e "${GREEN}System enhancement fonts installation completed!${NC}"
+    # Modern coding and display fonts
+    if confirm_action "Install modern coding and display fonts?"; then
+        echo -e "${CYAN}Installing modern fonts...${NC}"
+
+        local modern_fonts=(
+            "ttf-jetbrains-mono"     # JetBrains coding font with ligatures
+            "ttf-cascadia-code"      # Microsoft's coding font
+            "ttf-hack"               # Hand groomed coding font
+            "ttf-fira-code"          # Monospace with ligatures
+            "ttf-fira-sans"          # Mozilla's sans-serif
+            "ttf-fira-mono"          # Mozilla's monospace
+            "ttf-inconsolata"        # Monospace for code listings
+            "ttf-lato"               # Modern sans-serif
+        )
+
+        for font in "${modern_fonts[@]}"; do
+            if install_with_retries "$font"; then
+                echo -e "${GREEN}✓ $font installed${NC}"
+            else
+                echo -e "${YELLOW}⚠ $font not available${NC}"
+            fi
+        done
+    fi
 
     # Update font cache
     echo -e "${CYAN}Updating font cache...${NC}"

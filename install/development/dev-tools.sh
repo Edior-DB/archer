@@ -274,6 +274,14 @@ install_scripting_web() {
 
     if confirm_action "Install Node.js via Mise?"; then
         mise install nodejs@latest
+
+        # Configure npm to avoid sudo requirements for global packages
+        if command -v npm &> /dev/null; then
+            echo -e "${CYAN}Configuring npm for user-local global packages...${NC}"
+            npm config set prefix ~/.local
+            echo -e "${YELLOW}Global npm packages will be installed to ~/.local/bin${NC}"
+            echo -e "${YELLOW}Make sure ~/.local/bin is in your PATH${NC}"
+        fi
     fi
 
     if confirm_action "Install Ruby via Mise?"; then
@@ -283,7 +291,7 @@ install_scripting_web() {
     if confirm_action "Install PHP via Mise?"; then
         # Install PHP dependencies first
         echo -e "${YELLOW}Installing PHP dependencies...${NC}"
-        install_with_retries gd libgd
+        install_with_retries gd
         mise install php@latest
     fi
 
@@ -298,13 +306,37 @@ install_scripting_web() {
 
     # Elixir/Erlang
     if confirm_action "Install Elixir/Erlang via Mise?"; then
-        mise plugin add erlang && mise install erlang@latest
-        mise plugin add elixir && mise install elixir@latest
+        mise install erlang@latest
+        mise install elixir@latest
     fi
 
     # TypeScript via npm (after Node.js)
     if confirm_action "Install TypeScript globally via npm?" && command -v npm &> /dev/null; then
-        npm install -g typescript ts-node
+        echo -e "${CYAN}Installing TypeScript and ts-node globally...${NC}"
+
+        # Check if npm is configured with user prefix
+        npm_prefix=$(npm config get prefix 2>/dev/null || echo "")
+
+        if [[ "$npm_prefix" == *"$HOME"* ]]; then
+            # npm is configured for user installation
+            echo -e "${YELLOW}Installing to user directory: $npm_prefix${NC}"
+            npm install -g typescript ts-node
+            echo -e "${GREEN}✓ TypeScript installed to user directory${NC}"
+        else
+            # Try npm install without sudo first (if npm is properly configured)
+            if npm install -g typescript ts-node 2>/dev/null; then
+                echo -e "${GREEN}✓ TypeScript installed successfully${NC}"
+            else
+                # If it fails, try with sudo
+                echo -e "${YELLOW}Permission denied, trying with sudo...${NC}"
+                if sudo npm install -g typescript ts-node; then
+                    echo -e "${GREEN}✓ TypeScript installed with sudo${NC}"
+                else
+                    echo -e "${RED}✗ Failed to install TypeScript globally${NC}"
+                    echo -e "${YELLOW}You can install it locally in your project with: npm install typescript ts-node${NC}"
+                fi
+            fi
+        fi
     fi
 
     # UV - Python package manager

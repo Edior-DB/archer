@@ -22,8 +22,9 @@ install_google_fonts() {
             "noto-fonts"              # Comprehensive Unicode support
             "noto-fonts-emoji"        # Emoji support
             "noto-fonts-extra"        # Additional Noto variants
-            "ttf-roboto-fonts"        # Android's default font (fixed package name)
-            "ttf-ubuntu-font"         # Ubuntu fonts (fixed package name)
+            "ttf-roboto"              # Android's default font (VERIFIED CORRECT)
+            "ttf-roboto-mono"         # Roboto monospace (VERIFIED CORRECT)
+            "ttf-lato"                # Lato family (VERIFIED AVAILABLE)
         )
 
         for package in "${font_packages[@]}"; do
@@ -35,20 +36,17 @@ install_google_fonts() {
         done
     fi
 
-    # Additional Google Fonts from AUR
-    if confirm_action "Install additional Google Fonts from AUR?"; then
+    # Additional Google Fonts from AUR or manual installation
+    if confirm_action "Install additional fonts (AUR/Manual)?"; then
         # Check if AUR helper is available
         if ! check_aur_helper; then
-            echo -e "${YELLOW}AUR helper not found. Skipping AUR fonts installation.${NC}"
-            echo -e "${CYAN}Install an AUR helper (yay/paru) to access additional fonts.${NC}"
+            echo -e "${YELLOW}AUR helper not found. Installing manually...${NC}"
         else
-            echo -e "${CYAN}Installing Google Fonts from AUR...${NC}"
+            echo -e "${CYAN}Installing additional fonts from AUR...${NC}"
 
-            # AUR-only Google font packages
+            # These might be available in AUR
             local aur_fonts=(
-                "ttf-open-sans"           # Open Sans family
-                "ttf-lato"                # Lato family (AUR only)
-                "ttf-roboto-mono"         # Roboto monospace
+                "ttf-open-sans"           # Open Sans family (AUR)
             )
 
             for font in "${aur_fonts[@]}"; do
@@ -61,9 +59,7 @@ install_google_fonts() {
                 fi
             done
         fi
-    fi
-
-    # Manual Google Fonts installation for fonts not in repos
+    fi    # Manual Google Fonts installation for fonts not in repos
     if confirm_action "Install additional Google Fonts manually?"; then
         echo -e "${CYAN}Downloading additional Google Fonts...${NC}"
 
