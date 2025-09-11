@@ -22,32 +22,49 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # ============================================================================
-# USER INTERFACE FUNCTIONS (GUM-based)
+# USER INTERFACE FUNCTIONS (Simple, no dependencies)
 # ============================================================================
 
-# Confirm function using gum
+# Confirm function using simple read
 confirm_action() {
     local message="$1"
-    gum confirm "$message"
+    echo -n "$message (y/N): "
+    read -r response
+    case "$response" in
+        [yY]|[yY][eE][sS]) return 0 ;;
+        *) return 1 ;;
+    esac
 }
 
-# Wait function using gum
+# Wait function using simple read
 wait_for_input() {
     local message="${1:-Press Enter to continue...}"
-    gum input --placeholder "$message" --value "" > /dev/null
+    echo -n "$message"
+    read -r
 }
 
-# Input function using gum
+# Input function using simple read
 get_input() {
     local prompt="$1"
     local placeholder="${2:-}"
-    gum input --prompt "$prompt " --placeholder "$placeholder"
+    echo -n "$prompt [$placeholder]: "
+    read -r input
+    echo "${input:-$placeholder}"
 }
 
-# Enhanced selection function using gum
+# Enhanced selection function using simple select
 select_option() {
     local options=("$@")
-    gum choose "${options[@]}"
+    local PS3="Please select an option: "
+
+    select opt in "${options[@]}"; do
+        if [[ -n "$opt" ]]; then
+            echo "$opt"
+            break
+        else
+            echo "Invalid selection. Please try again." >&2
+        fi
+    done
 }
 
 # ============================================================================
@@ -131,20 +148,36 @@ discover_toml_menus() {
     printf '%s\n' "${menus[@]}"
 }
 
-# Execute installation with gum progress indication
-execute_with_progress() {
+# Execute installation commands directly (no gum dependency)
+execute_command() {
     local title="$1"
     local command="$2"
     shift 2
     local args=("$@")
 
+    echo -e "${BLUE}$title${NC}"
+
     if [[ "$ARCHER_VERBOSE" == "true" ]]; then
-        echo -e "${BLUE}$title${NC}"
-        eval "$command" "${args[@]}"
-    else
-        gum spin --title="$title" --spinner="dot" --show-error -- \
-            bash -c "$command $(printf '%q ' "${args[@]}")"
+        echo -e "${CYAN}Command: $command ${args[*]}${NC}"
     fi
+
+    eval "$command" "${args[@]}"
+}
+
+# Backward compatibility alias for execute_with_progress
+execute_with_progress() {
+    local command="$1"
+    local title="$2"
+    shift 2
+    local args=("$@")
+
+    echo -e "${BLUE}$title${NC}"
+
+    if [[ "$ARCHER_VERBOSE" == "true" ]]; then
+        echo -e "${CYAN}Command: $command ${args[*]}${NC}"
+    fi
+
+    eval "$command" "${args[@]}"
 }
 
 # Execute custom action from TOML
@@ -252,8 +285,8 @@ show_toml_menu() {
         echo -e "${CYAN}${MENU_DESCRIPTION}${NC}"
         echo ""
 
-        # Build options array from parsed TOML for gum
-        local gum_options=()
+        # Build options array from parsed TOML
+        local menu_options=()
         local option_actions=()
         local option_targets=()
         local option_keys=()
@@ -263,36 +296,36 @@ show_toml_menu() {
             local key="${var#OPTION_}"
             local value="${!var}"
             IFS='|' read -r display action target <<< "$value"
-            gum_options+=("$display")
+            menu_options+=("$display")
             option_actions+=("$action")
             option_targets+=("$target")
             option_keys+=("$key")
         done
 
         # Add standard navigation options
-        gum_options+=("🔙 Back to Previous Menu")
+        menu_options+=("🔙 Back to Previous Menu")
         option_actions+=("back")
         option_targets+=("")
         option_keys+=("back")
 
-        gum_options+=("🚪 Exit Archer")
+        menu_options+=("🚪 Exit Archer")
         option_actions+=("exit")
         option_targets+=("")
         option_keys+=("exit")
 
-        if [[ ${#gum_options[@]} -eq 0 ]]; then
+        if [[ ${#menu_options[@]} -eq 0 ]]; then
             echo -e "${RED}No menu options found${NC}"
             wait_for_input
             return 1
         fi
 
-        # Use gum-based select_option() from common-funcs.sh
-        local selection=$(select_option "${gum_options[@]}")
+        # Use select_option() from common-funcs.sh (simple selection)
+        local selection=$(select_option "${menu_options[@]}")
         local choice_index=-1
 
         # Find selected option index
-        for i in "${!gum_options[@]}"; do
-            if [[ "${gum_options[$i]}" == "$selection" ]]; then
+        for i in "${!menu_options[@]}"; do
+            if [[ "${menu_options[$i]}" == "$selection" ]]; then
                 choice_index=$i
                 break
             fi
@@ -411,7 +444,7 @@ build_main_toml_menu() {
     # Add exit option
     menu_options+=("🚪 Exit Archer")
 
-    # Use select_option() from common-funcs.sh (gum-based)
+    # Use select_option() from common-funcs.sh (simple selection)
     echo -e "${BLUE}Archer - System Management & Customization${NC}"
     echo -e "${CYAN}Select a category to configure:${NC}"
     echo ""

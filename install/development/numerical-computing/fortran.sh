@@ -21,7 +21,8 @@ install_gfortran() {
 
     # Install GNU Fortran compiler
     if ! pacman -Qi gcc-fortran &>/dev/null; then
-        execute_with_progress "sudo pacman -S --noconfirm gcc-fortran" "Installing GFortran..."
+        echo -e "${BLUE}Installing GFortran...${NC}"
+        install_with_retries gcc-fortran
     else
         log_info "GFortran already installed"
     fi
@@ -41,7 +42,8 @@ install_lfortran() {
 
     # Check if available in AUR or install from source
     if command -v yay &>/dev/null; then
-        execute_with_progress "yay -S --noconfirm lfortran" "Installing LFortran from AUR..."
+        echo -e "${BLUE}Installing LFortran from AUR...${NC}"
+        install_with_retries yay lfortran
     else
         log_warning "LFortran requires AUR helper. Installing GFortran only."
         return 0
