@@ -14,8 +14,12 @@ files = []
 directories = []
 
 [display]
-"cpp-compilers.sh" = "Cpp Compilers"
+"cpp-compilers.sh" = "C++ Compilers"
+"dlang.sh" = "DMD (D Reference Compiler)"
 "go.sh" = "Go"
-"install.sh" = "Install"
+"install.sh" = "Install All System Languages"
+"ldc.sh" = "LDC (LLVM D Compiler)"
+"nim.sh" = "Nim"
 "rust.sh" = "Rust"
-"system-programming/" = "System Programming"
+"vlang.sh" = "V Language"
+"zig.sh" = "Zig"

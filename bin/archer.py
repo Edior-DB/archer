@@ -115,6 +115,155 @@ class ArcherUI:
         }
         return icons.get(action, '⚙️')
 
+    def _detect_installation_type(self, command: str, script_path: str = "") -> str:
+        """Detect the type of installation to determine progress display strategy"""
+        command_lower = command.lower()
+
+        # Check script content for better detection
+        script_content = ""
+        if script_path and os.path.exists(script_path):
+            try:
+                with open(script_path, 'r') as f:
+                    script_content = f.read().lower()
+            except:
+                pass
+
+        combined_text = f"{command_lower} {script_content}"
+
+        # Quick installers that don't benefit from detailed progress bars
+        quick_patterns = [
+            'mise install',
+            'mise plugin',
+            'curl https://mise.run',
+            'npm install -g',
+            'pip install',
+            'cargo install',
+            'go install',
+            'go get',
+            'gem install',
+            'luarocks install',
+            'curl.*|.*sh',  # Curl pipe to shell installers
+            'wget.*|.*sh',  # Wget pipe to shell installers
+            'curl.*install',
+            'wget.*install',
+            'eval.*mise.*activate',
+            'source.*mise',
+            'sh.rustup.rs',  # Rust installer
+            'curl.*sh$',     # Curl ending with sh
+        ]
+
+        if any(pattern in combined_text for pattern in quick_patterns):
+            return 'quick'
+
+        # Package managers that show detailed progress
+        package_manager_patterns = [
+            'pacman -s',
+            'yay -s',
+            'paru -s',
+            'apt install',
+            'apt-get install',
+            'dnf install',
+            'zypper install',
+            'emerge ',
+            'portage',
+            'install_with_retries',  # Our custom function
+        ]
+
+        if any(pattern in combined_text for pattern in package_manager_patterns):
+            return 'package_manager'
+
+        # Compilation/building processes that benefit from detailed progress
+        build_patterns = [
+            'make ',
+            'cmake',
+            './configure',
+            'meson',
+            'ninja',
+            'autogen',
+            'autoconf',
+            'configure && make',
+            'build.sh',
+            'compile',
+            'gcc ',
+            'clang ',
+        ]
+
+        if any(pattern in combined_text for pattern in build_patterns):
+            return 'build'
+
+        # Check for specific script types that typically use quick installers
+        if script_path:
+            script_name = os.path.basename(script_path).lower()
+            if any(name in script_name for name in ['go.sh', 'rust.sh', 'node.sh', 'ruby.sh']):
+                # These often use mise or similar quick installers
+                return 'quick'
+
+        # Default for complex installations
+        return 'standard'
+
+    def show_simple_progress(self, description: str, command: str) -> bool:
+        """Show simple spinner-based progress for quick installations"""
+        self.console.print(f"\n[bold blue]⚡ {description}[/bold blue]")
+        self.console.print(f"[dim]Command: {command}[/dim]\n")
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TimeElapsedColumn(),
+            console=self.console,
+            transient=False
+        ) as progress:
+
+            task = progress.add_task(f"Running {description}...", total=None)
+
+            # Start the subprocess
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+
+            # Simple output capture without heavy processing
+            output_lines = []
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                if output:
+                    line = output.strip()
+                    output_lines.append(line)
+
+                    # Update status for key operations
+                    line_lower = line.lower()
+                    if 'downloading' in line_lower:
+                        progress.update(task, description=f"Downloading...")
+                    elif 'installing' in line_lower:
+                        progress.update(task, description=f"Installing...")
+                    elif 'complete' in line_lower or 'success' in line_lower:
+                        progress.update(task, description=f"Completing...")
+
+            return_code = process.poll()
+
+            if return_code == 0:
+                progress.update(task, description=f"✓ {description} completed")
+                self.console.print(f"\n[bold green]✓ {description} completed successfully![/bold green]")
+                return True
+            else:
+                progress.update(task, description=f"✗ {description} failed")
+                self.console.print(f"\n[bold red]✗ {description} failed (exit code: {return_code})[/bold red]")
+
+                # Show last few lines for debugging
+                if output_lines:
+                    self.console.print("\n[yellow]Last output:[/yellow]")
+                    for line in output_lines[-3:]:
+                        self.console.print(f"  [dim]{line}[/dim]")
+
+                return False
+
     def show_multi_package_progress(self, description: str, packages: List[str], command_template: str) -> bool:
         """Show nala-style multi-package installation progress"""
         self.console.print(f"\n[bold blue]📦 {description}[/bold blue]")
@@ -234,7 +383,20 @@ class ArcherUI:
                     self.console.print(f"[red]Failed packages: {', '.join(failed_packages)}[/red]")
                 return success_count > 0
 
-    def show_progress(self, description: str, command: str) -> bool:
+    def show_progress(self, description: str, command: str, script_path: str = "") -> bool:
+        """Show progress with intelligent detection of installation type"""
+
+        # Detect installation type and choose appropriate progress display
+        install_type = self._detect_installation_type(command, script_path)
+
+        if install_type == 'quick':
+            # Use simple spinner for quick installers (mise, npm, pip, etc.)
+            return self.show_simple_progress(description, command)
+        else:
+            # Use full nala-style progress bar for package managers and builds
+            return self.show_nala_progress(description, command)
+
+    def show_nala_progress(self, description: str, command: str) -> bool:
         """Show progress while executing a command with nala-style interface"""
         self.console.print(f"\n[bold blue]� {description}[/bold blue]")
         self.console.print(f"[dim]Command: {command}[/dim]\n")
@@ -686,7 +848,8 @@ class ArcherMenu:
         # Execute with progress and real-time feedback
         success = self.ui.show_progress(
             f"Installing {script_name}",
-            f"cd '{self.archer_dir}' && bash '{script_path}'"
+            f"cd '{self.archer_dir}' && bash '{script_path}'",
+            script_path
         )
 
         if success:
