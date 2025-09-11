@@ -1,11 +1,11 @@
 #!/bin/bash
-# Fortran Compilers Installation Script
-# Installs GFortran and LFortran for Fortran development
+# GFortran Compiler Installation Script
+# Installs GFortran (GNU Fortran) for Fortran development
 
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-TOOL_NAME="Fortran Compilers"
+TOOL_NAME="GFortran Compiler"
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 ARCHER_DIR="${ARCHER_DIR:-$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")}"
 
@@ -21,7 +21,7 @@ install_gfortran() {
 
     # Install GNU Fortran compiler
     if ! pacman -Qi gcc-fortran &>/dev/null; then
-        echo -e "${BLUE}Installing GFortran...${NC}"
+        log_info "Installing GFortran..."
         install_with_retries gcc-fortran
     else
         log_info "GFortran already installed"
@@ -59,7 +59,7 @@ install_lfortran() {
 }
 
 setup_fortran_environment() {
-    log_info "Setting up Fortran development environment..."
+    log_info "Setting up GFortran development environment..."
 
     # Create example Fortran project structure
     local example_dir="$HOME/fortran-projects"
@@ -70,7 +70,8 @@ setup_fortran_environment() {
         cat > "$example_dir/hello-world/hello.f90" << 'EOF'
 program hello
     implicit none
-    write(*,*) 'Hello, World!'
+    write(*,*) 'Hello, Fortran World!'
+    write(*,*) 'Compiled with GFortran'
 end program hello
 EOF
 
@@ -107,16 +108,20 @@ EOF
 print_fortran_info() {
     echo ""
     echo "=============================================="
-    echo "Fortran Development Environment Ready!"
+    echo "GFortran Development Environment Ready!"
     echo "=============================================="
     echo ""
-    echo "Installed compilers:"
+    echo "Installed compiler:"
     if command -v gfortran &>/dev/null; then
         echo "  • GFortran: $(gfortran --version | head -n 1)"
     fi
-    if command -v lfortran &>/dev/null; then
-        echo "  • LFortran: $(lfortran --version 2>/dev/null | head -n 1 || echo 'Available')"
-    fi
+    echo ""
+    echo "GFortran features:"
+    echo "  • Part of GNU Compiler Collection (GCC)"
+    echo "  • Mature and stable Fortran compiler"
+    echo "  • Supports Fortran 95, 2003, 2008, and 2018 standards"
+    echo "  • Excellent optimization capabilities"
+    echo "  • Wide platform support"
     echo ""
     echo "Quick start:"
     echo "  gfortran -o hello hello.f90   # Compile Fortran program"
@@ -125,6 +130,15 @@ print_fortran_info() {
     echo ""
     echo "Example project: ~/fortran-projects/hello-world"
     echo "  cd ~/fortran-projects/hello-world && make"
+    echo ""
+    echo "Common GFortran flags:"
+    echo "  -O2                           # Optimization level 2"
+    echo "  -Wall                         # Enable all warnings"
+    echo "  -g                            # Debug information"
+    echo "  -std=f2018                    # Use Fortran 2018 standard"
+    echo ""
+    echo "For modern LFortran compiler, install separately:"
+    echo "  Use the lfortran.sh installer for the modern alternative"
     echo ""
 }
 
@@ -138,9 +152,8 @@ main() {
     # Check system requirements
     check_system_requirements
 
-    # Install Fortran compilers
+    # Install GFortran
     install_gfortran || return 1
-    install_lfortran  # This may fail gracefully
 
     # Setup development environment
     setup_fortran_environment

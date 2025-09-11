@@ -14,12 +14,12 @@ files = []
 directories = []
 
 [display]
-"anaconda.sh" = "Anaconda"
-"fortran.sh" = "Fortran"
-"haskell.sh" = "Haskell"
-"install.sh" = "Install"
-"julia.sh" = "Julia"
-"octave.sh" = "Octave"
-"r-lang.sh" = "R Lang"
-"spack.sh" = "Spack"
-"numerical-computing/" = "Numerical Computing"
+"anaconda.sh" = "Anaconda (Python Distribution)"
+"fortran.sh" = "GFortran (GNU Fortran)"
+"lfortran.sh" = "LFortran (Modern Fortran)"
+"haskell.sh" = "Haskell (Functional)"
+"install.sh" = "Install All Numerical Tools"
+"julia.sh" = "Julia (High-Performance)"
+"octave.sh" = "Octave (MATLAB Alternative)"
+"r-lang.sh" = "R (Statistical Computing)"
+"spack.sh" = "Spack (Package Manager)"

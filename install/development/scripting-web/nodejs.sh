@@ -18,24 +18,27 @@ if ! confirm_action "Install Node.js via Mise?"; then
     exit 0
 fi
 
-# Check if Mise is installed
-if ! command -v mise &> /dev/null; then
-    echo -e "${YELLOW}Mise not found. Installing Mise first...${NC}"
-    if ! install_with_retries mise; then
-        echo -e "${YELLOW}Installing Mise via curl...${NC}"
-        curl https://mise.run | sh
-        echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
-        eval "$(~/.local/bin/mise activate bash)"
+# Setup Mise and install Node.js
+setup_mise || {
+    echo -e "${RED}Failed to setup Mise. Trying system package manager...${NC}"
+    if install_with_retries nodejs npm; then
+        echo -e "${GREEN}✓ Node.js installed via system package manager!${NC}"
+        exit 0
+    else
+        echo -e "${RED}✗ Failed to install Node.js${NC}"
+        exit 1
     fi
-fi
-
-# Initialize mise for current session
-eval "$(mise activate bash)" 2>/dev/null || true
+}
 
 echo -e "${BLUE}Installing Node.js via Mise...${NC}"
 
-if mise install nodejs@latest; then
-    echo -e "${GREEN}✓ Node.js installed successfully!${NC}"
+if install_mise_tool nodejs latest; then
+    # Verify installation
+    if verify_mise_tool nodejs node; then
+        echo -e "${GREEN}✓ Node.js is ready to use!${NC}"
+    else
+        echo -e "${YELLOW}⚠ Node.js installed but requires shell restart${NC}"
+    fi
 
     # Configure npm to avoid sudo requirements for global packages
     if command -v npm &> /dev/null; then
@@ -52,8 +55,8 @@ if mise install nodejs@latest; then
     fi
 
     # Show versions
-    node_version=$(node --version 2>/dev/null || echo "Not available")
-    npm_version=$(npm --version 2>/dev/null || echo "Not available")
+    node_version=$(node --version 2>/dev/null || echo "Run 'source ~/.bashrc' to activate")
+    npm_version=$(npm --version 2>/dev/null || echo "Run 'source ~/.bashrc' to activate")
 
     echo -e "${GREEN}
 =========================================================================

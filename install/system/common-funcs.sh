@@ -897,6 +897,109 @@ print_error() {
     echo -e "${RED}✗ $1${NC}"
 }
 
+# =============================================================================
+# MISE (VERSION MANAGER) FUNCTIONS
+# =============================================================================
+
+# Setup and activate Mise for the current session
+setup_mise() {
+    log_info "Setting up Mise for current session..."
+
+    # Check if Mise is installed
+    if ! command -v mise &> /dev/null; then
+        log_info "Mise not found. Installing Mise first..."
+        if ! install_with_retries mise; then
+            log_info "Installing Mise via curl..."
+            curl https://mise.run | sh
+
+            # Add to bashrc if not already present
+            if [[ -f ~/.bashrc ]] && ! grep -q 'mise activate' ~/.bashrc; then
+                echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+                log_info "Added Mise activation to ~/.bashrc"
+            fi
+        fi
+    fi
+
+    # Ensure mise is in PATH
+    if [[ -f ~/.local/bin/mise ]] && ! command -v mise &> /dev/null; then
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    # Activate mise for current session
+    if command -v mise &> /dev/null; then
+        eval "$(mise activate bash)" 2>/dev/null || true
+        log_info "Mise activated for current session"
+        return 0
+    else
+        log_warning "Failed to setup Mise"
+        return 1
+    fi
+}
+
+# Install and set global tool via Mise
+install_mise_tool() {
+    local tool="$1"
+    local version="${2:-latest}"
+
+    if [[ -z "$tool" ]]; then
+        log_error "Tool name is required for install_mise_tool"
+        return 1
+    fi
+
+    log_info "Installing $tool@$version via Mise..."
+
+    # Ensure Mise is set up
+    setup_mise || return 1
+
+    # Install the tool
+    if mise install "$tool@$version"; then
+        log_info "Setting $tool@$version as global default..."
+        mise use -g "$tool@$version"
+
+        # Refresh mise activation to make tool immediately available
+        eval "$(mise activate bash)" 2>/dev/null || true
+
+        # Add current session path
+        if [[ -d "$HOME/.local/share/mise/installs/$tool" ]]; then
+            export PATH="$HOME/.local/share/mise/installs/$tool/latest/bin:$PATH"
+        fi
+
+        return 0
+    else
+        log_error "Failed to install $tool via Mise"
+        return 1
+    fi
+}
+
+# Verify tool is available after Mise installation
+verify_mise_tool() {
+    local tool="$1"
+    local command_name="${2:-$tool}"
+
+    if [[ -z "$tool" ]]; then
+        log_error "Tool name is required for verify_mise_tool"
+        return 1
+    fi
+
+    # Refresh mise activation
+    eval "$(mise activate bash)" 2>/dev/null || true
+
+    # Check if command is available
+    if command -v "$command_name" &>/dev/null; then
+        local version=$($command_name --version 2>/dev/null | head -1 || echo "Available")
+        echo -e "${GREEN}✓ $tool installed and available: $version${NC}"
+        return 0
+    else
+        log_warning "$tool installed via Mise but not immediately available"
+        log_info "Run 'source ~/.bashrc' or start a new terminal session to use $tool"
+        return 1
+    fi
+}
+
+# =============================================================================
+# CLEANUP AND INITIALIZATION
+# =============================================================================
+
 # Cleanup function to be called on script exit
 cleanup() {
     # Clear any leftover input

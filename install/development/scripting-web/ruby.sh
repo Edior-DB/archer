@@ -18,28 +18,31 @@ if ! confirm_action "Install Ruby via Mise?"; then
     exit 0
 fi
 
-# Check if Mise is installed
-if ! command -v mise &> /dev/null; then
-    echo -e "${YELLOW}Mise not found. Installing Mise first...${NC}"
-    if ! install_with_retries mise; then
-        echo -e "${YELLOW}Installing Mise via curl...${NC}"
-        curl https://mise.run | sh
-        echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
-        eval "$(~/.local/bin/mise activate bash)"
+# Setup Mise and install Ruby
+setup_mise || {
+    echo -e "${RED}Failed to setup Mise. Trying system package manager...${NC}"
+    if install_with_retries ruby; then
+        echo -e "${GREEN}✓ Ruby installed via system package manager!${NC}"
+        exit 0
+    else
+        echo -e "${RED}✗ Failed to install Ruby${NC}"
+        exit 1
     fi
-fi
-
-# Initialize mise for current session
-eval "$(mise activate bash)" 2>/dev/null || true
+}
 
 echo -e "${BLUE}Installing Ruby via Mise...${NC}"
 
-if mise install ruby@latest; then
-    echo -e "${GREEN}✓ Ruby installed successfully!${NC}"
+if install_mise_tool ruby latest; then
+    # Verify installation
+    if verify_mise_tool ruby ruby; then
+        echo -e "${GREEN}✓ Ruby is ready to use!${NC}"
+    else
+        echo -e "${YELLOW}⚠ Ruby installed but requires shell restart${NC}"
+    fi
 
     # Show versions
-    ruby_version=$(ruby --version 2>/dev/null || echo "Not available")
-    gem_version=$(gem --version 2>/dev/null || echo "Not available")
+    ruby_version=$(ruby --version 2>/dev/null || echo "Run 'source ~/.bashrc' to activate")
+    gem_version=$(gem --version 2>/dev/null || echo "Run 'source ~/.bashrc' to activate")
 
     echo -e "${GREEN}
 =========================================================================

@@ -22,6 +22,7 @@ install_all_scripts() {
     # Array of all scientific computing installation scripts in order
     local scripts=(
         "fortran.sh"
+        "lfortran.sh"
         "julia.sh"
         "r-lang.sh"
         "octave.sh"
@@ -45,7 +46,7 @@ install_all_scripts() {
         fi
     done
 
-    log_success "All $COMPONENT_NAME installed!"
+    echo -e "${GREEN}✓ All $COMPONENT_NAME installed!${NC}"
 }
 
 install_essential_scripts() {
@@ -73,7 +74,7 @@ install_essential_scripts() {
         fi
     done
 
-    log_success "Essential $COMPONENT_NAME installed!"
+    echo -e "${GREEN}✓ Essential $COMPONENT_NAME installed!${NC}"
 }
 
 install_python_science() {
@@ -86,7 +87,7 @@ install_python_science() {
         log_warning "Anaconda script not found"
     fi
 
-    log_success "Python scientific stack installed!"
+    echo -e "${GREEN}✓ Python scientific stack installed!${NC}"
 }
 
 install_custom_selection() {
@@ -114,7 +115,7 @@ install_custom_selection() {
         fi
     done
 
-    log_success "Selected $COMPONENT_NAME installed!"
+    echo -e "${GREEN}✓ Selected $COMPONENT_NAME installed!${NC}"
 }
 
 # ==============================================================================
@@ -162,7 +163,8 @@ main() {
                 echo "  --help           Show this help message"
                 echo ""
                 echo "Available tool packages:"
-                echo "  fortran.sh       Fortran compilers (GFortran + LFortran)"
+                echo "  fortran.sh       GFortran (GNU Fortran compiler)"
+                echo "  lfortran.sh      LFortran (modern Fortran compiler)"
                 echo "  julia.sh         Julia programming language"
                 echo "  r-lang.sh        R statistical computing"
                 echo "  octave.sh        GNU Octave (MATLAB alternative)"

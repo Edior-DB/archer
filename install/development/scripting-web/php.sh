@@ -18,40 +18,36 @@ if ! confirm_action "Install PHP via Mise?"; then
     exit 0
 fi
 
-# Check if Mise is installed
-if ! command -v mise &> /dev/null; then
-    echo -e "${YELLOW}Mise not found. Installing Mise first...${NC}"
-    if ! install_with_retries mise; then
-        echo -e "${YELLOW}Installing Mise via curl...${NC}"
-        curl https://mise.run | sh
-        echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
-        eval "$(~/.local/bin/mise activate bash)"
+# Setup Mise and install PHP
+setup_mise || {
+    echo -e "${RED}Failed to setup Mise. Trying system package manager...${NC}"
+    if install_with_retries php; then
+        echo -e "${GREEN}✓ PHP installed via system package manager!${NC}"
+        exit 0
+    else
+        echo -e "${RED}✗ Failed to install PHP${NC}"
+        exit 1
     fi
-fi
-
-# Initialize mise for current session
-eval "$(mise activate bash)" 2>/dev/null || true
+}
 
 echo -e "${BLUE}Installing PHP dependencies first...${NC}"
 # Install PHP dependencies that might be needed
-if ! install_with_retries gd; then
-    echo -e "${YELLOW}Warning: Could not install some PHP dependencies${NC}"
-fi
-
-if ! install_with_retries gd; then
+if ! install_with_retries gd onigurama re2c; then
     echo -e "${YELLOW}Warning: Could not install some PHP dependencies${NC}"
 fi
 
 echo -e "${BLUE}Installing PHP via Mise...${NC}"
 
-if mise install php@latest; then
-    echo -e "${GREEN}✓ PHP installed successfully!${NC}"
-
-    # Set as global default
-    mise use -g php@latest
+if install_mise_tool php latest; then
+    # Verify installation
+    if verify_mise_tool php php; then
+        echo -e "${GREEN}✓ PHP is ready to use!${NC}"
+    else
+        echo -e "${YELLOW}⚠ PHP installed but requires shell restart${NC}"
+    fi
 
     # Show version and information
-    php_version=$(php --version 2>/dev/null | head -1 || echo "Not available")
+    php_version=$(php --version 2>/dev/null | head -1 || echo "Run 'source ~/.bashrc' to activate")
     composer_status="Not installed"
 
     # Check if Composer is available
@@ -135,9 +131,21 @@ ${NC}"
 
 else
     echo -e "${RED}✗ Failed to install PHP via Mise${NC}"
-    echo -e "${YELLOW}You can try installing PHP manually:${NC}"
-    echo -e "${CYAN}  sudo pacman -S php php-apache${NC}"
-    exit 1
+    echo -e "${YELLOW}Trying system package manager...${NC}"
+    if install_with_retries php; then
+        echo -e "${GREEN}✓ PHP installed via system package manager!${NC}"
+    else
+        echo -e "${RED}✗ Failed to install PHP${NC}"
+        echo -e "${YELLOW}You can try installing PHP manually:${NC}"
+        echo -e "${CYAN}  sudo pacman -S php php-apache${NC}"
+        exit 1
+    fi
 fi
+
+echo ""
+echo -e "${YELLOW}📝 Important: To use PHP in new terminal sessions${NC}"
+echo -e "${CYAN}Run: source ~/.bashrc${NC}"
+echo -e "${CYAN}Or restart your terminal${NC}"
+echo ""
 
 wait_for_input
