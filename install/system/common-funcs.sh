@@ -105,30 +105,53 @@ import tomllib
 import sys
 import os
 
+def escape_bash_string(s):
+    # Escape single quotes for bash
+    return s.replace(\"'\", \"'\\\"'\\\"'\")
+
 try:
     with open('$toml_file', 'rb') as f:
         config = tomllib.load(f)
-    menu = config.get('menu', {})
 
-    print(f\"MENU_NAME='{menu.get('name', 'Unknown')}')\")
-    print(f\"MENU_DESCRIPTION='{menu.get('description', '')}')\")
-    print(f\"MENU_ICON='{menu.get('icon', '📁')}')\")
-    print(f\"MENU_LEVEL='{menu.get('level', 'main')}')\")
+    # Get header information
+    print(f\"MENU_NAME='{escape_bash_string(config.get('description', 'Unknown Menu'))}'\")
+    print(f\"MENU_DESCRIPTION='{escape_bash_string(config.get('description', ''))}'\")
+    print(f\"MENU_ICON='📁'\")
+    print(f\"MENU_LEVEL='main'\")
 
-    options = config.get('options', {})
-    for key, value in options.items():
-        display = value.get('display', str(key))
-        action = value.get('action', 'unknown')
-        target = value.get('target', '')
-        print(f\"OPTION_{key}='{display}|{action}|{target}')\")
+def escape_bash_string(s):
+    # Escape single quotes for bash
+    return s.replace(\"'\", \"'\\\"'\\\"'\")
 
-    # Export quick actions
-    quick_actions = config.get('quick_actions', {})
+    # Parse menu_items array
+    menu_items = config.get('menu_items', [])
+    for i, item in enumerate(menu_items):
+        name = item.get('name', f'Item {i}')
+        description = item.get('description', '')
+        action_type = item.get('action_type', 'unknown')
+
+        # Handle different action types
+        if action_type == 'submenu':
+            target = item.get('submenu_path', '')
+        elif action_type == 'script':
+            target = item.get('script_path', '')
+        elif action_type == 'multiselect':
+            target = 'multiselect'
+        else:
+            target = item.get('target', '')
+
+        # Create option variable
+        print(f\"OPTION_{i}='{name}|{action_type}|{target}')\")
+
+    # Parse quick_actions array
+    quick_actions = config.get('quick_actions', [])
     if quick_actions:
         print(f\"QUICK_ACTIONS_AVAILABLE='true')\")
-        for action_name, items in quick_actions.items():
-            items_str = ','.join(items)
-            print(f\"QUICK_ACTION_{action_name}='{items_str}')\")
+        for i, action in enumerate(quick_actions):
+            name = action.get('name', f'Action {i}')
+            description = action.get('description', '')
+            command = action.get('command', '')
+            print(f\"QUICK_ACTION_{i}='{name}|{description}|{command}')\")
 
 except Exception as e:
     print(f\"echo 'Error parsing TOML: {e}' >&2; exit 1\", file=sys.stderr)
@@ -282,6 +305,17 @@ show_toml_menu() {
             option_keys+=("$key")
         done
 
+        # Add standard navigation options
+        gum_options+=("🔙 Back to Previous Menu")
+        option_actions+=("back")
+        option_targets+=("")
+        option_keys+=("back")
+
+        gum_options+=("🚪 Exit Archer")
+        option_actions+=("exit")
+        option_targets+=("")
+        option_keys+=("exit")
+
         if [[ ${#gum_options[@]} -eq 0 ]]; then
             echo -e "${RED}No menu options found${NC}"
             wait_for_input
@@ -311,7 +345,26 @@ show_toml_menu() {
 
         case "$action" in
             "submenu")
-                navigate_to_toml_menu "$menu_path/$target"
+                # Remove leading ./ if present and navigate to submenu
+                local submenu_path="${target#./}"
+                if [[ "$submenu_path" == /* ]]; then
+                    navigate_to_toml_menu "$submenu_path"
+                else
+                    navigate_to_toml_menu "$menu_path/$submenu_path"
+                fi
+                ;;
+            "script")
+                # Remove leading ./ if present and execute script
+                local script_path="${target#./}"
+                if [[ "$script_path" == /* ]]; then
+                    execute_installer "$script_path" "$menu_path"
+                else
+                    execute_installer "$menu_path/$script_path" "$menu_path"
+                fi
+                ;;
+            "multiselect")
+                echo -e "${YELLOW}Multiselect functionality not yet implemented${NC}"
+                wait_for_input "Press Enter to continue..."
                 ;;
             "install")
                 if confirm_action "Proceed with installation of $target?"; then
