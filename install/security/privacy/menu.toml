@@ -1,56 +1,17 @@
-# Privacy & Anonymity Tools
-heading_color = "purple"
-description = "Tor, VPN, and privacy protection tools"
+# Tor Setup
+# Tor, VPN, and privacy protection tools
 
-[[menu_items]]
+[menu]
 name = "Tor Setup"
-description = "Tor browser and network anonymity"
-action_type = "script"
-script_path = "./tor-setup.sh"
+description = "Tor, VPN, and privacy protection tools"
+icon = "📁"
 
-[[menu_items]]
-name = "VPN Tools"
-description = "VPN clients and privacy VPN tools"
-action_type = "script"
-script_path = "./vpn-tools.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Privacy Tools"
-description = "Privacy-focused browsers and tools"
-action_type = "script"
-script_path = "./privacy-tools.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Anonymity Tools"
-description = "Advanced anonymity and privacy tools"
-action_type = "script"
-script_path = "./anonymity-tools.sh"
-
-[[menu_items]]
-name = "Secure Communication"
-description = "Encrypted messaging and communication"
-action_type = "script"
-script_path = "./secure-communication.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"privacy/" = "Privacy"

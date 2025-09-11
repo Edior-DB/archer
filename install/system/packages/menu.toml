@@ -1,61 +1,18 @@
-# Package Management
-heading_color = "yellow"
-description = "AUR helpers, Flatpak, package cleanup, and management tools"
+# AUR Helpers
+# AUR helpers, Flatpak, package cleanup, and management tools
 
-[[menu_items]]
+[menu]
 name = "AUR Helpers"
-description = "yay, paru for AUR package management"
-action_type = "script"
-script_path = "./aur-helpers.sh"
+description = "AUR helpers, Flatpak, package cleanup, and management tools"
+icon = "📁"
 
-[[menu_items]]
-name = "Flatpak"
-description = "Flatpak runtime and application support"
-action_type = "script"
-script_path = "./flatpak.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Snap Support"
-description = "Snap package manager (optional)"
-action_type = "script"
-script_path = "./snap.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Cleanup Tools"
-description = "Package cleanup and system maintenance"
-action_type = "script"
-script_path = "./cleanup-tools.sh"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific package management tools"
-action_type = "multiselect"
-items = [
-    { name = "AUR Helpers", script = "./aur-helpers.sh" },
-    { name = "Flatpak", script = "./flatpak.sh" },
-    { name = "Snap Support", script = "./snap.sh" },
-    { name = "Cleanup Tools", script = "./cleanup-tools.sh" }
-]
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"aur-helpers.sh" = "Aur Helpers"
+"packages/" = "Packages"

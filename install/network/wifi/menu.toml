@@ -1,50 +1,19 @@
-# WiFi Configuration & Setup
-heading_color = "cyan"
-description = "WiFi drivers, setup, and connectivity tools"
+# WiFi Drivers Installation
+# WiFi drivers, setup, and connectivity tools
 
-[[menu_items]]
+[menu]
 name = "WiFi Drivers Installation"
-description = "Install WiFi drivers and firmware"
-action_type = "script"
-script_path = "./wifi-install.sh"
+description = "WiFi drivers, setup, and connectivity tools"
+icon = "📁"
 
-[[menu_items]]
-name = "WiFi Configuration"
-description = "Setup WiFi connections and network profiles"
-action_type = "script"
-script_path = "./wifi-setup.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "WiFi Troubleshooting"
-description = "Diagnose and fix WiFi connectivity issues"
-action_type = "script"
-script_path = "./wifi-troubleshooting.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Advanced WiFi Tools"
-description = "WiFi analysis and management tools"
-action_type = "script"
-script_path = "./wifi-tools.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"wifi-install.sh" = "Wifi Install"
+"wifi-setup.sh" = "Wifi Setup"
+"wifi/" = "Wifi"

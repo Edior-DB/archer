@@ -1,32 +1,17 @@
-# Command Line Tools Menu
+# Command Line Tools
 # Essential CLI utilities and modern replacements
 
 [menu]
 name = "Command Line Tools"
 description = "Essential CLI utilities and modern replacements"
 icon = "⚡"
-level = "submenu"
-
-[options]
-# Essential CLI tools
-1 = { display = "Essential CLI Package", action = "script", target = "essential-tools.sh" }
-2 = { display = "Modern CLI Replacements", action = "script", target = "modern-replacements.sh" }
-3 = { display = "File Utilities", action = "script", target = "file-utilities.sh" }
-4 = { display = "Search & Find Tools", action = "script", target = "search-tools.sh" }
-5 = { display = "Git Enhancement Tools", action = "script", target = "git-tools.sh" }
-6 = { display = "Archive & Compression", action = "script", target = "archive-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All CLI Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Terminal Tools", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-15 minutes"
-categories = ["cli", "tools", "utilities"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"cli-tools/" = "Cli Tools"

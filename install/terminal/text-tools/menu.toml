@@ -1,32 +1,17 @@
-# Text Processing Tools Menu
+# Text Processing Tools
 # Text editors, processing utilities, and content manipulation
 
 [menu]
 name = "Text Processing Tools"
 description = "Text editors, processing utilities, and content manipulation"
 icon = "📝"
-level = "submenu"
-
-[options]
-# Text processing tools
-1 = { display = "Modern Text Tools", action = "script", target = "modern-text-tools.sh" }
-2 = { display = "Advanced Text Editors", action = "script", target = "editors.sh" }
-3 = { display = "Document Converters", action = "script", target = "converters.sh" }
-4 = { display = "Text Analysis Tools", action = "script", target = "analysis-tools.sh" }
-5 = { display = "Markup & Documentation", action = "script", target = "markup-tools.sh" }
-6 = { display = "Regex & Pattern Tools", action = "script", target = "regex-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All Text Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Terminal Tools", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-15 minutes"
-categories = ["text", "editors", "processing", "documentation"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"text-tools/" = "Text Tools"

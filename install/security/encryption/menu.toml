@@ -1,56 +1,17 @@
-# Encryption & Key Management
-heading_color = "yellow"
-description = "Disk encryption, GPG, and password managers"
+# GPG Setup
+# Disk encryption, GPG, and password managers
 
-[[menu_items]]
+[menu]
 name = "GPG Setup"
-description = "GNU Privacy Guard setup and configuration"
-action_type = "script"
-script_path = "./gpg-setup.sh"
+description = "Disk encryption, GPG, and password managers"
+icon = "📁"
 
-[[menu_items]]
-name = "Password Managers"
-description = "Bitwarden, KeePass, and other password managers"
-action_type = "script"
-script_path = "./password-manager.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Disk Encryption"
-description = "LUKS, VeraCrypt, and disk encryption tools"
-action_type = "script"
-script_path = "./disk-encryption.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "SSH Key Management"
-description = "SSH key generation and management"
-action_type = "script"
-script_path = "./ssh-keys.sh"
-
-[[menu_items]]
-name = "Certificate Management"
-description = "SSL/TLS certificate tools"
-action_type = "script"
-script_path = "./certificates.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"encryption/" = "Encryption"

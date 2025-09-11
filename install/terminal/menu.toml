@@ -1,33 +1,24 @@
-# Terminal Tools Menu
+# Terminal Tools
 # Shell utilities, command-line tools, and terminal enhancements
 
 [menu]
 name = "Terminal Tools"
 description = "Shell utilities, command-line tools, and terminal enhancements"
 icon = "💻"
-level = "main"
-
-[options]
-# Terminal tool categories
-1 = { display = "Shell Enhancements", action = "submenu", target = "shell/" }
-2 = { display = "Command Line Tools", action = "submenu", target = "cli-tools/" }
-3 = { display = "System Monitoring", action = "submenu", target = "monitoring/" }
-4 = { display = "Text Processing", action = "submenu", target = "text-tools/" }
-5 = { display = "File Management", action = "submenu", target = "file-tools/" }
-6 = { display = "Network Tools", action = "submenu", target = "network-tools/" }
-
-# Quick installations
-"all" = { display = "Install All Terminal Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "10-25 minutes"
-dependencies = ["base-system"]
-categories = ["terminal", "cli", "shell", "tools"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"install.sh" = "Install"
+"terminal/" = "Terminal"
+"cli-tools/" = "Cli Tools"
+"file-tools/" = "File Tools"
+"monitoring/" = "Monitoring"
+"network-tools/" = "Network Tools"
+"shell/" = "Shell"
+"text-tools/" = "Text Tools"

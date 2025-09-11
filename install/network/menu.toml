@@ -1,59 +1,22 @@
-# Network Configuration & Tools
-heading_color = "purple"
-description = "WiFi setup, network tools, and connectivity"
+# WiFi Configuration
+# WiFi setup, network tools, and connectivity
 
-[[menu_items]]
+[menu]
 name = "WiFi Configuration"
-description = "WiFi drivers, setup, and troubleshooting"
-action_type = "submenu"
-submenu_path = "./wifi/menu.toml"
+description = "WiFi setup, network tools, and connectivity"
+icon = "📁"
 
-[[menu_items]]
-name = "Network Tools"
-description = "Network monitoring, testing, and diagnostics"
-action_type = "submenu"
-submenu_path = "./tools/menu.toml"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "VPN & Security"
-description = "VPN clients, firewall, network security"
-action_type = "submenu"
-submenu_path = "./security/menu.toml"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Network Sharing"
-description = "Samba, NFS, file sharing protocols"
-action_type = "submenu"
-submenu_path = "./sharing/menu.toml"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific network components"
-action_type = "multiselect"
-items = [
-    { name = "WiFi Setup", script = "./wifi/wifi-setup.sh" },
-    { name = "WiFi Drivers", script = "./wifi/wifi-install.sh" },
-    { name = "Network Monitoring", script = "./tools/network-monitoring.sh" },
-    { name = "Network Diagnostics", script = "./tools/network-diagnostics.sh" },
-    { name = "VPN Clients", script = "./security/vpn-clients.sh" },
-    { name = "Firewall Setup", script = "./security/firewall-setup.sh" },
-    { name = "Samba Sharing", script = "./sharing/samba.sh" },
-    { name = "SSH Tools", script = "./tools/ssh-tools.sh" }
-]
-
-[[menu_items]]
-name = "Install Everything"
-description = "Install all components from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"install.sh" = "Install"
+"network/" = "Network"
+"security/" = "Security"
+"sharing/" = "Sharing"
+"tools/" = "Tools"
+"wifi/" = "Wifi"

@@ -1,33 +1,17 @@
-# Media Players Menu
-# VLC, MPV, multimedia codecs and players
+# Media Players
+# VLC, MPV, multimedia codecs and media playback tools
 
 [menu]
 name = "Media Players"
 description = "VLC, MPV, multimedia codecs and media playback tools"
 icon = "📺"
-level = "submenu"
-
-[options]
-# Media player applications
-1 = { display = "VLC Media Player (Recommended)", action = "script", target = "vlc-player.sh" }
-2 = { display = "MPV Player", action = "script", target = "mpv-player.sh" }
-3 = { display = "Multimedia Codecs", action = "script", target = "codecs.sh" }
-4 = { display = "Audio Players", action = "script", target = "audio-players.sh" }
-5 = { display = "Image Viewers", action = "script", target = "image-viewers.sh" }
-6 = { display = "Video Players", action = "script", target = "video-players.sh" }
-
-# Quick installations
-"all" = { display = "Install All Media Players", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
-requires_network = true
-requires_aur = false
-estimated_time = "3-8 minutes"
-dependencies = ["base-system"]
-categories = ["multimedia", "media", "video", "audio"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"media-players/" = "Media Players"

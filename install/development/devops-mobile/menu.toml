@@ -1,52 +1,21 @@
-# DevOps & Mobile Development Menu
-# DevOps tools, containerization, and mobile development platforms
+# DevOps & Mobile
+# DevOps tools, containerization, orchestration, and mobile development
 
 [menu]
 name = "DevOps & Mobile"
 description = "DevOps tools, containerization, orchestration, and mobile development"
 icon = "🚀"
-level = "sub"
-
-[options]
-# Container and orchestration
-1 = { display = "Docker & Docker Compose", action = "script", target = "docker.sh" }
-2 = { display = "Podman (Docker alternative)", action = "script", target = "podman.sh" }
-3 = { display = "Kubernetes Tools (kubectl, helm)", action = "script", target = "kubernetes.sh" }
-
-# Infrastructure as Code
-4 = { display = "Terraform", action = "script", target = "terraform.sh" }
-5 = { display = "Ansible", action = "script", target = "ansible.sh" }
-
-# Mobile development
-6 = { display = "Flutter & Dart", action = "script", target = "flutter.sh" }
-7 = { display = "Kotlin Programming Language", action = "script", target = "kotlin.sh" }
-
-# Bulk actions
-"all" = { display = "Install All DevOps & Mobile Tools", action = "install", target = "install.sh" }
-"multi" = { display = "Select Multiple Tools", action = "multiselect", target = "available_scripts" }
-
-# Navigation
-"up" = { display = "← Back to Development", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-[multiselect]
-# Available DevOps and mobile tools for multiple selection
-available_scripts = [
-    { file = "docker.sh", display = "Docker", description = "Containerization platform and Docker Compose" },
-    { file = "podman.sh", display = "Podman", description = "Daemonless container engine" },
-    { file = "kubernetes.sh", display = "Kubernetes", description = "kubectl and helm for container orchestration" },
-    { file = "terraform.sh", display = "Terraform", description = "Infrastructure as Code tool" },
-    { file = "ansible.sh", display = "Ansible", description = "IT automation and configuration management" },
-    { file = "flutter.sh", display = "Flutter", description = "Cross-platform mobile development framework" },
-    { file = "kotlin.sh", display = "Kotlin", description = "Modern programming language for Android" }
-]
-
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "10-20 minutes"
-dependencies = ["base-system", "mise"]
-categories = ["development", "devops", "mobile", "containers"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"docker.sh" = "Docker"
+"install.sh" = "Install"
+"kubernetes.sh" = "Kubernetes"
+"podman.sh" = "Podman"
+"devops-mobile/" = "Devops Mobile"

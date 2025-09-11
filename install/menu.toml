@@ -1,62 +1,25 @@
 # Archer Linux Enhancement Suite - Main Menu
-heading_color = "blue"
+# Comprehensive system enhancement and software installation
+
+[menu]
+name = "Archer Linux Enhancement Suite"
 description = "Comprehensive system enhancement and software installation"
+icon = "🏹"
 
-[[menu_items]]
-name = "Development Tools"
-description = "Programming languages, IDEs, frameworks, and dev tools"
-action_type = "submenu"
-submenu_path = "./development/menu.toml"
+[metadata]
+level = "main"
 
-[[menu_items]]
-name = "System Tools"
-description = "Hardware drivers, system utilities, and package management"
-action_type = "submenu"
-submenu_path = "./system/menu.toml"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Desktop Environment"
-description = "Themes, fonts, office tools, and desktop customization"
-action_type = "submenu"
-submenu_path = "./desktop/menu.toml"
-
-[[menu_items]]
-name = "Multimedia"
-description = "Media players, content creation, gaming, and entertainment"
-action_type = "submenu"
-submenu_path = "./multimedia/menu.toml"
-
-[[menu_items]]
-name = "Network & Connectivity"
-description = "WiFi setup, network tools, VPN, and file sharing"
-action_type = "submenu"
-submenu_path = "./network/menu.toml"
-
-[[menu_items]]
-name = "Security & Privacy"
-description = "Firewall, encryption, privacy tools, and security analysis"
-action_type = "submenu"
-submenu_path = "./security/menu.toml"
-
-[[menu_items]]
-name = "Extra Applications"
-description = "Browsers, communication tools, utilities, and specialized apps"
-action_type = "submenu"
-submenu_path = "./extras/menu.toml"
-
-[[menu_items]]
-name = "Terminal Tools"
-description = "Shell enhancements, CLI utilities, and command-line tools"
-action_type = "submenu"
-submenu_path = "./terminal/menu.toml"
-
-[[menu_items]]
-name = "Install Everything"
-description = "Install all components (may take a long time)"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"development/" = "Development Tools"
+"system/" = "System Tools"
+"desktop/" = "Desktop Environment"
+"multimedia/" = "Multimedia"
+"network/" = "Network & Connectivity"
+"security/" = "Security & Privacy"
+"extras/" = "Extra Applications"
+"terminal/" = "Terminal Tools"
+"install.sh" = "Install Everything"

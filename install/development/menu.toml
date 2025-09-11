@@ -5,25 +5,6 @@
 name = "Development Tools"
 description = "Programming environments, code editors, terminals, and development utilities"
 icon = "⚒️"
-level = "main"
-
-[options]
-# Development categories
-1 = { display = "Code Editors & IDEs", action = "submenu", target = "editors/" }
-2 = { display = "Terminal Emulators", action = "submenu", target = "terminals/" }
-3 = { display = "System Programming", action = "submenu", target = "system-programming/" }
-4 = { display = "Numerical Computing", action = "submenu", target = "numerical-computing/" }
-5 = { display = "Scripting & Web", action = "submenu", target = "scripting-web/" }
-6 = { display = "DevOps & Mobile", action = "submenu", target = "devops-mobile/" }
-7 = { display = "Database Tools", action = "submenu", target = "database-tools/" }
-8 = { display = "General Dev Tools", action = "script", target = "dev-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All Development Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
 
 [metadata]
 requires_network = true
@@ -31,3 +12,12 @@ requires_aur = true
 estimated_time = "15-30 minutes"
 dependencies = ["base-system", "package-manager"]
 categories = ["development", "programming", "tools"]
+level = "main"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"dev-tools.sh" = "General Development Tools"
+"install.sh" = "Install All Development Tools"

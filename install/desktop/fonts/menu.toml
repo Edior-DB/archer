@@ -1,30 +1,13 @@
 # Font Management Menu
 # System fonts, programming fonts, and icon fonts
 
+# Font Management Menu
+# System fonts, programming fonts, and icon fonts
+
 [menu]
 name = "Font Management"
 description = "System fonts, programming fonts, and icon fonts"
 icon = "🔤"
-level = "submenu"
-
-[options]
-# Font categories
-1 = { display = "System Fonts", action = "script", target = "system-fonts.sh" }
-2 = { display = "Programming/Coding Fonts", action = "script", target = "coding-fonts.sh" }
-3 = { display = "Nerd Fonts (Patched)", action = "script", target = "nerd-fonts.sh" }
-4 = { display = "Google Fonts", action = "script", target = "google-fonts.sh" }
-5 = { display = "Microsoft Fonts", action = "script", target = "microsoft-fonts.sh" }
-6 = { display = "Apple Fonts", action = "script", target = "apple-fonts.sh" }
-7 = { display = "Adobe Fonts", action = "script", target = "adobe-fonts.sh" }
-
-# Quick installations
-"all" = { display = "Install All Fonts", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
 requires_network = true
@@ -32,3 +15,18 @@ requires_aur = true
 estimated_time = "5-15 minutes"
 dependencies = ["base-system"]
 categories = ["fonts", "typography", "desktop"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"system-fonts.sh" = "System Fonts"
+"coding-fonts.sh" = "Programming/Coding Fonts"
+"nerd-fonts.sh" = "Nerd Fonts (Patched)"
+"google-fonts.sh" = "Google Fonts"
+"microsoft-fonts.sh" = "Microsoft Fonts"
+"apple-fonts.sh" = "Apple Fonts"
+"adobe-fonts.sh" = "Adobe Fonts"
+"install.sh" = "Install All Fonts"

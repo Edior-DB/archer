@@ -1,50 +1,17 @@
-# Network Security & VPN
-heading_color = "red"
-description = "VPN clients, firewall, and network security"
+# Firewall Setup
+# VPN clients, firewall, and network security
 
-[[menu_items]]
+[menu]
 name = "Firewall Setup"
-description = "Configure UFW/iptables firewall"
-action_type = "script"
-script_path = "./firewall-setup.sh"
+description = "VPN clients, firewall, and network security"
+icon = "📁"
 
-[[menu_items]]
-name = "VPN Clients"
-description = "OpenVPN, WireGuard, and other VPN clients"
-action_type = "script"
-script_path = "./vpn-clients.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Network Security Tools"
-description = "Security scanning and monitoring tools"
-action_type = "script"
-script_path = "./network-security.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Intrusion Detection"
-description = "Network intrusion detection systems"
-action_type = "script"
-script_path = "./intrusion-detection.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"security/" = "Security"

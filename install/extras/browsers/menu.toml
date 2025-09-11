@@ -1,31 +1,19 @@
-# Web Browsers Menu
-# Popular web browsers and browser utilities
+# Web Browsers
+# Firefox, Brave, Chrome, and other web browsers
 
 [menu]
 name = "Web Browsers"
 description = "Firefox, Brave, Chrome, and other web browsers"
 icon = "🌐"
-level = "submenu"
-
-[options]
-# Browser installations
-1 = { display = "Firefox (Recommended)", action = "script", target = "firefox-install.sh" }
-2 = { display = "Brave Browser", action = "script", target = "brave-install.sh" }
-3 = { display = "Google Chrome", action = "script", target = "chrome-install.sh" }
-4 = { display = "Chromium", action = "script", target = "chromium-install.sh" }
-5 = { display = "Opera", action = "script", target = "opera-install.sh" }
-
-# Quick installations
-"all" = { display = "Install All Browsers", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
 
 [metadata]
-requires_network = true
-requires_aur = false
-estimated_time = "5-10 minutes"
-dependencies = ["base-system"]
-categories = ["browsers", "internet", "web"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"brave-install.sh" = "Brave Install"
+"firefox-install.sh" = "Firefox Install"
+"browsers/" = "Browsers"

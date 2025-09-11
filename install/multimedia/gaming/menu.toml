@@ -1,31 +1,18 @@
-# Gaming Platforms & Tools Menu
+# Gaming Platforms & Tools
 # Steam, Lutris, emulators, and gaming utilities
 
 [menu]
 name = "Gaming Platforms & Tools"
 description = "Steam, Lutris, emulators, and gaming utilities"
 icon = "🎮"
-level = "submenu"
-
-[options]
-# Gaming categories
-1 = { display = "Gaming Platforms", action = "script", target = "gaming-platforms.sh" }
-2 = { display = "Game Emulators", action = "script", target = "emulators.sh" }
-3 = { display = "Gaming Tools", action = "script", target = "gaming-tools.sh" }
-4 = { display = "Wine & Compatibility", action = "script", target = "wine-tools.sh" }
-
-# Quick installations
-"all" = { display = "Complete Gaming Setup", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "10-20 minutes"
-dependencies = ["base-system", "graphics-drivers"]
-categories = ["gaming", "entertainment", "steam"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"gaming-platforms.sh" = "Gaming Platforms"
+"gaming/" = "Gaming"

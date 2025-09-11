@@ -1,46 +1,21 @@
-# System Programming Languages Menu
-# Low-level and systems programming languages
+# System Programming
+# Low-level languages for systems, performance, and memory-safe programming
 
 [menu]
 name = "System Programming"
 description = "Low-level languages for systems, performance, and memory-safe programming"
 icon = "⚡"
-level = "sub"
-
-[options]
-# Individual languages
-1 = { display = "C/C++ Compilers (GCC + Clang)", action = "script", target = "cpp-compilers.sh" }
-2 = { display = "Rust Programming Language", action = "script", target = "rust.sh" }
-3 = { display = "Go Programming Language", action = "script", target = "go.sh" }
-4 = { display = "D Language (DMD + LDC)", action = "script", target = "d-lang.sh" }
-5 = { display = "Nim Programming Language", action = "script", target = "nim.sh" }
-6 = { display = "Zig Programming Language", action = "script", target = "zig.sh" }
-7 = { display = "V Programming Language", action = "script", target = "v-lang.sh" }
-
-# Bulk actions
-"all" = { display = "Install All System Languages", action = "install", target = "install.sh" }
-"multi" = { display = "Select Multiple Languages", action = "multiselect", target = "available_scripts" }
-
-# Navigation
-"up" = { display = "← Back to Development", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-[multiselect]
-# Available system programming languages for multiple selection
-available_scripts = [
-    { file = "cpp-compilers.sh", display = "C/C++ Compilers", description = "GCC and Clang/LLVM toolchains" },
-    { file = "rust.sh", display = "Rust", description = "Memory-safe systems programming" },
-    { file = "go.sh", display = "Go", description = "Simple, reliable, efficient language" },
-    { file = "d-lang.sh", display = "D Language", description = "Modern systems programming language" },
-    { file = "nim.sh", display = "Nim", description = "Expressive and efficient language" },
-    { file = "zig.sh", display = "Zig", description = "General-purpose programming language" },
-    { file = "v-lang.sh", display = "V Language", description = "Simple, fast, safe, compiled language" }
-]
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "10-25 minutes"
-dependencies = ["base-system", "mise"]
-categories = ["development", "system-programming", "languages"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"cpp-compilers.sh" = "Cpp Compilers"
+"go.sh" = "Go"
+"install.sh" = "Install"
+"rust.sh" = "Rust"
+"system-programming/" = "System Programming"

@@ -1,60 +1,22 @@
-# Additional Software & Tools
-heading_color = "green"
-description = "Web browsers, virtualization, and extra applications"
+# Web Browsers
+# Web browsers, virtualization, and extra applications
 
-[[menu_items]]
+[menu]
 name = "Web Browsers"
-description = "Firefox, Brave, Chrome, and other browsers"
-action_type = "submenu"
-submenu_path = "./browsers/menu.toml"
+description = "Web browsers, virtualization, and extra applications"
+icon = "📁"
 
-[[menu_items]]
-name = "Virtualization"
-description = "VirtualBox, QEMU, Docker, and VM management"
-action_type = "submenu"
-submenu_path = "./virtualization/menu.toml"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Communication"
-description = "Discord, Slack, messaging applications"
-action_type = "submenu"
-submenu_path = "./communication/menu.toml"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Utilities"
-description = "Archive tools, file managers, system utilities"
-action_type = "submenu"
-submenu_path = "./utilities/menu.toml"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific extra applications"
-action_type = "multiselect"
-items = [
-    { name = "Firefox Browser", script = "./browsers/firefox-install.sh" },
-    { name = "Brave Browser", script = "./browsers/brave-install.sh" },
-    { name = "Google Chrome", script = "./browsers/chrome-install.sh" },
-    { name = "VirtualBox", script = "./virtualization/virtualbox.sh" },
-    { name = "QEMU/KVM", script = "./virtualization/qemu-kvm.sh" },
-    { name = "Virt Manager", script = "./virtualization/virt-manager-install.sh" },
-    { name = "Discord", script = "./communication/discord.sh" },
-    { name = "Archive Tools", script = "./utilities/archive-tools.sh" },
-    { name = "File Managers", script = "./utilities/file-managers.sh" }
-]
-
-[[menu_items]]
-name = "Install Everything"
-description = "Install all components from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"install.sh" = "Install"
+"extras/" = "Extras"
+"browsers/" = "Browsers"
+"communication/" = "Communication"
+"utilities/" = "Utilities"
+"virtualization/" = "Virtualization"

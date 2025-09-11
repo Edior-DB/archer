@@ -1,61 +1,22 @@
-# Hardware Management
-heading_color = "cyan"
-description = "GPU drivers, audio system, bluetooth, and printer support"
+# GPU Drivers
+# GPU drivers, audio system, bluetooth, and printer support
 
-[[menu_items]]
+[menu]
 name = "GPU Drivers"
-description = "NVIDIA, AMD, Intel graphics drivers and utilities"
-action_type = "script"
-script_path = "./gpu-drivers.sh"
+description = "GPU drivers, audio system, bluetooth, and printer support"
+icon = "📁"
 
-[[menu_items]]
-name = "Audio System"
-description = "PipeWire, ALSA, PulseAudio configuration"
-action_type = "script"
-script_path = "./audio-system.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Bluetooth"
-description = "Bluetooth stack and device management"
-action_type = "script"
-script_path = "./bluetooth.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Printer Support"
-description = "CUPS printing system and driver support"
-action_type = "script"
-script_path = "./printer-support.sh"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific hardware components"
-action_type = "multiselect"
-items = [
-    { name = "GPU Drivers", script = "./gpu-drivers.sh" },
-    { name = "Audio System", script = "./audio-system.sh" },
-    { name = "Bluetooth", script = "./bluetooth.sh" },
-    { name = "Printer Support", script = "./printer-support.sh" }
-]
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"audio-system.sh" = "Audio System"
+"bluetooth.sh" = "Bluetooth"
+"gpu-drivers.sh" = "Gpu Drivers"
+"install.sh" = "Install"
+"printer-support.sh" = "Printer Support"
+"hardware/" = "Hardware"

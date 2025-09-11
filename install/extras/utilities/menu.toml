@@ -1,35 +1,17 @@
-# Utilities Menu
-# Archive tools, file managers, and system utilities
+# System Utilities
+# Archive tools, file managers, and various system utilities
 
 [menu]
 name = "System Utilities"
 description = "Archive tools, file managers, and various system utilities"
 icon = "🔧"
-level = "submenu"
-
-[options]
-# File management and archives
-1 = { display = "Archive Tools (7zip, unrar, etc.)", action = "script", target = "archive-tools.sh" }
-2 = { display = "File Managers (Nautilus, Dolphin, etc.)", action = "script", target = "file-managers.sh" }
-3 = { display = "PDF Tools (Readers, Editors)", action = "script", target = "pdf-tools.sh" }
-4 = { display = "Image Viewers & Editors", action = "script", target = "image-tools.sh" }
-5 = { display = "Text Editors (GUI)", action = "script", target = "text-editors.sh" }
-6 = { display = "System Monitors", action = "script", target = "system-monitors.sh" }
-7 = { display = "Backup Tools", action = "script", target = "backup-tools.sh" }
-8 = { display = "Network Tools", action = "script", target = "network-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All Utilities", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
-requires_network = true
-requires_aur = false
-estimated_time = "5-15 minutes"
-dependencies = ["base-system"]
-categories = ["utilities", "tools", "file-management"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"utilities/" = "Utilities"

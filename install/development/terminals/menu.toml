@@ -1,40 +1,22 @@
-# Terminal Emulators Menu
-# Modern terminal applications for development
+# Terminal Emulators
+# Modern terminal emulators optimized for development and productivity
 
 [menu]
 name = "Terminal Emulators"
 description = "Modern terminal emulators optimized for development and productivity"
 icon = "💻"
-level = "sub"
-
-[options]
-# Individual terminals
-1 = { display = "Alacritty (GPU-accelerated)", action = "script", target = "terminal-alacritty.sh" }
-2 = { display = "Kitty (Feature-rich)", action = "script", target = "terminal-kitty.sh" }
-3 = { display = "WezTerm (Rust-based)", action = "script", target = "terminal-wezterm.sh" }
-4 = { display = "Hyper (Electron-based)", action = "script", target = "terminal-hyper.sh" }
-
-# Bulk actions
-"all" = { display = "Install All Terminals", action = "install", target = "install.sh" }
-"multi" = { display = "Select Multiple Terminals", action = "multiselect", target = "available_scripts" }
-
-# Navigation
-"up" = { display = "← Back to Development", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-[multiselect]
-# Available terminal scripts for multiple selection
-available_scripts = [
-    { file = "terminal-alacritty.sh", display = "Alacritty", description = "GPU-accelerated, minimal config" },
-    { file = "terminal-kitty.sh", display = "Kitty", description = "Feature-rich with image support" },
-    { file = "terminal-wezterm.sh", display = "WezTerm", description = "Cross-platform, Rust-based" },
-    { file = "terminal-hyper.sh", display = "Hyper", description = "Extensible, Electron-based" }
-]
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-10 minutes"
-dependencies = ["base-system"]
-categories = ["development", "terminal", "productivity"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"install.sh" = "Install"
+"terminal-alacritty.sh" = "Terminal Alacritty"
+"terminal-hyper.sh" = "Terminal Hyper"
+"terminal-kitty.sh" = "Terminal Kitty"
+"terminal-wezterm.sh" = "Terminal Wezterm"
+"terminals/" = "Terminals"

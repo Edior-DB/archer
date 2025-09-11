@@ -1,56 +1,17 @@
-# Network Tools & Utilities
-heading_color = "green"
-description = "Network monitoring, diagnostics, and utilities"
+# Basic Network Tools
+# Network monitoring, diagnostics, and utilities
 
-[[menu_items]]
+[menu]
 name = "Basic Network Tools"
-description = "Essential network utilities (ping, wget, curl, etc.)"
-action_type = "script"
-script_path = "./basic-tools.sh"
+description = "Network monitoring, diagnostics, and utilities"
+icon = "📁"
 
-[[menu_items]]
-name = "Network Monitoring"
-description = "Real-time network monitoring tools"
-action_type = "script"
-script_path = "./network-monitoring.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Network Diagnostics"
-description = "Network scanning and diagnostic tools"
-action_type = "script"
-script_path = "./network-diagnostics.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "SSH Tools"
-description = "SSH client, server, and key management"
-action_type = "script"
-script_path = "./ssh-tools.sh"
-
-[[menu_items]]
-name = "Network Utilities"
-description = "Advanced network utilities and tools"
-action_type = "script"
-script_path = "./network-utilities.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"tools/" = "Tools"

@@ -1,47 +1,25 @@
-# Numerical Computing & Scientific Programming Menu
-# Scientific computing languages and mathematical tools
+# Numerical Computing
+# Scientific computing, mathematical programming, and statistical analysis tools
 
 [menu]
 name = "Numerical Computing"
 description = "Scientific computing, mathematical programming, and statistical analysis tools"
 icon = "🧮"
-level = "sub"
-
-[options]
-# Individual languages and tools
-1 = { display = "Fortran Compilers (GFortran + LFortran)", action = "script", target = "fortran.sh" }
-2 = { display = "Julia Programming Language", action = "script", target = "julia.sh" }
-3 = { display = "R Statistical Computing", action = "script", target = "r-lang.sh" }
-4 = { display = "GNU Octave (MATLAB alternative)", action = "script", target = "octave.sh" }
-5 = { display = "Haskell Programming Language", action = "script", target = "haskell.sh" }
-6 = { display = "Anaconda Python Distribution", action = "script", target = "anaconda.sh" }
-7 = { display = "Spack Package Manager (HPC)", action = "script", target = "spack.sh" }
-
-# Bulk actions
-"all" = { display = "Install All Scientific Tools", action = "install", target = "install.sh" }
-"multi" = { display = "Select Multiple Tools", action = "multiselect", target = "available_scripts" }
-
-# Navigation
-"up" = { display = "← Back to Development", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-[multiselect]
-# Available scientific computing tools for multiple selection
-available_scripts = [
-    { file = "fortran.sh", display = "Fortran", description = "GFortran and LFortran compilers with BLAS/LAPACK" },
-    { file = "julia.sh", display = "Julia", description = "High-performance scientific computing language" },
-    { file = "r-lang.sh", display = "R", description = "Statistical computing and graphics" },
-    { file = "octave.sh", display = "Octave", description = "MATLAB-compatible numerical computing" },
-    { file = "haskell.sh", display = "Haskell", description = "Functional programming with mathematical focus" },
-    { file = "anaconda.sh", display = "Anaconda", description = "Python scientific distribution (large download)" },
-    { file = "spack.sh", display = "Spack", description = "HPC package manager for scientific computing" }
-]
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "15-45 minutes"
-dependencies = ["base-system", "mise"]
-categories = ["development", "scientific", "numerical", "languages"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"anaconda.sh" = "Anaconda"
+"fortran.sh" = "Fortran"
+"haskell.sh" = "Haskell"
+"install.sh" = "Install"
+"julia.sh" = "Julia"
+"octave.sh" = "Octave"
+"r-lang.sh" = "R Lang"
+"spack.sh" = "Spack"
+"numerical-computing/" = "Numerical Computing"

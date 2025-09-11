@@ -1,50 +1,17 @@
-# Network Sharing & File Services
-heading_color = "orange"
-description = "Samba, NFS, and network file sharing"
+# Samba File Sharing
+# Samba, NFS, and network file sharing
 
-[[menu_items]]
+[menu]
 name = "Samba File Sharing"
-description = "Windows-compatible file sharing (SMB/CIFS)"
-action_type = "script"
-script_path = "./samba.sh"
+description = "Samba, NFS, and network file sharing"
+icon = "📁"
 
-[[menu_items]]
-name = "NFS File Sharing"
-description = "Unix/Linux network file system"
-action_type = "script"
-script_path = "./nfs.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "FTP Server"
-description = "FTP/SFTP server setup"
-action_type = "script"
-script_path = "./ftp.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Media Streaming"
-description = "DLNA/UPnP media streaming servers"
-action_type = "script"
-script_path = "./media-streaming.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"sharing/" = "Sharing"

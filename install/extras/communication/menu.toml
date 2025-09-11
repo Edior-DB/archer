@@ -1,34 +1,17 @@
-# Communication Tools Menu
-# Messaging, video calls, and communication applications
+# Communication Tools
+# Discord, Slack, messaging and video conferencing applications
 
 [menu]
 name = "Communication Tools"
 description = "Discord, Slack, messaging and video conferencing applications"
 icon = "💬"
-level = "submenu"
-
-[options]
-# Communication applications
-1 = { display = "Discord", action = "script", target = "discord-install.sh" }
-2 = { display = "Slack", action = "script", target = "slack-install.sh" }
-3 = { display = "Telegram", action = "script", target = "telegram-install.sh" }
-4 = { display = "WhatsApp (Web)", action = "script", target = "whatsapp-install.sh" }
-5 = { display = "Zoom", action = "script", target = "zoom-install.sh" }
-6 = { display = "Teams", action = "script", target = "teams-install.sh" }
-7 = { display = "Element (Matrix)", action = "script", target = "element-install.sh" }
-
-# Quick installations
-"all" = { display = "Install All Communication Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-15 minutes"
-dependencies = ["base-system"]
-categories = ["communication", "messaging", "video-calls"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"communication/" = "Communication"

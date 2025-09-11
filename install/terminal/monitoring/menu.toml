@@ -1,32 +1,17 @@
-# System Monitoring Tools Menu
+# System Monitoring Tools
 # Performance monitoring, system analysis, and process management
 
 [menu]
 name = "System Monitoring Tools"
 description = "Performance monitoring, system analysis, and process management"
 icon = "📊"
-level = "submenu"
-
-[options]
-# Monitoring tools
-1 = { display = "htop & btop (Process Managers)", action = "script", target = "htop-btop.sh" }
-2 = { display = "System Info Tools", action = "script", target = "system-info.sh" }
-3 = { display = "Resource Monitors", action = "script", target = "resource-monitors.sh" }
-4 = { display = "Network Monitoring", action = "script", target = "network-monitoring.sh" }
-5 = { display = "Disk Usage Tools", action = "script", target = "disk-tools.sh" }
-6 = { display = "Performance Analysis", action = "script", target = "performance-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All Monitoring Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Terminal Tools", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
 
 [metadata]
-requires_network = true
-requires_aur = false
-estimated_time = "5-10 minutes"
-categories = ["monitoring", "performance", "system"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"monitoring/" = "Monitoring"

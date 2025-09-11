@@ -1,34 +1,17 @@
-# Content Creation Menu
-# Video editing, image manipulation, audio production
+# Content Creation
+# Video editing, image manipulation, audio production tools
 
 [menu]
 name = "Content Creation"
 description = "Video editing, image manipulation, audio production tools"
 icon = "🎨"
-level = "submenu"
-
-[options]
-# Content creation applications
-1 = { display = "Video Editing (Kdenlive, OpenShot)", action = "script", target = "video-editing.sh" }
-2 = { display = "Image Editing (GIMP, Krita)", action = "script", target = "image-editing.sh" }
-3 = { display = "Audio Production (Audacity, Ardour)", action = "script", target = "audio-production.sh" }
-4 = { display = "3D Graphics (Blender, FreeCAD)", action = "script", target = "3d-graphics.sh" }
-5 = { display = "Vector Graphics (Inkscape)", action = "script", target = "vector-graphics.sh" }
-6 = { display = "Animation Tools", action = "script", target = "animation-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All Creation Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "10-25 minutes"
-dependencies = ["base-system", "graphics-drivers"]
-categories = ["multimedia", "content-creation", "graphics", "video"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"content-creation/" = "Content Creation"

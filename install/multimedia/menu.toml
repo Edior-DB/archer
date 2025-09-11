@@ -1,63 +1,22 @@
-# Multimedia Applications
-heading_color = "magenta"
-description = "Gaming, media players, streaming, and content creation tools"
+# Gaming Platforms
+# Gaming, media players, streaming, and content creation tools
 
-[[menu_items]]
+[menu]
 name = "Gaming Platforms"
-description = "Steam, Lutris, Epic Games, GOG launchers"
-action_type = "submenu"
-submenu_path = "./gaming/menu.toml"
+description = "Gaming, media players, streaming, and content creation tools"
+icon = "📁"
 
-[[menu_items]]
-name = "Media Players"
-description = "VLC, MPV, multimedia codecs and players"
-action_type = "submenu"
-submenu_path = "./media-players/menu.toml"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Content Creation"
-description = "Video editing, image manipulation, audio production"
-action_type = "submenu"
-submenu_path = "./content-creation/menu.toml"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Streaming & Recording"
-description = "OBS Studio, streaming tools, screen recording"
-action_type = "submenu"
-submenu_path = "./streaming/menu.toml"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific multimedia tools"
-action_type = "multiselect"
-items = [
-    { name = "Gaming Platforms", script = "./gaming/gaming-platforms.sh" },
-    { name = "Game Emulators", script = "./gaming/emulators.sh" },
-    { name = "Gaming Tools", script = "./gaming/gaming-tools.sh" },
-    { name = "Media Players", script = "./media-players/players.sh" },
-    { name = "Audio Tools", script = "./media-players/audio-tools.sh" },
-    { name = "Video Codecs", script = "./media-players/codecs.sh" },
-    { name = "Video Editing", script = "./content-creation/video-editing.sh" },
-    { name = "Image Editing", script = "./content-creation/image-editing.sh" },
-    { name = "Audio Production", script = "./content-creation/audio-production.sh" },
-    { name = "3D Graphics", script = "./content-creation/3d-graphics.sh" },
-    { name = "OBS Studio", script = "./streaming/obs-studio.sh" },
-    { name = "Streaming Tools", script = "./streaming/streaming-tools.sh" }
-]
-
-[[menu_items]]
-name = "Install Everything"
-description = "Install all components from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"install.sh" = "Install"
+"multimedia/" = "Multimedia"
+"content-creation/" = "Content Creation"
+"gaming/" = "Gaming"
+"media-players/" = "Media Players"
+"streaming/" = "Streaming"

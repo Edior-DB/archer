@@ -1,32 +1,17 @@
-# File Management Tools Menu
+# File Management Tools
 # Advanced file operations, managers, and utilities
 
 [menu]
 name = "File Management Tools"
 description = "Advanced file operations, managers, and utilities"
 icon = "📁"
-level = "submenu"
-
-[options]
-# File management tools
-1 = { display = "Modern File Tools", action = "script", target = "modern-file-tools.sh" }
-2 = { display = "Terminal File Managers", action = "script", target = "file-managers.sh" }
-3 = { display = "File Synchronization", action = "script", target = "sync-tools.sh" }
-4 = { display = "Backup & Archive Tools", action = "script", target = "backup-tools.sh" }
-5 = { display = "File Analysis & Search", action = "script", target = "analysis-search.sh" }
-6 = { display = "Cloud Storage Tools", action = "script", target = "cloud-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All File Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Terminal Tools", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-15 minutes"
-categories = ["files", "management", "sync", "backup"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"file-tools/" = "File Tools"

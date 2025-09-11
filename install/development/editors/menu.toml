@@ -1,38 +1,21 @@
-# Code Editors & IDEs Menu
-# Text editors, IDEs, and coding environments
+# Code Editors & IDEs
+# Text editors, integrated development environments, and coding tools
 
 [menu]
 name = "Code Editors & IDEs"
 description = "Text editors, integrated development environments, and coding tools"
 icon = "📝"
-level = "sub"
-
-[options]
-# Individual editors
-1 = { display = "Visual Studio Code", action = "script", target = "app-vscode.sh" }
-2 = { display = "VSCodium (Open Source)", action = "script", target = "app-vscodium.sh" }
-3 = { display = "Additional Editors Package", action = "script", target = "editors.sh" }
-
-# Bulk actions
-"all" = { display = "Install All Editors", action = "install", target = "install.sh" }
-"multi" = { display = "Select Multiple Editors", action = "multiselect", target = "available_scripts" }
-
-# Navigation
-"up" = { display = "← Back to Development", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-[multiselect]
-# Available editor scripts for multiple selection
-available_scripts = [
-    { file = "app-vscode.sh", display = "Visual Studio Code", description = "Microsoft's popular code editor" },
-    { file = "app-vscodium.sh", display = "VSCodium", description = "Open source build of VS Code" },
-    { file = "editors.sh", display = "Additional Editors", description = "Vim, Neovim, Emacs, and other editors" }
-]
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-15 minutes"
-dependencies = ["base-system"]
-categories = ["development", "editors", "ide"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"app-vscode.sh" = "App Vscode"
+"app-vscodium.sh" = "App Vscodium"
+"editors.sh" = "Editors"
+"install.sh" = "Install"
+"editors/" = "Editors"

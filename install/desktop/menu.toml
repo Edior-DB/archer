@@ -5,21 +5,6 @@
 name = "Desktop Environment"
 description = "Desktop themes, office tools, fonts, and UI customization"
 icon = "🖥️"
-level = "main"
-
-[options]
-# Desktop categories
-1 = { display = "Desktop Themes", action = "submenu", target = "themes/" }
-2 = { display = "Fonts", action = "submenu", target = "fonts/" }
-3 = { display = "Office Tools", action = "submenu", target = "office-tools/" }
-4 = { display = "Desktop Utilities", action = "submenu", target = "utilities/" }
-
-# Quick installations
-"all" = { display = "Install All Desktop Tools", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
 
 [metadata]
 requires_network = true
@@ -27,3 +12,11 @@ requires_aur = true
 estimated_time = "10-20 minutes"
 dependencies = ["base-system"]
 categories = ["desktop", "themes", "fonts", "office"]
+level = "main"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"install.sh" = "Install All Desktop Components"

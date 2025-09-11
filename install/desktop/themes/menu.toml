@@ -1,29 +1,22 @@
-# Desktop Themes Menu
+# Desktop Themes
 # Cupertini, Redmondi, Vanilla themes and desktop customizations
 
 [menu]
 name = "Desktop Themes"
 description = "Cupertini, Redmondi, Vanilla themes and desktop customizations"
 icon = "🎨"
-level = "submenu"
-
-[options]
-# Theme options
-1 = { display = "Cupertini Theme", action = "script", target = "cupertini.sh", description = "macOS-inspired KDE theme with dock and aesthetics" }
-2 = { display = "Redmondi Theme", action = "script", target = "redmondi.sh", description = "Windows-inspired theme with taskbar layout" }
-3 = { display = "Vanilla Theme", action = "script", target = "vanilla.sh", description = "Clean minimal theme with default KDE aesthetics" }
-4 = { display = "Theme Uninstaller", action = "script", target = "de-installer.sh", description = "Remove installed themes and restore defaults" }
-
-# Quick installations
-"all" = { display = "Install All Themes", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "5-15 minutes"
-categories = ["themes", "desktop", "kde"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"cupertini.sh" = "Cupertini"
+"de-installer.sh" = "De Installer"
+"install.sh" = "Install"
+"redmondi.sh" = "Redmondi"
+"vanilla.sh" = "Vanilla"
+"themes/" = "Themes"

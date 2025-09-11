@@ -1,56 +1,17 @@
-# Security Analysis & Testing
-heading_color = "orange"
-description = "Penetration testing, vulnerability scanning, and security auditing"
+# Security Audit
+# Penetration testing, vulnerability scanning, and security auditing
 
-[[menu_items]]
+[menu]
 name = "Security Audit"
-description = "System security auditing tools"
-action_type = "script"
-script_path = "./security-audit.sh"
+description = "Penetration testing, vulnerability scanning, and security auditing"
+icon = "📁"
 
-[[menu_items]]
-name = "Vulnerability Scanning"
-description = "Network and system vulnerability scanners"
-action_type = "script"
-script_path = "./vulnerability-scanning.sh"
+[metadata]
+level = "submenu"
 
-[[menu_items]]
-name = "Penetration Testing"
-description = "Penetration testing and ethical hacking tools"
-action_type = "script"
-script_path = "./penetration-testing.sh"
+[excludes]
+files = []
+directories = []
 
-[[menu_items]]
-name = "Network Analysis"
-description = "Network security analysis tools"
-action_type = "script"
-script_path = "./network-analysis.sh"
-
-[[menu_items]]
-name = "Forensics Tools"
-description = "Digital forensics and investigation tools"
-action_type = "script"
-script_path = "./forensics.sh"
-
-[[menu_items]]
-name = "Install All"
-description = "Install all tools from this category"
-action_type = "script"
-script_path = "./install.sh"
-
-[[menu_items]]
-name = "← Back to Parent Menu"
-description = "Return to parent menu"
-action_type = "back"
-target = ".."
-
-[[menu_items]]
-name = "← Main Menu"
-description = "Return to main menu"
-action_type = "back"
-target = "../.."
-
-[[menu_items]]
-name = "Exit Archer"
-description = "Exit the installation system"
-action_type = "exit"
+[display]
+"analysis/" = "Analysis"

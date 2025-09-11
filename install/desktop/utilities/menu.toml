@@ -1,34 +1,17 @@
-# Desktop Utilities Menu
+# Desktop Utilities
 # Desktop widgets, launchers, and system utilities
 
 [menu]
 name = "Desktop Utilities"
 description = "Desktop widgets, launchers, and system utilities"
 icon = "🔧"
-level = "submenu"
-
-[options]
-# Desktop utilities
-1 = { display = "Application Launchers", action = "script", target = "launchers.sh" }
-2 = { display = "Desktop Widgets", action = "script", target = "widgets.sh" }
-3 = { display = "System Monitors", action = "script", target = "system-monitors.sh" }
-4 = { display = "Screen Savers", action = "script", target = "screensavers.sh" }
-5 = { display = "Wallpaper Tools", action = "script", target = "wallpaper-tools.sh" }
-6 = { display = "Notification Tools", action = "script", target = "notification-tools.sh" }
-7 = { display = "Clipboard Managers", action = "script", target = "clipboard-tools.sh" }
-
-# Quick installations
-"all" = { display = "Install All Desktop Utilities", action = "install", target = "install.sh" }
-
-# Navigation
-"up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
-"0" = { display = "Exit Archer", action = "exit", target = "" }
-
-
 
 [metadata]
-requires_network = true
-requires_aur = true
-estimated_time = "3-8 minutes"
-dependencies = ["base-system", "desktop-environment"]
-categories = ["desktop", "utilities", "widgets"]
+level = "submenu"
+
+[excludes]
+files = []
+directories = []
+
+[display]
+"utilities/" = "Utilities"

@@ -1,294 +1,242 @@
 #!/usr/bin/env python3
 """
-Archer TOML Menu Parser
-Parses TOML menu configuration files and outputs bash-compatible variable assignments
+Enhanced TOML parser for Archer menus with pythonic auto-discovery
+Supports the new simplified TOML format with directory-based auto-discovery
 """
-
-import sys
-import tomllib
 import os
+import sys
+import re
 from pathlib import Path
 
+def resolve_path(path, base_dir=None):
+    """Resolve relative paths to absolute paths using $ARCHER_DIR or base_dir"""
+    if os.path.isabs(path):
+        return path
+
+    if base_dir is None:
+        archer_dir = os.environ.get('ARCHER_DIR', '/home/giorgil/archer')
+        base_dir = archer_dir
+
+    return os.path.join(base_dir, path)
+
+def parse_toml_simplified(file_path):
+    """Parse simplified TOML format with auto-discovery"""
+    result = {}
+    current_section = None
+
+    try:
+        with open(file_path, 'r') as f:
+            content = f.read()
+    except Exception as e:
+        print(f"Error reading {file_path}: {e}", file=sys.stderr)
+        return {}
+
+    lines = content.split('\n')
+    base_dir = os.path.dirname(file_path)
+
+    for line in lines:
+        line = line.strip()
+
+        # Skip comments and empty lines
+        if not line or line.startswith('#'):
+            continue
+
+        # Section headers
+        if line.startswith('[') and line.endswith(']'):
+            current_section = line[1:-1]
+            if current_section not in result:
+                result[current_section] = {}
+            continue
+
+        # Key-value pairs
+        if '=' in line and current_section:
+            key, value = line.split('=', 1)
+            key = key.strip().strip('"')
+            value = value.strip().strip('"')
+
+            # Handle arrays (basic support)
+            if value.startswith('[') and value.endswith(']'):
+                value = [v.strip().strip('"') for v in value[1:-1].split(',') if v.strip()]
+
+            result[current_section][key] = value
+
+    return result
+
+def auto_discover_directory(dir_path):
+    """Auto-discover scripts and subdirectories in a directory"""
+    items = {}
+
+    try:
+        for item in sorted(os.listdir(dir_path)):
+            if item.startswith('.') or item == 'menu.toml':
+                continue
+
+            item_path = os.path.join(dir_path, item)
+
+            if os.path.isfile(item_path) and item.endswith('.sh'):
+                # Create display name from script filename
+                display_name = item.replace('.sh', '').replace('-', ' ').replace('_', ' ')
+                display_name = ' '.join(word.capitalize() for word in display_name.split())
+                items[item] = {
+                    'display': display_name,
+                    'action': 'script',
+                    'target': item,
+                    'type': 'file'
+                }
+            elif os.path.isdir(item_path):
+                # Check if subdirectory has a menu.toml
+                submenu_path = os.path.join(item_path, 'menu.toml')
+                if os.path.exists(submenu_path):
+                    display_name = item.replace('-', ' ').replace('_', ' ')
+                    display_name = ' '.join(word.capitalize() for word in display_name.split())
+                    items[item + '/'] = {
+                        'display': display_name,
+                        'action': 'submenu',
+                        'target': submenu_path,
+                        'type': 'directory'
+                    }
+    except Exception as e:
+        print(f"Error discovering directory {dir_path}: {e}", file=sys.stderr)
+
+    return items
+
+def process_menu_data(data, file_path):
+    """Process parsed TOML data and generate menu items"""
+    menu_items = {}
+    base_dir = os.path.dirname(file_path)
+
+    # Get menu metadata
+    menu_info = data.get('menu', {})
+    metadata = data.get('metadata', {})
+    excludes = data.get('excludes', {'files': [], 'directories': []})
+    display_overrides = data.get('display', {})
+
+    # If we have display overrides, use them as the primary source
+    if display_overrides:
+        for key, display_name in display_overrides.items():
+            if key.endswith('/'):
+                # Directory - target should be the subdirectory's menu.toml
+                subdir = key.rstrip('/')
+                submenu_path = f"{subdir}/menu.toml"
+                menu_items[key] = {
+                    'display': display_name,
+                    'action': 'submenu',
+                    'target': submenu_path,
+                    'type': 'directory'
+                }
+            else:
+                # File
+                menu_items[key] = {
+                    'display': display_name,
+                    'action': 'script',
+                    'target': key,
+                    'type': 'file'
+                }
+    else:
+        # Fallback to auto-discovery if no display section
+        auto_items = auto_discover_directory(base_dir)
+
+        # Apply excludes
+        excluded_files = excludes.get('files', [])
+        excluded_dirs = excludes.get('directories', [])
+
+        for key, item in auto_items.items():
+            should_exclude = False
+
+            if item['type'] == 'file' and item['target'] in excluded_files:
+                should_exclude = True
+            elif item['type'] == 'directory' and key.rstrip('/') in excluded_dirs:
+                should_exclude = True
+
+            if not should_exclude:
+                menu_items[key] = item
+
+    return menu_items, menu_info, metadata
 
 def escape_bash_string(s):
     """Escape single quotes for bash variable assignment"""
     return s.replace("'", "'\"'\"'")
 
+def generate_bash_output(menu_items, menu_info, metadata):
+    """Generate bash-compatible output in old format for compatibility"""
+    output = []
 
-def resolve_path(path, toml_file_path):
-    """
-    Resolve relative paths to absolute paths using ARCHER_DIR
-    """
-    if not path or path == 'multiselect':
-        return path
+    # Menu metadata
+    menu_name = menu_info.get('name', 'Menu')
+    menu_desc = menu_info.get('description', '')
+    menu_icon = menu_info.get('icon', '📁')
+    menu_level = metadata.get('level', 'submenu')
 
-    # If it's already an absolute path, return as-is
-    if os.path.isabs(path):
-        return path
+    output.append(f"MENU_NAME='{escape_bash_string(menu_name)}'")
+    output.append(f"MENU_DESCRIPTION='{escape_bash_string(menu_desc)}'")
+    output.append(f"MENU_HEADING_COLOR='blue'")
+    output.append(f"MENU_ICON='{menu_icon}'")
+    output.append(f"MENU_LEVEL='{menu_level}'")
 
-    # Get ARCHER_DIR from environment (set by archer-toml.sh)
-    archer_dir = os.environ.get('ARCHER_DIR')
-    if not archer_dir:
-        # Fallback: calculate ARCHER_DIR from toml_file_path
-        toml_path = Path(toml_file_path).resolve()
-        # Navigate up to find the archer root (where install/ directory is)
-        current = toml_path.parent
-        while current != current.parent:
-            if (current / 'install').exists():
-                archer_dir = str(current)
-                break
-            current = current.parent
+    # Sort items: files first, then directories, alphabetically within each group
+    sorted_items = sorted(menu_items.items(), key=lambda x: (
+        0 if x[1]['type'] == 'file' else 1,  # Files before directories
+        x[1]['display'].lower()  # Alphabetical within each group
+    ))
 
-        if not archer_dir:
-            # Last resort: assume we're already in the right location
-            return path
+    # Add navigation items
+    nav_items = [
+        ('back', {'display': '← Back', 'action': 'back', 'target': '..', 'type': 'nav'}),
+        ('exit', {'display': 'Exit Archer', 'action': 'exit', 'target': '', 'type': 'nav'})
+    ]
 
-    # Handle different path patterns
-    if path.startswith('./'):
-        # Path relative to current menu location
-        menu_dir = str(Path(toml_file_path).parent)
-        resolved = os.path.join(menu_dir, path[2:])
-    elif path.startswith('../'):
-        # Path relative to parent directory
-        menu_dir = str(Path(toml_file_path).parent)
-        resolved = os.path.normpath(os.path.join(menu_dir, path))
-    else:
-        # Path relative to current menu directory
-        menu_dir = str(Path(toml_file_path).parent)
-        resolved = os.path.join(menu_dir, path)
+    # Combine all items
+    all_items = sorted_items + nav_items
 
-    # Convert to absolute path and normalize
-    return os.path.normpath(os.path.abspath(resolved))
+    # Generate option variables in old format for compatibility
+    for i, (key, item) in enumerate(all_items):
+        display = escape_bash_string(item['display'])
+        action = item['action']
+        target = item['target']
 
+        # Resolve target paths
+        if action == 'script':
+            target = os.path.join(os.path.dirname(sys.argv[1]), target)
+        elif action == 'submenu':
+            target = os.path.join(os.path.dirname(sys.argv[1]), target)
+
+        target = escape_bash_string(target)
+        description = escape_bash_string(item.get('description', ''))
+
+        output.append(f"OPTION_{i}='{display}|{action}|{target}|{description}'")
+
+    output.append(f"OPTION_COUNT='{len(all_items)}'")
+
+    # No quick actions in new format
+    output.append("QUICK_ACTIONS_AVAILABLE='false'")
+    output.append("QUICK_ACTIONS_COUNT='0'")
+
+    return '\n'.join(output)
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: parse_toml.py <toml_file>", file=sys.stderr)
+        print("Usage: python3 parse_toml.py <menu.toml>", file=sys.stderr)
         sys.exit(1)
 
     toml_file = sys.argv[1]
 
-    if not Path(toml_file).exists():
-        print(f"Error: TOML file not found: {toml_file}", file=sys.stderr)
+    if not os.path.exists(toml_file):
+        print(f"Error: File {toml_file} not found", file=sys.stderr)
         sys.exit(1)
 
-    try:
-        with open(toml_file, 'rb') as f:
-            config = tomllib.load(f)
+    # Parse TOML file
+    data = parse_toml_simplified(toml_file)
 
-        # Get header information
-        menu_info = config.get('menu', {})
-
-        # Fallback to root-level properties if no [menu] section exists
-        if not menu_info:
-            description = escape_bash_string(config.get('description', 'Unknown Menu'))
-            heading_color = config.get('heading_color', 'blue')
-            icon = config.get('icon', '📁')
-            level = config.get('level', 'main')
-        else:
-            description = escape_bash_string(menu_info.get('description', menu_info.get('name', 'Unknown Menu')))
-            heading_color = menu_info.get('heading_color', 'blue')
-            icon = menu_info.get('icon', '📁')
-            level = menu_info.get('level', 'main')
-
-        print(f"MENU_NAME='{description}'")
-        print(f"MENU_DESCRIPTION='{description}'")
-        print(f"MENU_HEADING_COLOR='{heading_color}'")
-        print(f"MENU_ICON='{icon}'")
-        print(f"MENU_LEVEL='{level}'")
-
-        # Parse menu_items array (new format) or options section (legacy format)
-        menu_items = config.get('menu_items', [])
-        options = config.get('options', {})
-
-        # Handle new format (menu_items array)
-        if menu_items:
-            # Create a list to store all menu items with proper ordering
-            all_menu_items = []
-
-            for i, item in enumerate(menu_items):
-                name = item.get('name', f'Item {i}')
-                description = item.get('description', '')
-                action_type = item.get('action_type', 'unknown')
-
-                # Handle different action types
-                if action_type == 'submenu':
-                    target = resolve_path(item.get('submenu_path', ''), toml_file)
-                elif action_type == 'script':
-                    target = resolve_path(item.get('script_path', ''), toml_file)
-                elif action_type == 'multiselect':
-                    target = 'multiselect'
-                    # Store multiselect items for later processing
-                    items = item.get('items', [])
-                    for j, multi_item in enumerate(items):
-                        item_name = escape_bash_string(multi_item.get('name', f'Item {j}'))
-                        item_script = resolve_path(multi_item.get('script', ''), toml_file)
-                        item_script_escaped = escape_bash_string(item_script)
-                        print(f"MULTISELECT_{i}_{j}='{item_name}|{item_script_escaped}'")
-                else:
-                    target = resolve_path(item.get('target', ''), toml_file)
-
-                # Create menu item data structure
-                menu_item_data = {
-                    'name': name,
-                    'action_type': action_type,
-                    'target': target,
-                    'description': description
-                }
-                all_menu_items.append(menu_item_data)
-
-            # Create a dictionary with numbered IDs using range and zip
-            menu_dict = dict(zip(range(len(all_menu_items)), all_menu_items))
-
-            # Output menu items using the dictionary with proper numbering
-            for item_id, item_data in menu_dict.items():
-                name = escape_bash_string(item_data['name'])
-                action_type = item_data['action_type']
-                target = escape_bash_string(item_data['target'])
-                description = escape_bash_string(item_data['description'])
-
-                # Create option variable with sequential numbering
-                print(f"OPTION_{item_id}='{name}|{action_type}|{target}|{description}'")
-
-            # Store total number of options
-            print(f"OPTION_COUNT='{len(menu_dict)}'")
-
-        # Handle legacy format (options section)
-        elif options:
-            # Create ordered lists for different option types
-            main_options = []
-            quick_options = []
-            navigation_options = []
-
-            # Process all options and categorize them
-            for key, value in options.items():
-                if isinstance(value, dict):
-                    action_type = value.get('action', 'unknown')
-                    display_name = value.get('display', f'Option {key}')
-                    target = resolve_path(value.get('target', ''), toml_file)
-                    description = value.get('description', '')
-
-                    option_data = {
-                        'key': key,
-                        'display': display_name,
-                        'action': action_type,
-                        'target': target,
-                        'description': description
-                    }
-
-                    # Categorize options by type
-                    if action_type in ['back', 'exit']:
-                        # Navigation items go at the end
-                        if action_type == 'back':
-                            nav_order = 1000
-                        elif action_type == 'exit':
-                            nav_order = 2000
-                        else:
-                            nav_order = 1500
-                        navigation_options.append((nav_order, option_data))
-
-                    elif action_type in ['install', 'custom'] or key in ['all', 'essential', 'editors', 'terminals', 'languages_core', 'scientific', 'platforms', 'containers', 'multimedia', 'audio', 'video', 'graphics', 'recording', 'productivity']:
-                        # Quick install options go in middle
-                        try:
-                            quick_order = int(key) if key.isdigit() else 100 + len(quick_options)
-                        except ValueError:
-                            quick_order = 100 + len(quick_options)
-                        quick_options.append((quick_order, option_data))
-
-                    else:
-                        # Main menu items go first
-                        try:
-                            main_order = int(key)
-                        except ValueError:
-                            main_order = 50 + len(main_options)
-                        main_options.append((main_order, option_data))
-
-            # Sort each category by their order value
-            main_options.sort(key=lambda x: x[0])
-            quick_options.sort(key=lambda x: x[0])
-            navigation_options.sort(key=lambda x: x[0])
-
-            # Create final ordered list by combining categories
-            all_options = []
-            all_options.extend([option_data for _, option_data in main_options])
-            all_options.extend([option_data for _, option_data in quick_options])
-            all_options.extend([option_data for _, option_data in navigation_options])
-
-            # Create a dictionary with numbered IDs using range and zip
-            option_dict = dict(zip(range(len(all_options)), all_options))
-
-            # Output options using the dictionary with proper numbering
-            for option_id, option_data in option_dict.items():
-                name = escape_bash_string(option_data['display'])
-                action_type = option_data['action']
-                target = escape_bash_string(option_data['target'])
-                description = escape_bash_string(option_data['description'])
-
-                # Create option variable with sequential numbering
-                print(f"OPTION_{option_id}='{name}|{action_type}|{target}|{description}'")
-
-            # Store total number of options
-            print(f"OPTION_COUNT='{len(option_dict)}'")
-        else:
-            print(f"OPTION_COUNT='0'")
-
-        # Parse quick_actions (handle both array and dictionary formats)
-        quick_actions = config.get('quick_actions', [])
-        if quick_actions:
-            print(f"QUICK_ACTIONS_AVAILABLE='true'")
-            action_list = []
-
-            # Handle array format [[quick_actions]]
-            if isinstance(quick_actions, list):
-                for action in quick_actions:
-                    if isinstance(action, dict):
-                        name = action.get('name', 'Unknown Action')
-                        description = action.get('description', f'Execute {name}')
-                        command = action.get('command', '')
-                        # Resolve command if it looks like a script path
-                        if command and not command.startswith(('cd ', 'export ', 'source ')):
-                            command = resolve_path(command, toml_file)
-                        action_list.append((name, description, command))
-
-            # Handle dictionary format [quick_actions]
-            elif isinstance(quick_actions, dict):
-                for action_name, action_items in quick_actions.items():
-                    if isinstance(action_items, list):
-                        # Convert list of scripts to a single command
-                        command_parts = []
-                        for item in action_items:
-                            if isinstance(item, str):
-                                resolved_item = resolve_path(item, toml_file)
-                                command_parts.append(f"bash '{resolved_item}'")
-                        command = " && ".join(command_parts)
-                        action_list.append((action_name, f"Execute {action_name}", command))
-                    elif isinstance(action_items, dict):
-                        # Handle dictionary format
-                        description = action_items.get('description', f'Execute {action_name}')
-                        command = action_items.get('command', '')
-                        # Resolve command if it looks like a script path
-                        if command and not command.startswith(('cd ', 'export ', 'source ')):
-                            command = resolve_path(command, toml_file)
-                        action_list.append((action_name, description, command))
-                    else:
-                        # Handle simple string
-                        resolved_action = resolve_path(str(action_items), toml_file)
-                        action_list.append((action_name, f'Execute {action_name}', resolved_action))
-
-            print(f"QUICK_ACTIONS_COUNT='{len(action_list)}'")
-            for i, (name, description, command) in enumerate(action_list):
-                name = escape_bash_string(name)
-                description = escape_bash_string(description)
-                command = escape_bash_string(command)
-                print(f"QUICK_ACTION_{i}='{name}|{description}|{command}'")
-        else:
-            print(f"QUICK_ACTIONS_AVAILABLE='false'")
-            print(f"QUICK_ACTIONS_COUNT='0'")
-
-    except Exception as e:
-        print(f"Error parsing TOML file '{toml_file}': {e}", file=sys.stderr)
+    if not data:
+        print("Error: Failed to parse TOML file", file=sys.stderr)
         sys.exit(1)
 
+    # Process menu data
+    menu_items, menu_info, metadata = process_menu_data(data, toml_file)
 
-if __name__ == '__main__':
+    # Generate output
+    bash_output = generate_bash_output(menu_items, menu_info, metadata)
+    print(bash_output)
+
+if __name__ == "__main__":
     main()
