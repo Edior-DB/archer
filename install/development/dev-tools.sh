@@ -9,6 +9,36 @@ set -e
 # Source common functions
 source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/..}/install/system/common-funcs.sh"
 
+# Interactive selection function using gum
+select_option() {
+    local options=("$@")
+    gum choose "${options[@]}"
+}
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --reset)
+            echo -e "${YELLOW}Resetting development tools installation state...${NC}"
+            rm -f "$ARCHER_DIR/.archer-dev-state"
+            echo -e "${GREEN}State reset complete.${NC}"
+            shift
+            ;;
+        --help)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --reset    Reset installation state and start fresh"
+            echo "  --help     Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 show_banner "Development Tools Installation"
 
 # Check if AUR helper is available
@@ -20,39 +50,64 @@ fi
 # Programming Languages Selection
 select_languages() {
     echo -e "${BLUE}Select programming language categories to install:${NC}"
-    echo "1. System Programming (C/C++, Rust, Go, Nim, D, Zig, V)"
-    echo "2. Numerical Computing (Fortran, Julia, R, Octave, Haskell, Anaconda)"
-    echo "3. Scripting & Web (Node.js, Ruby, PHP, Perl, Raku, Elixir, TypeScript)"
-    echo "4. DevOps/Mobile (Docker, Kubernetes, Dart/Flutter, Kotlin)"
-    echo "5. Database Tools (SQL clients, Docker databases)"
-    echo "6. All categories"
-    echo "0. Skip language installation"
-    echo ""
 
-    lang_choice=$(get_input "Enter your choice (1-6, or multiple separated by spaces):" "1 2 3")
+    options=(
+        "1) System Programming (C/C++, Rust, Go, Nim, D, Zig, V)"
+        "2) Numerical Computing (Fortran, Julia, R, Octave, Haskell, Anaconda)"
+        "3) Scripting & Web (Node.js, Ruby, PHP, Perl, Raku, Elixir, TypeScript)"
+        "4) DevOps/Mobile (Docker, Kubernetes, Dart/Flutter, Kotlin)"
+        "5) Database Tools (SQL clients, Docker databases)"
+        "6) All categories"
+        "0) Skip language installation"
+    )
+
+    selection_error=false
+    choice=""
+    if selection=$(select_option "${options[@]}") && [[ -n "$selection" ]]; then
+        choice=$(echo "$selection" | cut -d')' -f1)
+        echo -e "${GREEN}Your selection: ${selection}${NC}"
+    else
+        # Fallback: use gum input for manual entry
+        choice=$(gum input --placeholder "Select an option [0-6]: " --width=20)
+        if ! [[ "$choice" =~ ^[0-6]+$ ]]; then
+            selection_error=true
+        fi
+    fi
+
+    if [[ "$selection_error" == true ]] || [[ -z "$choice" ]]; then
+        gum style --foreground="#ff0000" "Invalid selection. Please try again."
+        sleep 2
+        select_languages
+        return
+    fi
 
     # Install Mise first (required for many language installations)
     install_mise
 
     # Install selected categories
-    if [[ "$lang_choice" == *"1"* ]] || [[ "$lang_choice" == "6" ]]; then
+    if [[ "$choice" == *"1"* ]] || [[ "$choice" == "6" ]]; then
         install_system_programming
     fi
 
-    if [[ "$lang_choice" == *"2"* ]] || [[ "$lang_choice" == "6" ]]; then
+    if [[ "$choice" == *"2"* ]] || [[ "$choice" == "6" ]]; then
         install_numerical_computing
     fi
 
-    if [[ "$lang_choice" == *"3"* ]] || [[ "$lang_choice" == "6" ]]; then
+    if [[ "$choice" == *"3"* ]] || [[ "$choice" == "6" ]]; then
         install_scripting_web
     fi
 
-    if [[ "$lang_choice" == *"4"* ]] || [[ "$lang_choice" == "6" ]]; then
+    if [[ "$choice" == *"4"* ]] || [[ "$choice" == "6" ]]; then
         install_devops_mobile
     fi
 
-    if [[ "$lang_choice" == *"5"* ]] || [[ "$lang_choice" == "6" ]]; then
+    if [[ "$choice" == *"5"* ]] || [[ "$choice" == "6" ]]; then
         install_database_tools
+    fi
+
+    if [[ "$choice" == "0" ]]; then
+        echo -e "${YELLOW}Skipping language installation.${NC}"
+        return
     fi
 }
 
@@ -104,11 +159,11 @@ install_system_programming() {
     echo -e "${YELLOW}Installing languages via Mise...${NC}"
 
     if confirm_action "Install Rust via Mise?"; then
-        mise plugin add rust && mise install rust@latest
+        mise install rust@latest
     fi
 
     if confirm_action "Install Go via Mise?"; then
-        mise plugin add go && mise install go@latest
+        mise install go@latest
     fi
 
     if confirm_action "Install Nim via Mise?"; then
@@ -116,7 +171,7 @@ install_system_programming() {
     fi
 
     if confirm_action "Install Zig via Mise?"; then
-        mise plugin add zig && mise install zig@latest
+        mise install zig@latest
     fi
 
     # V language (manual install)
@@ -135,17 +190,14 @@ install_system_programming() {
 install_numerical_computing() {
     echo -e "${BLUE}Installing Numerical Computing tools...${NC}"
 
-    # Fortran: GFortran and LFortran
-    if confirm_action "Install Fortran compilers (GFortran + LFortran)?"; then
+    # Fortran: GFortran (fast install)
+    if confirm_action "Install GFortran compiler?"; then
         packages=(
             "gcc-fortran"
             "openblas" "lapack"
         )
 
         install_with_retries "${packages[@]}"
-
-        # Install LFortran from AUR
-        install_with_retries yay lfortran-git
     fi
 
     # R statistical computing
@@ -192,7 +244,7 @@ install_numerical_computing() {
     fi
 
     # Anaconda for Python scientific computing
-    if confirm_action "Install Anaconda for Python scientific computing?"; then
+    if confirm_action "Install Anaconda for Python scientific computing? (WARNING: Large download, 15-30 minutes)"; then
         install_with_retries yay anaconda || {
             echo -e "${YELLOW}Installing Anaconda via official installer...${NC}"
             cd /tmp
@@ -200,6 +252,12 @@ install_numerical_computing() {
             bash Anaconda3-2025.09-Linux-x86_64.sh -b
             echo 'export PATH="$HOME/anaconda3/bin:$PATH"' >> ~/.bashrc
         }
+    fi
+
+    # LFortran (separate due to long compilation time)
+    if confirm_action "Install LFortran compiler? (WARNING: Compilation takes 20-45 minutes)"; then
+        echo -e "${YELLOW}Installing LFortran from AUR (this will take a while)...${NC}"
+        install_with_retries yay lfortran-git
     fi
 
     echo -e "${GREEN}Numerical computing tools installed!${NC}"
@@ -215,15 +273,18 @@ install_scripting_web() {
     echo -e "${YELLOW}Installing languages via Mise...${NC}"
 
     if confirm_action "Install Node.js via Mise?"; then
-        mise plugin add nodejs && mise install nodejs@latest
+        mise install nodejs@latest
     fi
 
     if confirm_action "Install Ruby via Mise?"; then
-        mise plugin add ruby && mise install ruby@latest
+        mise install ruby@latest
     fi
 
     if confirm_action "Install PHP via Mise?"; then
-        mise plugin add php && mise install php@latest
+        # Install PHP dependencies first
+        echo -e "${YELLOW}Installing PHP dependencies...${NC}"
+        install_with_retries gd libgd
+        mise install php@latest
     fi
 
     if confirm_action "Install Perl via Mise?"; then
@@ -244,6 +305,14 @@ install_scripting_web() {
     # TypeScript via npm (after Node.js)
     if confirm_action "Install TypeScript globally via npm?" && command -v npm &> /dev/null; then
         npm install -g typescript ts-node
+    fi
+
+    # UV - Python package manager
+    if confirm_action "Install UV (fast Python package manager)?"; then
+        echo -e "${YELLOW}Installing UV via official installer...${NC}"
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        echo -e "${GREEN}UV installed! Restart your terminal or run 'source ~/.bashrc'${NC}"
     fi
 
     # System packages for web development
@@ -333,6 +402,24 @@ install_database_tools() {
 install_dev_tools() {
     echo -e "${BLUE}Installing development tools...${NC}"
 
+    # Check what's already installed
+    installed_packages=()
+    if command -v git &> /dev/null; then installed_packages+=("Git"); fi
+    if command -v cmake &> /dev/null; then installed_packages+=("CMake"); fi
+    if command -v curl &> /dev/null; then installed_packages+=("curl"); fi
+    if command -v wget &> /dev/null; then installed_packages+=("wget"); fi
+    if command -v jq &> /dev/null; then installed_packages+=("jq"); fi
+    if command -v htop &> /dev/null; then installed_packages+=("htop"); fi
+    if command -v tmux &> /dev/null; then installed_packages+=("tmux"); fi
+
+    if [[ ${#installed_packages[@]} -gt 0 ]]; then
+        echo -e "${GREEN}Already installed: ${installed_packages[*]}${NC}"
+        if ! confirm_action "Install additional development tools?"; then
+            echo -e "${YELLOW}Skipping development tools installation.${NC}"
+            return
+        fi
+    fi
+
     # Version control and tools
     if confirm_action "Install version control tools (Git, GitHub CLI, etc.)?"; then
         git_packages=("git" "git-lfs" "github-cli" "tig" "diff-so-fancy")
@@ -394,6 +481,21 @@ install_dev_tools() {
 # Database setup
 setup_docker_databases() {
     echo -e "${BLUE}Setting up Docker-based databases...${NC}"
+
+    # Check if Docker is installed
+    if ! command -v docker &> /dev/null; then
+        echo -e "${YELLOW}Docker is not installed. Installing Docker first...${NC}"
+        if confirm_action "Install Docker for database containers?"; then
+            install_with_retries docker docker-compose
+            sudo systemctl enable docker
+            sudo systemctl start docker
+            sudo usermod -aG docker $USER
+            echo -e "${YELLOW}You may need to log out and back in for Docker group permissions${NC}"
+        else
+            echo -e "${RED}Docker is required for database containers. Skipping database setup.${NC}"
+            return 1
+        fi
+    fi
 
     # Create docker-compose.yml for databases
     mkdir -p ~/dev-databases
@@ -503,12 +605,26 @@ install_dev_editors() {
 configure_git() {
     echo -e "${BLUE}Configuring Git...${NC}"
 
-    git_username=$(get_input "Enter your Git username:" "johndoe")
-    git_email=$(get_input "Enter your Git email:" "john@example.com")
+    # Check if Git is already configured
+    git_user=$(git config --global user.name 2>/dev/null || echo "")
+    git_email=$(git config --global user.email 2>/dev/null || echo "")
 
-    if [[ -n "$git_username" && -n "$git_email" ]]; then
+    if [[ -n "$git_user" && -n "$git_email" ]]; then
+        echo -e "${GREEN}Git already configured:${NC}"
+        echo -e "  Name: $git_user"
+        echo -e "  Email: $git_email"
+        if ! confirm_action "Reconfigure Git settings?"; then
+            echo -e "${YELLOW}Keeping existing Git configuration.${NC}"
+            return
+        fi
+    fi
+
+    git_username=$(get_input "Enter your Git username:" "${git_user:-johndoe}")
+    git_email_input=$(get_input "Enter your Git email:" "${git_email:-john@example.com}")
+
+    if [[ -n "$git_username" && -n "$git_email_input" ]]; then
         git config --global user.name "$git_username"
-        git config --global user.email "$git_email"
+        git config --global user.email "$git_email_input"
         git config --global init.defaultBranch main
         git config --global core.editor nano
         git config --global pull.rebase false
@@ -522,6 +638,27 @@ configure_git() {
 # Main execution
 main() {
     echo -e "${YELLOW}This script will install development tools and programming languages.${NC}"
+
+    # Check for existing installations
+    STATE_FILE="$ARCHER_DIR/.archer-dev-state"
+
+    # Show current state if exists
+    if [[ -f "$STATE_FILE" ]]; then
+        echo -e "${CYAN}Previous installation detected:${NC}"
+        cat "$STATE_FILE"
+        echo ""
+        if confirm_action "Skip already completed sections?"; then
+            SKIP_COMPLETED=true
+        else
+            SKIP_COMPLETED=false
+        fi
+    else
+        SKIP_COMPLETED=false
+        mkdir -p "$(dirname "$STATE_FILE")"
+        echo "# Archer Development Tools Installation State" > "$STATE_FILE"
+        echo "# Generated on $(date)" >> "$STATE_FILE"
+    fi
+
     if ! confirm_action "Continue with development tools installation?"; then
         echo -e "${YELLOW}Installation cancelled.${NC}"
         exit 0
@@ -530,14 +667,24 @@ main() {
     # Update system first
     sudo pacman -Syu --noconfirm
 
-    # Install development tools
-    install_dev_tools
+    # Install development tools (with state awareness)
+    if [[ "$SKIP_COMPLETED" == "false" ]] || ! grep -q "dev_tools_installed=true" "$STATE_FILE"; then
+        install_dev_tools
+        echo "dev_tools_installed=true" >> "$STATE_FILE"
+    else
+        echo -e "${GREEN}Development tools already installed, skipping...${NC}"
+    fi
 
     # Select and install programming languages
     select_languages
 
-    # Configure Git
-    configure_git
+    # Configure Git (only if not already configured)
+    if [[ "$SKIP_COMPLETED" == "false" ]] || ! grep -q "git_configured=true" "$STATE_FILE"; then
+        configure_git
+        echo "git_configured=true" >> "$STATE_FILE"
+    else
+        echo -e "${GREEN}Git already configured, skipping...${NC}"
+    fi
 
     # Setup database tools
     install_database_tools
@@ -570,6 +717,9 @@ Next steps:
 - Set up project-specific language versions with '.tool-versions' files
 - Configure your preferred code editor
 - For databases: check ~/dev-databases/ if Docker option was selected
+
+State file: $STATE_FILE
+Run with --reset to clear installation state
 
 ${NC}"
 

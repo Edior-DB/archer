@@ -370,7 +370,7 @@ install_code_editors() {
 
     # Notepadqq (Notepad++ clone)
     if confirm_action "Install Notepadqq (Notepad++ clone)?"; then
-        install_with_retries pacman notepadqq
+        install_with_retries yay notepadqq
     fi
 }
 
