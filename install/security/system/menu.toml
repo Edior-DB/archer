@@ -2,16 +2,6 @@
 heading_color = "red"
 description = "Firewall, antivirus, hardening, and backup tools"
 
-[[quick_actions]]
-name = "Essential System Security"
-description = "Firewall and basic security setup"
-command = "./firewall.sh && ./backup-tools.sh"
-
-[[quick_actions]]
-name = "Complete System Security"
-description = "All system security tools"
-command = "./firewall.sh && ./antivirus.sh && ./hardening.sh && ./backup-tools.sh"
-
 [[menu_items]]
 name = "Firewall Setup"
 description = "Configure UFW/iptables firewall"

@@ -1,0 +1,32 @@
+# Shell Enhancements Menu
+# Advanced shell configurations, themes, and productivity tools
+
+[menu]
+name = "Shell Enhancements"
+description = "Advanced shell configurations, themes, and productivity tools"
+icon = "🐚"
+level = "submenu"
+
+[options]
+# Shell configurations
+1 = { display = "Zsh Setup & Configuration", action = "script", target = "zsh-setup.sh" }
+2 = { display = "Oh My Zsh & Plugins", action = "script", target = "oh-my-zsh.sh" }
+3 = { display = "Powerlevel10k Theme", action = "script", target = "powerlevel10k.sh" }
+4 = { display = "Starship Prompt", action = "script", target = "starship.sh" }
+5 = { display = "Bash Enhancements", action = "script", target = "bash-enhancements.sh" }
+6 = { display = "Shell Productivity Tools", action = "script", target = "productivity-tools.sh" }
+
+# Quick installations
+"all" = { display = "Install All Shell Tools", action = "install", target = "install.sh" }
+
+# Navigation
+"up" = { display = "← Back to Terminal Tools", action = "back", target = ".." }
+"main" = { display = "← Main Menu", action = "back", target = "../.." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-20 minutes"
+categories = ["shell", "zsh", "themes", "productivity"]

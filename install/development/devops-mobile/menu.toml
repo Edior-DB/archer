@@ -23,9 +23,6 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All DevOps & Mobile Tools", action = "install", target = "install.sh" }
-"containers" = { display = "Container Tools Only", action = "custom", target = "install_containers" }
-"iac" = { display = "Infrastructure as Code", action = "custom", target = "install_iac" }
-"mobile" = { display = "Mobile Development", action = "custom", target = "install_mobile" }
 "multi" = { display = "Select Multiple Tools", action = "multiselect", target = "available_scripts" }
 
 # Navigation
@@ -45,23 +42,7 @@ available_scripts = [
     { file = "kotlin.sh", display = "Kotlin", description = "Modern programming language for Android" }
 ]
 
-[quick_actions]
-# Define DevOps and mobile combinations
-install_containers = [
-    "docker.sh",
-    "podman.sh",
-    "kubernetes.sh"
-]
 
-install_iac = [
-    "terraform.sh",
-    "ansible.sh"
-]
-
-install_mobile = [
-    "flutter.sh",
-    "kotlin.sh"
-]
 
 [metadata]
 requires_network = true

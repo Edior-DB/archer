@@ -19,7 +19,6 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All System Languages", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Only (C/C++, Rust, Go)", action = "custom", target = "install_essential" }
 "multi" = { display = "Select Multiple Languages", action = "multiselect", target = "available_scripts" }
 
 # Navigation
@@ -37,14 +36,6 @@ available_scripts = [
     { file = "nim.sh", display = "Nim", description = "Expressive and efficient language" },
     { file = "zig.sh", display = "Zig", description = "General-purpose programming language" },
     { file = "v-lang.sh", display = "V Language", description = "Simple, fast, safe, compiled language" }
-]
-
-[quick_actions]
-# Define essential system programming combinations
-install_essential = [
-    "cpp-compilers.sh",
-    "rust.sh",
-    "go.sh"
 ]
 
 [metadata]

@@ -2,26 +2,6 @@
 heading_color = "blue"
 description = "Desktop themes, office tools, fonts, and UI customization"
 
-[[quick_actions]]
-name = "Essential Desktop"
-description = "Fonts and basic office tools"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "Complete Desktop Setup"
-description = "All themes, fonts, and office applications"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "Themes Only"
-description = "Desktop themes and customizations"
-command = "./install.sh --themes"
-
-[[quick_actions]]
-name = "Office Tools Only"
-description = "LibreOffice and productivity applications"
-command = "./install.sh --office"
-
 [[menu_items]]
 name = "Desktop Themes"
 description = "Cupertini, Redmondi, Vanilla themes and customizations"

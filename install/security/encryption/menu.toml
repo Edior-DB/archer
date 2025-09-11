@@ -2,16 +2,6 @@
 heading_color = "yellow"
 description = "Disk encryption, GPG, and password managers"
 
-[[quick_actions]]
-name = "Essential Encryption"
-description = "GPG and password manager setup"
-command = "./gpg-setup.sh && ./password-manager.sh"
-
-[[quick_actions]]
-name = "Complete Encryption Suite"
-description = "All encryption and key management tools"
-command = "./gpg-setup.sh && ./password-manager.sh && ./disk-encryption.sh"
-
 [[menu_items]]
 name = "GPG Setup"
 description = "GNU Privacy Guard setup and configuration"

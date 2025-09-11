@@ -19,8 +19,6 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All Scientific Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Only (Julia, R, Octave)", action = "custom", target = "install_essential" }
-"python" = { display = "Python Scientific Stack", action = "custom", target = "install_python_science" }
 "multi" = { display = "Select Multiple Tools", action = "multiselect", target = "available_scripts" }
 
 # Navigation
@@ -40,17 +38,6 @@ available_scripts = [
     { file = "spack.sh", display = "Spack", description = "HPC package manager for scientific computing" }
 ]
 
-[quick_actions]
-# Define scientific computing combinations
-install_essential = [
-    "julia.sh",
-    "r-lang.sh",
-    "octave.sh"
-]
-
-install_python_science = [
-    "anaconda.sh"
-]
 
 [metadata]
 requires_network = true

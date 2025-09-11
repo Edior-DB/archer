@@ -19,31 +19,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Office Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Office (LibreOffice + PDF)", action = "custom", target = "install_essential" }
-"minimal" = { display = "Minimal Office (Writer + Calc)", action = "custom", target = "install_minimal" }
 
 # Navigation
 "up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "office-suite.sh",
-    "pdf-tools.sh"
-]
 
-install_minimal = [
-    "libreoffice-writer.sh",
-    "libreoffice-calc.sh"
-]
-
-install_all = [
-    "office-suite.sh",
-    "pdf-tools.sh",
-    "document-viewers.sh",
-    "note-apps.sh"
-]
 
 [metadata]
 requires_network = true

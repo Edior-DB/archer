@@ -23,8 +23,6 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All Database Tools", action = "install", target = "install.sh" }
-"clients" = { display = "Database Clients Only", action = "custom", target = "install_clients" }
-"servers" = { display = "Database Servers", action = "custom", target = "install_servers" }
 "docker" = { display = "Docker Databases Setup", action = "script", target = "docker-databases.sh" }
 "multi" = { display = "Select Multiple Tools", action = "multiselect", target = "available_scripts" }
 
@@ -45,19 +43,6 @@ available_scripts = [
     { file = "docker-databases.sh", display = "Docker Setup", description = "Development databases via Docker" }
 ]
 
-[quick_actions]
-# Define database combinations
-install_clients = [
-    "sqlite.sh",
-    "postgresql-client.sh",
-    "mariadb-client.sh"
-]
-
-install_servers = [
-    "postgresql-server.sh",
-    "mariadb-server.sh",
-    "redis.sh"
-]
 
 [metadata]
 requires_network = true

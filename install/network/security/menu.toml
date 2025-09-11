@@ -2,16 +2,6 @@
 heading_color = "red"
 description = "VPN clients, firewall, and network security"
 
-[[quick_actions]]
-name = "Essential Security"
-description = "Basic firewall and VPN setup"
-command = "./firewall-setup.sh && ./vpn-clients.sh"
-
-[[quick_actions]]
-name = "Complete Security Suite"
-description = "All network security tools"
-command = "./firewall-setup.sh && ./vpn-clients.sh && ./network-security.sh"
-
 [[menu_items]]
 name = "Firewall Setup"
 description = "Configure UFW/iptables firewall"

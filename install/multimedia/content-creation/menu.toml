@@ -18,40 +18,13 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Creation Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Tools (GIMP + Kdenlive)", action = "custom", target = "install_essential" }
-"video" = { display = "Video Tools Only", action = "custom", target = "install_video" }
-"graphics" = { display = "Graphics Tools Only", action = "custom", target = "install_graphics" }
 
 # Navigation
 "up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "image-editing.sh",
-    "video-editing.sh"
-]
 
-install_video = [
-    "video-editing.sh",
-    "animation-tools.sh"
-]
 
-install_graphics = [
-    "image-editing.sh",
-    "vector-graphics.sh",
-    "3d-graphics.sh"
-]
-
-install_all = [
-    "video-editing.sh",
-    "image-editing.sh",
-    "audio-production.sh",
-    "3d-graphics.sh",
-    "vector-graphics.sh",
-    "animation-tools.sh"
-]
 
 [metadata]
 requires_network = true

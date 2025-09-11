@@ -16,7 +16,6 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All Terminals", action = "install", target = "install.sh" }
-"modern" = { display = "Modern Terminals Only", action = "custom", target = "install_modern" }
 "multi" = { display = "Select Multiple Terminals", action = "multiselect", target = "available_scripts" }
 
 # Navigation
@@ -31,14 +30,6 @@ available_scripts = [
     { file = "terminal-kitty.sh", display = "Kitty", description = "Feature-rich with image support" },
     { file = "terminal-wezterm.sh", display = "WezTerm", description = "Cross-platform, Rust-based" },
     { file = "terminal-hyper.sh", display = "Hyper", description = "Extensible, Electron-based" }
-]
-
-[quick_actions]
-# Define modern terminal combinations
-install_modern = [
-    "terminal-alacritty.sh",
-    "terminal-kitty.sh",
-    "terminal-wezterm.sh"
 ]
 
 [metadata]

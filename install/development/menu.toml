@@ -20,45 +20,10 @@ level = "main"
 
 # Quick installations
 "all" = { display = "Install All Development Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Dev Environment", action = "custom", target = "install_essential" }
-"editors" = { display = "All Editors Only", action = "custom", target = "install_editors" }
-"terminals" = { display = "All Terminals Only", action = "custom", target = "install_terminals" }
 
 # Navigation
 "up" = { display = "← Back to Main Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
-
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "dev-tools.sh",
-    "editors/app-vscode.sh",
-    "terminals/terminal-kitty.sh",
-    "system-programming/rust.sh",
-    "scripting-web/nodejs.sh"
-]
-
-install_editors = [
-    "editors/app-vscode.sh",
-    "editors/app-vscodium.sh"
-]
-
-install_terminals = [
-    "terminals/terminal-alacritty.sh",
-    "terminals/terminal-kitty.sh",
-    "terminals/terminal-wezterm.sh",
-    "terminals/terminal-hyper.sh"
-]
-
-install_languages_core = [
-    "system-programming/install.sh",
-    "scripting-web/install.sh"
-]
-
-install_scientific = [
-    "numerical-computing/install.sh",
-    "database-tools/install.sh"
-]
 
 [metadata]
 requires_network = true

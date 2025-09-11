@@ -17,26 +17,11 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Browsers", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Browsers (Firefox + Brave)", action = "custom", target = "install_essential" }
 
 # Navigation
 "up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "firefox-install.sh",
-    "brave-install.sh"
-]
-
-install_all = [
-    "firefox-install.sh",
-    "brave-install.sh",
-    "chrome-install.sh",
-    "chromium-install.sh",
-    "opera-install.sh"
-]
 
 [metadata]
 requires_network = true

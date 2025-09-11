@@ -2,26 +2,6 @@
 heading_color = "magenta"
 description = "Gaming, media players, streaming, and content creation tools"
 
-[[quick_actions]]
-name = "Essential Multimedia"
-description = "Basic media players, codecs, and popular gaming platforms"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "Complete Multimedia Suite"
-description = "Full multimedia and gaming setup"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "Gaming Only"
-description = "Steam, Lutris, and gaming tools"
-command = "./install.sh --gaming"
-
-[[quick_actions]]
-name = "Media Players Only"
-description = "VLC, MPV, and media playback tools"
-command = "./install.sh --media"
-
 [[menu_items]]
 name = "Gaming Platforms"
 description = "Steam, Lutris, Epic Games, GOG launchers"

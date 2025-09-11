@@ -19,35 +19,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Communication Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Apps (Discord + Telegram)", action = "custom", target = "install_essential" }
-"business" = { display = "Business Tools (Slack + Zoom + Teams)", action = "custom", target = "install_business" }
 
 # Navigation
 "up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "discord-install.sh",
-    "telegram-install.sh"
-]
 
-install_business = [
-    "slack-install.sh",
-    "zoom-install.sh",
-    "teams-install.sh"
-]
-
-install_all = [
-    "discord-install.sh",
-    "slack-install.sh",
-    "telegram-install.sh",
-    "whatsapp-install.sh",
-    "zoom-install.sh",
-    "teams-install.sh",
-    "element-install.sh"
-]
 
 [metadata]
 requires_network = true

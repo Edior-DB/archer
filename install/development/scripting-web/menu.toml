@@ -21,8 +21,6 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All Scripting Languages", action = "install", target = "install.sh" }
-"web" = { display = "Web Development Stack", action = "custom", target = "install_web" }
-"essential" = { display = "Essential Only (Node.js, Ruby, PHP)", action = "custom", target = "install_essential" }
 "multi" = { display = "Select Multiple Languages", action = "multiselect", target = "available_scripts" }
 
 # Navigation
@@ -44,20 +42,6 @@ available_scripts = [
     { file = "lua.sh", display = "Lua", description = "Lightweight, embeddable scripting language" }
 ]
 
-[quick_actions]
-# Define installation combinations
-install_essential = [
-    "nodejs.sh",
-    "ruby.sh",
-    "php.sh"
-]
-
-install_web = [
-    "nodejs.sh",
-    "typescript.sh",
-    "php.sh",
-    "uv.sh"
-]
 
 [metadata]
 requires_network = true

@@ -2,16 +2,6 @@
 heading_color = "orange"
 description = "Samba, NFS, and network file sharing"
 
-[[quick_actions]]
-name = "Samba Setup"
-description = "Install and configure Samba sharing"
-command = "./samba.sh"
-
-[[quick_actions]]
-name = "Complete Sharing Suite"
-description = "All file sharing protocols"
-command = "./samba.sh && ./nfs.sh && ./ftp.sh"
-
 [[menu_items]]
 name = "Samba File Sharing"
 description = "Windows-compatible file sharing (SMB/CIFS)"

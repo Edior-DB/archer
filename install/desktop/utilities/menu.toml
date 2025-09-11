@@ -19,34 +19,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Desktop Utilities", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Utilities (Launcher + Widgets)", action = "custom", target = "install_essential" }
-"productivity" = { display = "Productivity Tools (Clipboard + Notifications)", action = "custom", target = "install_productivity" }
 
 # Navigation
 "up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "launchers.sh",
-    "widgets.sh"
-]
 
-install_productivity = [
-    "clipboard-tools.sh",
-    "notification-tools.sh"
-]
-
-install_all = [
-    "launchers.sh",
-    "widgets.sh",
-    "system-monitors.sh",
-    "screensavers.sh",
-    "wallpaper-tools.sh",
-    "notification-tools.sh",
-    "clipboard-tools.sh"
-]
 
 [metadata]
 requires_network = true

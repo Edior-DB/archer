@@ -2,21 +2,6 @@
 heading_color = "red"
 description = "System security, privacy tools, and encryption"
 
-[[quick_actions]]
-name = "Essential Security"
-description = "Basic security setup (firewall, antivirus, encryption)"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "Complete Security Suite"
-description = "All security and privacy tools"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "Privacy Focus"
-description = "Privacy tools and anonymity software"
-command = "./privacy/tor-setup.sh && ./privacy/privacy-tools.sh"
-
 [[menu_items]]
 name = "System Security"
 description = "Firewall, antivirus, system hardening"

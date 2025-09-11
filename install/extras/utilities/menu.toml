@@ -20,35 +20,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Utilities", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Utilities (Archives + File Manager)", action = "custom", target = "install_essential" }
-"multimedia" = { display = "Multimedia Utilities (PDF + Images)", action = "custom", target = "install_multimedia" }
 
 # Navigation
 "up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "archive-tools.sh",
-    "file-managers.sh"
-]
 
-install_multimedia = [
-    "pdf-tools.sh",
-    "image-tools.sh"
-]
-
-install_all = [
-    "archive-tools.sh",
-    "file-managers.sh",
-    "pdf-tools.sh",
-    "image-tools.sh",
-    "text-editors.sh",
-    "system-monitors.sh",
-    "backup-tools.sh",
-    "network-tools.sh"
-]
 
 [metadata]
 requires_network = true

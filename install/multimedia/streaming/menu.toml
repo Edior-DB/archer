@@ -18,33 +18,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Streaming Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Streaming (OBS + Tools)", action = "custom", target = "install_essential" }
-"recording" = { display = "Recording Tools Only", action = "custom", target = "install_recording" }
 
 # Navigation
 "up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "obs-studio.sh",
-    "streaming-tools.sh"
-]
 
-install_recording = [
-    "obs-studio.sh",
-    "screen-recording.sh"
-]
-
-install_all = [
-    "obs-studio.sh",
-    "screen-recording.sh",
-    "streaming-tools.sh",
-    "live-streaming.sh",
-    "audio-streaming.sh",
-    "webcam-tools.sh"
-]
 
 [metadata]
 requires_network = true

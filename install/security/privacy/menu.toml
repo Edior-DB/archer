@@ -2,16 +2,6 @@
 heading_color = "purple"
 description = "Tor, VPN, and privacy protection tools"
 
-[[quick_actions]]
-name = "Essential Privacy"
-description = "Tor browser and basic privacy tools"
-command = "./tor-setup.sh && ./privacy-tools.sh"
-
-[[quick_actions]]
-name = "Complete Privacy Suite"
-description = "All privacy and anonymity tools"
-command = "./tor-setup.sh && ./vpn-tools.sh && ./privacy-tools.sh && ./anonymity-tools.sh"
-
 [[menu_items]]
 name = "Tor Setup"
 description = "Tor browser and network anonymity"

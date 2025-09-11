@@ -18,34 +18,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Virtualization Tools", action = "install", target = "install.sh" }
-"essential" = { display = "Essential VM Tools (Virt Manager + VirtualBox)", action = "custom", target = "install_essential" }
-"containers" = { display = "Container Tools Only (Docker + Podman)", action = "custom", target = "install_containers" }
 
 # Navigation
 "up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "virt-manager-install.sh",
-    "virtualbox-install.sh"
-]
 
-install_containers = [
-    "docker-install.sh",
-    "docker-compose-install.sh",
-    "podman-install.sh"
-]
-
-install_all = [
-    "virt-manager-install.sh",
-    "virtualbox-install.sh",
-    "qemu-kvm-install.sh",
-    "docker-install.sh",
-    "docker-compose-install.sh",
-    "podman-install.sh"
-]
 
 [metadata]
 requires_network = true

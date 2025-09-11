@@ -2,21 +2,6 @@
 heading_color = "green"
 description = "System-level configuration and hardware management"
 
-[[quick_actions]]
-name = "Essential System Setup"
-description = "Hardware drivers, audio, and essential system tools"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "Complete System Setup"
-description = "Full system configuration with all modules"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "Hardware Only"
-description = "GPU drivers, audio, bluetooth, printer support"
-command = "./install.sh --hardware"
-
 [[menu_items]]
 name = "Hardware Management"
 description = "GPU drivers, audio system, bluetooth, printer support"

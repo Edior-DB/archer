@@ -19,34 +19,12 @@ level = "submenu"
 
 # Quick installations
 "all" = { display = "Install All Fonts", action = "install", target = "install.sh" }
-"essential" = { display = "Essential Fonts Only", action = "custom", target = "install_essential" }
-"programming" = { display = "Programming Fonts Only", action = "custom", target = "install_programming" }
 
 # Navigation
 "up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[quick_actions]
-# Define custom installation combinations
-install_essential = [
-    "system-fonts.sh",
-    "coding-fonts.sh"
-]
 
-install_programming = [
-    "coding-fonts.sh",
-    "nerd-fonts.sh"
-]
-
-install_all = [
-    "system-fonts.sh",
-    "coding-fonts.sh",
-    "nerd-fonts.sh",
-    "google-fonts.sh",
-    "microsoft-fonts.sh",
-    "apple-fonts.sh",
-    "adobe-fonts.sh"
-]
 
 [metadata]
 requires_network = true

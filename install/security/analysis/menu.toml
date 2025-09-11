@@ -2,16 +2,6 @@
 heading_color = "orange"
 description = "Penetration testing, vulnerability scanning, and security auditing"
 
-[[quick_actions]]
-name = "Basic Security Audit"
-description = "Basic security auditing tools"
-command = "./security-audit.sh"
-
-[[quick_actions]]
-name = "Complete Security Analysis"
-description = "All security analysis and testing tools"
-command = "./security-audit.sh && ./vulnerability-scanning.sh && ./penetration-testing.sh"
-
 [[menu_items]]
 name = "Security Audit"
 description = "System security auditing tools"

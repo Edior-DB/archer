@@ -2,21 +2,6 @@
 heading_color = "yellow"
 description = "AUR helpers, Flatpak, package cleanup, and management tools"
 
-[[quick_actions]]
-name = "Essential Package Tools"
-description = "AUR helper and basic package management"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "All Package Tools"
-description = "Complete package management setup"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "AUR Helper Only"
-description = "Install yay AUR helper"
-command = "./aur-helpers.sh"
-
 [[menu_items]]
 name = "AUR Helpers"
 description = "yay, paru for AUR package management"

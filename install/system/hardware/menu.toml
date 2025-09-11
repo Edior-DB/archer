@@ -2,21 +2,6 @@
 heading_color = "cyan"
 description = "GPU drivers, audio system, bluetooth, and printer support"
 
-[[quick_actions]]
-name = "Essential Hardware"
-description = "GPU drivers and audio system (most common needs)"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "Complete Hardware Setup"
-description = "All hardware drivers and support"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "GPU Drivers Only"
-description = "Install graphics drivers for NVIDIA, AMD, Intel"
-command = "./gpu-drivers.sh"
-
 [[menu_items]]
 name = "GPU Drivers"
 description = "NVIDIA, AMD, Intel graphics drivers and utilities"

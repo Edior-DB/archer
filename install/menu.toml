@@ -2,21 +2,6 @@
 heading_color = "blue"
 description = "Comprehensive system enhancement and software installation"
 
-[[quick_actions]]
-name = "Essential Setup"
-description = "Install essential tools from all categories"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "Complete Installation"
-description = "Install everything (may take a long time)"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "Development Environment"
-description = "Quick setup for developers"
-command = "./development/install.sh --essential"
-
 [[menu_items]]
 name = "Development Tools"
 description = "Programming languages, IDEs, frameworks, and dev tools"
@@ -64,18 +49,3 @@ name = "Terminal Tools"
 description = "Shell enhancements, CLI utilities, and command-line tools"
 action_type = "submenu"
 submenu_path = "./terminal/menu.toml"
-
-[[menu_items]]
-name = "Custom Installation"
-description = "Select specific components from all categories"
-action_type = "multiselect"
-items = [
-    { name = "Development Essentials", script = "./development/install.sh --essential" },
-    { name = "System Essentials", script = "./system/install.sh --essential" },
-    { name = "Desktop Essentials", script = "./desktop/install.sh --essential" },
-    { name = "Multimedia Essentials", script = "./multimedia/install.sh --essential" },
-    { name = "Network Essentials", script = "./network/install.sh --essential" },
-    { name = "Security Essentials", script = "./security/install.sh --essential" },
-    { name = "Extra Apps", script = "./extras/install.sh --essential" },
-    { name = "Terminal Setup", script = "./terminal/install.sh --essential" }
-]

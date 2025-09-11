@@ -2,26 +2,6 @@
 heading_color = "green"
 description = "Web browsers, virtualization, and extra applications"
 
-[[quick_actions]]
-name = "Essential Extras"
-description = "Popular browsers and basic tools"
-command = "./install.sh --essential"
-
-[[quick_actions]]
-name = "All Extra Tools"
-description = "Complete extra software collection"
-command = "./install.sh --all"
-
-[[quick_actions]]
-name = "Browsers Only"
-description = "Install web browsers (Firefox, Brave, etc.)"
-command = "./install.sh --browsers"
-
-[[quick_actions]]
-name = "Virtualization Only"
-description = "VM tools and containerization"
-command = "./install.sh --virtualization"
-
 [[menu_items]]
 name = "Web Browsers"
 description = "Firefox, Brave, Chrome, and other browsers"
