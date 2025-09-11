@@ -1,0 +1,53 @@
+# Package Management
+heading_color = "yellow"
+description = "AUR helpers, Flatpak, package cleanup, and management tools"
+
+[[quick_actions]]
+name = "Essential Package Tools"
+description = "AUR helper and basic package management"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "All Package Tools"
+description = "Complete package management setup"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "AUR Helper Only"
+description = "Install yay AUR helper"
+command = "./aur-helpers.sh"
+
+[[menu_items]]
+name = "AUR Helpers"
+description = "yay, paru for AUR package management"
+action_type = "script"
+script_path = "./aur-helpers.sh"
+
+[[menu_items]]
+name = "Flatpak"
+description = "Flatpak runtime and application support"
+action_type = "script"
+script_path = "./flatpak.sh"
+
+[[menu_items]]
+name = "Snap Support"
+description = "Snap package manager (optional)"
+action_type = "script"
+script_path = "./snap.sh"
+
+[[menu_items]]
+name = "Cleanup Tools"
+description = "Package cleanup and system maintenance"
+action_type = "script"
+script_path = "./cleanup-tools.sh"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific package management tools"
+action_type = "multiselect"
+items = [
+    { name = "AUR Helpers", script = "./aur-helpers.sh" },
+    { name = "Flatpak", script = "./flatpak.sh" },
+    { name = "Snap Support", script = "./snap.sh" },
+    { name = "Cleanup Tools", script = "./cleanup-tools.sh" }
+]

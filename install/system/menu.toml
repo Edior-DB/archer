@@ -1,0 +1,64 @@
+# System Management Modules
+heading_color = "green"
+description = "System-level configuration and hardware management"
+
+[[quick_actions]]
+name = "Essential System Setup"
+description = "Hardware drivers, audio, and essential system tools"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "Complete System Setup"
+description = "Full system configuration with all modules"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "Hardware Only"
+description = "GPU drivers, audio, bluetooth, printer support"
+command = "./install.sh --hardware"
+
+[[menu_items]]
+name = "Hardware Management"
+description = "GPU drivers, audio system, bluetooth, printer support"
+action_type = "submenu"
+submenu_path = "./hardware/menu.toml"
+
+[[menu_items]]
+name = "System Optimization"
+description = "Performance tuning, memory management, power settings"
+action_type = "submenu"
+submenu_path = "./optimization/menu.toml"
+
+[[menu_items]]
+name = "Security & Monitoring"
+description = "Firewall, system monitoring, logging, backup solutions"
+action_type = "submenu"
+submenu_path = "./security/menu.toml"
+
+[[menu_items]]
+name = "Package Management"
+description = "AUR helpers, Flatpak, Snap, cleanup tools"
+action_type = "submenu"
+submenu_path = "./packages/menu.toml"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific system modules to install"
+action_type = "multiselect"
+items = [
+    { name = "GPU Drivers", script = "./hardware/gpu-drivers.sh" },
+    { name = "Audio System", script = "./hardware/audio-system.sh" },
+    { name = "Bluetooth", script = "./hardware/bluetooth.sh" },
+    { name = "Printer Support", script = "./hardware/printer-support.sh" },
+    { name = "Performance Tuning", script = "./optimization/performance-tuning.sh" },
+    { name = "Memory Management", script = "./optimization/memory-management.sh" },
+    { name = "Power Management", script = "./optimization/power-management.sh" },
+    { name = "Kernel Management", script = "./optimization/kernel-management.sh" },
+    { name = "Firewall Setup", script = "./security/firewall.sh" },
+    { name = "System Monitoring", script = "./security/monitoring.sh" },
+    { name = "Log Management", script = "./security/log-management.sh" },
+    { name = "Backup Solutions", script = "./security/backup-solutions.sh" },
+    { name = "AUR Helpers", script = "./packages/aur-helpers.sh" },
+    { name = "Flatpak", script = "./packages/flatpak.sh" },
+    { name = "Cleanup Tools", script = "./packages/cleanup-tools.sh" }
+]

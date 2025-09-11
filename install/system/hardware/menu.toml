@@ -1,0 +1,53 @@
+# Hardware Management
+heading_color = "cyan"
+description = "GPU drivers, audio system, bluetooth, and printer support"
+
+[[quick_actions]]
+name = "Essential Hardware"
+description = "GPU drivers and audio system (most common needs)"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "Complete Hardware Setup"
+description = "All hardware drivers and support"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "GPU Drivers Only"
+description = "Install graphics drivers for NVIDIA, AMD, Intel"
+command = "./gpu-drivers.sh"
+
+[[menu_items]]
+name = "GPU Drivers"
+description = "NVIDIA, AMD, Intel graphics drivers and utilities"
+action_type = "script"
+script_path = "./gpu-drivers.sh"
+
+[[menu_items]]
+name = "Audio System"
+description = "PipeWire, ALSA, PulseAudio configuration"
+action_type = "script"
+script_path = "./audio-system.sh"
+
+[[menu_items]]
+name = "Bluetooth"
+description = "Bluetooth stack and device management"
+action_type = "script"
+script_path = "./bluetooth.sh"
+
+[[menu_items]]
+name = "Printer Support"
+description = "CUPS printing system and driver support"
+action_type = "script"
+script_path = "./printer-support.sh"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific hardware components"
+action_type = "multiselect"
+items = [
+    { name = "GPU Drivers", script = "./gpu-drivers.sh" },
+    { name = "Audio System", script = "./audio-system.sh" },
+    { name = "Bluetooth", script = "./bluetooth.sh" },
+    { name = "Printer Support", script = "./printer-support.sh" }
+]

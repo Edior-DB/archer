@@ -1,0 +1,53 @@
+# Gaming Platforms & Tools
+heading_color = "red"
+description = "Steam, Lutris, emulators, and gaming utilities"
+
+[[quick_actions]]
+name = "Essential Gaming"
+description = "Steam and basic gaming tools"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "Complete Gaming Setup"
+description = "All gaming platforms and tools"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "Gaming Platforms Only"
+description = "Steam, Lutris, Epic Games, GOG launchers"
+command = "./gaming-platforms.sh"
+
+[[menu_items]]
+name = "Gaming Platforms"
+description = "Steam, Lutris, Epic Games, GOG, and other launchers"
+action_type = "script"
+script_path = "./gaming-platforms.sh"
+
+[[menu_items]]
+name = "Game Emulators"
+description = "RetroArch, console emulators, and ROMs management"
+action_type = "script"
+script_path = "./emulators.sh"
+
+[[menu_items]]
+name = "Gaming Tools"
+description = "Discord, GameMode, performance tools"
+action_type = "script"
+script_path = "./gaming-tools.sh"
+
+[[menu_items]]
+name = "Wine & Compatibility"
+description = "Wine, Bottles, Windows game compatibility"
+action_type = "script"
+script_path = "./wine-tools.sh"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific gaming components"
+action_type = "multiselect"
+items = [
+    { name = "Gaming Platforms", script = "./gaming-platforms.sh" },
+    { name = "Game Emulators", script = "./emulators.sh" },
+    { name = "Gaming Tools", script = "./gaming-tools.sh" },
+    { name = "Wine & Compatibility", script = "./wine-tools.sh" }
+]
