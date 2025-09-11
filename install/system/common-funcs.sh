@@ -809,6 +809,29 @@ log_message() {
     esac
 }
 
+# Convenience logging functions
+log_info() {
+    log_message "INFO" "$1"
+}
+
+log_warn() {
+    log_message "WARN" "$1"
+}
+
+log_warning() {
+    log_message "WARN" "$1"
+}
+
+log_error() {
+    log_message "ERROR" "$1"
+}
+
+log_debug() {
+    if [[ "${ARCHER_DEBUG:-false}" == "true" ]]; then
+        echo -e "${PURPLE}[DEBUG $(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+    fi
+}
+
 # Print success message
 print_success() {
     echo -e "${GREEN}✓ $1${NC}"
