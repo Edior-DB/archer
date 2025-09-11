@@ -289,7 +289,7 @@ class ArcherUI:
                         if 'gfortran' in line_lower:
                             current_operation = "Installing GFortran compiler..."
                         elif 'lfortran' in line_lower:
-                            current_operation = "Installing LFortran compiler..."
+                            current_operation = "Building LFortran (this may take 20-45 minutes)..."
                         elif any(pkg in line_lower for pkg in ['dlang', 'dmd', 'ldc']):
                             current_operation = "Installing D compiler..."
                         elif 'nim' in line_lower:
@@ -319,7 +319,11 @@ class ArcherUI:
                     elif 'downloading' in line_lower:
                         current_operation = "Downloading packages..."
                     elif 'building' in line_lower or 'compiling' in line_lower:
-                        current_operation = "Building from source..."
+                        # Special handling for LFortran build process
+                        if 'lfortran' in line_lower or any(word in line_lower for word in ['bison', 'parser', 'grammar']):
+                            current_operation = "Building LFortran (bison parser generation - please be patient)..."
+                        else:
+                            current_operation = "Building from source..."
                     elif 'configuring' in line_lower:
                         current_operation = "Configuring installation..."
                     elif 'complete' in line_lower or 'success' in line_lower:

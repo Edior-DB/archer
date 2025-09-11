@@ -19,6 +19,20 @@ source "$ARCHER_DIR/install/system/common-funcs.sh"
 install_lfortran() {
     log_info "Installing LFortran (modern Fortran compiler)..."
 
+    # Important warning about build time
+    echo ""
+    echo -e "${YELLOW}⚠️  IMPORTANT BUILD TIME WARNING ⚠️${NC}"
+    echo -e "${YELLOW}LFortran installation may take 20-45 minutes or longer.${NC}"
+    echo -e "${YELLOW}This is due to bison parser generation during the build process,${NC}"
+    echo -e "${YELLOW}which can exceed time limits and appear to hang. This is normal.${NC}"
+    echo -e "${YELLOW}Please be patient - the installation will complete successfully.${NC}"
+    echo ""
+
+    if ! confirm_action "Continue with LFortran installation (this will take a long time)?"; then
+        log_info "LFortran installation cancelled by user"
+        return 1
+    fi
+
     # Check if LFortran is already installed
     if command -v lfortran &>/dev/null; then
         local version=$(lfortran --version 2>/dev/null | head -n 1 || echo "LFortran")
@@ -29,9 +43,11 @@ install_lfortran() {
     # Check if AUR helper is available
     if command -v yay &>/dev/null; then
         log_info "Installing LFortran from AUR using yay..."
+        echo -e "${CYAN}📝 Note: Build process starting - this will take considerable time...${NC}"
         install_with_retries yay lfortran-git
     elif command -v paru &>/dev/null; then
         log_info "Installing LFortran from AUR using paru..."
+        echo -e "${CYAN}📝 Note: Build process starting - this will take considerable time...${NC}"
         install_with_retries paru lfortran-git
     else
         log_warning "LFortran requires an AUR helper (yay or paru)."
@@ -139,6 +155,12 @@ print_lfortran_info() {
     echo "  • Interactive shell (coming soon)"
     echo "  • LLVM-based backend"
     echo "  • Cross-platform compatibility"
+    echo ""
+    echo "Build time information:"
+    echo "  • LFortran requires extensive compilation from source"
+    echo "  • Parser generation with bison can take 20-45+ minutes"
+    echo "  • This is a one-time cost - subsequent usage is very fast"
+    echo "  • Build complexity is due to modern LLVM integration"
     echo ""
     echo "Quick start:"
     echo "  lfortran -o hello hello.f90   # Compile Fortran program"
