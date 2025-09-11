@@ -565,35 +565,25 @@ class ArcherUI:
 
     def show_nala_progress(self, description: str, command: str) -> bool:
         """Show progress while executing a command with nala-style interface"""
-        self.console.print(f"\n[bold blue]� {description}[/bold blue]")
+        self.console.print(f"\n[bold blue]📦 {description}[/bold blue]")
         self.console.print(f"[dim]Command: {command}[/dim]\n")
 
-        # Create nala-style progress display
+        # Create nala-style progress display with SINGLE progress bar
         with Progress(
             TextColumn("[bold blue]{task.description}"),
             BarColumn(bar_width=40),
             TaskProgressColumn(),
             TextColumn("•"),
             TimeElapsedColumn(),
-            TextColumn("•"),
-            TextColumn("[cyan]{task.fields[status]}"),
             console=self.console,
             transient=False,
             expand=False
         ) as progress:
 
-            # Main task for overall progress
+            # Single main progress task
             main_task = progress.add_task(
                 f"[bold]{description}",
-                total=100,
-                status="Initializing..."
-            )
-
-            # Subtask for current operation
-            sub_task = progress.add_task(
-                "  └─ Preparing...",
-                total=100,
-                status="Starting"
+                total=100
             )
 
             # Start the subprocess with real-time output
@@ -610,9 +600,9 @@ class ArcherUI:
             # Progress tracking variables
             output_lines = []
             main_progress = 0
-            sub_progress = 0
             current_operation = "Starting"
             operations_seen = set()
+            status_text = ""
 
             while True:
                 output = process.stdout.readline()
@@ -636,62 +626,58 @@ class ArcherUI:
                             operations_seen.add('downloading')
                             main_progress = min(main_progress + 20, 90)
                         current_operation = "Downloading"
-                        sub_progress = min(sub_progress + 15, 100)
 
                     elif any(keyword in line_lower for keyword in ['installing', 'install']):
                         if 'installing' not in operations_seen:
                             operations_seen.add('installing')
                             main_progress = min(main_progress + 25, 90)
                         current_operation = "Installing"
-                        sub_progress = min(sub_progress + 20, 100)
 
                     elif any(keyword in line_lower for keyword in ['building', 'compiling', 'compile']):
                         if 'building' not in operations_seen:
                             operations_seen.add('building')
                             main_progress = min(main_progress + 30, 90)
                         current_operation = "Building"
-                        sub_progress = min(sub_progress + 10, 100)
 
                     elif any(keyword in line_lower for keyword in ['configuring', 'configure']):
                         if 'configuring' not in operations_seen:
                             operations_seen.add('configuring')
                             main_progress = min(main_progress + 15, 90)
                         current_operation = "Configuring"
-                        sub_progress = min(sub_progress + 25, 100)
 
                     elif any(keyword in line_lower for keyword in ['extracting', 'extract']):
                         if 'extracting' not in operations_seen:
                             operations_seen.add('extracting')
                             main_progress = min(main_progress + 10, 90)
                         current_operation = "Extracting"
-                        sub_progress = min(sub_progress + 30, 100)
 
                     elif any(keyword in line_lower for keyword in ['processing', 'process']):
                         current_operation = "Processing"
-                        sub_progress = min(sub_progress + 5, 100)
 
                     elif any(keyword in line_lower for keyword in ['complete', 'finished', 'done', 'success']):
                         current_operation = "Completing"
                         main_progress = min(main_progress + 10, 100)
-                        sub_progress = 100
 
-                    # Update progress bars
+                    # Update main progress bar
                     progress.update(
                         main_task,
-                        completed=main_progress,
-                        status=f"{current_operation}..."
+                        completed=main_progress
                     )
 
-                    # Show current package/file being processed
+                    # Show status text below the progress bar
                     if len(line) > 0:
                         # Extract package name or file name if visible
-                        display_line = line[:50] + "..." if len(line) > 50 else line
-                        progress.update(
-                            sub_task,
-                            description=f"  └─ {current_operation}: {display_line}",
-                            completed=sub_progress,
-                            status="Active"
-                        )
+                        display_line = line[:60] + "..." if len(line) > 60 else line
+                        new_status = f"{current_operation}: {display_line}"
+
+                        if new_status != status_text:
+                            # Clear previous status line if it exists
+                            if status_text:
+                                self.console.print("\033[1A\033[K", end="")
+
+                            # Print new status below the progress bar
+                            self.console.print(f"[cyan]{new_status}[/cyan]")
+                            status_text = new_status
 
                     # Small delay to make progress visible
                     time.sleep(0.05)
@@ -699,37 +685,29 @@ class ArcherUI:
             # Complete the progress
             return_code = process.poll()
 
+            # Clear the last status line
+            if status_text:
+                self.console.print("\033[1A\033[K", end="")
+
             if return_code == 0:
                 progress.update(
                     main_task,
-                    completed=100,
-                    status="✓ Completed"
+                    completed=100
                 )
-                progress.update(
-                    sub_task,
-                    description="  └─ Installation successful",
-                    completed=100,
-                    status="✓ Done"
-                )
-                time.sleep(0.5)  # Brief pause to show completion
 
-                self.console.print(f"\n[bold green]✓ {description} completed successfully![/bold green]")
+                # Show final success status
+                self.console.print(f"[bold green]✓ {description} completed successfully![/bold green]")
+                time.sleep(0.5)  # Brief pause to show completion
                 return True
             else:
                 progress.update(
                     main_task,
-                    completed=main_progress,
-                    status="✗ Failed"
+                    completed=main_progress
                 )
-                progress.update(
-                    sub_task,
-                    description="  └─ Installation failed",
-                    completed=sub_progress,
-                    status="✗ Error"
-                )
-                time.sleep(0.5)
 
-                self.console.print(f"\n[bold red]✗ {description} failed (exit code: {return_code})[/bold red]")
+                # Show final error status
+                self.console.print(f"[bold red]✗ {description} failed (exit code: {return_code})[/bold red]")
+                time.sleep(0.5)
 
                 # Show last few lines of output for debugging
                 if output_lines:
