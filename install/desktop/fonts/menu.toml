@@ -1,53 +1,56 @@
-# Font Management
-heading_color = "cyan"
+# Font Management Menu
+# System fonts, programming fonts, and icon fonts
+
+[menu]
+name = "Font Management"
 description = "System fonts, programming fonts, and icon fonts"
+icon = "🔤"
+level = "submenu"
 
-[[quick_actions]]
-name = "Essential Fonts"
-description = "Install essential system and programming fonts"
-command = "./install.sh --essential"
+[options]
+# Font categories
+1 = { display = "System Fonts", action = "script", target = "system-fonts.sh" }
+2 = { display = "Programming/Coding Fonts", action = "script", target = "coding-fonts.sh" }
+3 = { display = "Nerd Fonts (Patched)", action = "script", target = "nerd-fonts.sh" }
+4 = { display = "Google Fonts", action = "script", target = "google-fonts.sh" }
+5 = { display = "Microsoft Fonts", action = "script", target = "microsoft-fonts.sh" }
+6 = { display = "Apple Fonts", action = "script", target = "apple-fonts.sh" }
+7 = { display = "Adobe Fonts", action = "script", target = "adobe-fonts.sh" }
 
-[[quick_actions]]
-name = "All Fonts"
-description = "Install all available font packages"
-command = "./install.sh --all"
+# Quick installations
+"all" = { display = "Install All Fonts", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Fonts Only", action = "custom", target = "install_essential" }
+"programming" = { display = "Programming Fonts Only", action = "custom", target = "install_programming" }
 
-[[quick_actions]]
-name = "Programming Fonts Only"
-description = "Fonts optimized for coding (Nerd Fonts)"
-command = "./programming-fonts.sh"
+# Navigation
+"up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[[menu_items]]
-name = "System Fonts"
-description = "Essential system fonts and font rendering"
-action_type = "script"
-script_path = "./system-fonts.sh"
-
-[[menu_items]]
-name = "Programming Fonts"
-description = "Nerd Fonts and coding-optimized typefaces"
-action_type = "script"
-script_path = "./programming-fonts.sh"
-
-[[menu_items]]
-name = "Icon Fonts"
-description = "Font Awesome, Material Icons, and symbol fonts"
-action_type = "script"
-script_path = "./icon-fonts.sh"
-
-[[menu_items]]
-name = "Google Fonts"
-description = "Popular web fonts from Google Fonts collection"
-action_type = "script"
-script_path = "./google-fonts.sh"
-
-[[menu_items]]
-name = "Custom Font Selection"
-description = "Select specific font categories"
-action_type = "multiselect"
-items = [
-    { name = "System Fonts", script = "./system-fonts.sh" },
-    { name = "Programming Fonts", script = "./programming-fonts.sh" },
-    { name = "Icon Fonts", script = "./icon-fonts.sh" },
-    { name = "Google Fonts", script = "./google-fonts.sh" }
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "system-fonts.sh",
+    "coding-fonts.sh"
 ]
+
+install_programming = [
+    "coding-fonts.sh",
+    "nerd-fonts.sh"
+]
+
+install_all = [
+    "system-fonts.sh",
+    "coding-fonts.sh",
+    "nerd-fonts.sh",
+    "google-fonts.sh",
+    "microsoft-fonts.sh",
+    "apple-fonts.sh",
+    "adobe-fonts.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "5-15 minutes"
+dependencies = ["base-system"]
+categories = ["fonts", "typography", "desktop"]

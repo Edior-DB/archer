@@ -1,0 +1,54 @@
+# Streaming & Recording Menu
+# OBS Studio, streaming tools, screen recording
+
+[menu]
+name = "Streaming & Recording"
+description = "OBS Studio, streaming tools, and screen recording applications"
+icon = "📹"
+level = "submenu"
+
+[options]
+# Streaming and recording applications
+1 = { display = "OBS Studio (Recommended)", action = "script", target = "obs-studio.sh" }
+2 = { display = "Screen Recording Tools", action = "script", target = "screen-recording.sh" }
+3 = { display = "Streaming Tools", action = "script", target = "streaming-tools.sh" }
+4 = { display = "Live Streaming Setup", action = "script", target = "live-streaming.sh" }
+5 = { display = "Audio Streaming", action = "script", target = "audio-streaming.sh" }
+6 = { display = "Webcam Tools", action = "script", target = "webcam-tools.sh" }
+
+# Quick installations
+"all" = { display = "Install All Streaming Tools", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Streaming (OBS + Tools)", action = "custom", target = "install_essential" }
+"recording" = { display = "Recording Tools Only", action = "custom", target = "install_recording" }
+
+# Navigation
+"up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "obs-studio.sh",
+    "streaming-tools.sh"
+]
+
+install_recording = [
+    "obs-studio.sh",
+    "screen-recording.sh"
+]
+
+install_all = [
+    "obs-studio.sh",
+    "screen-recording.sh",
+    "streaming-tools.sh",
+    "live-streaming.sh",
+    "audio-streaming.sh",
+    "webcam-tools.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "5-15 minutes"
+dependencies = ["base-system", "audio-system"]
+categories = ["multimedia", "streaming", "recording", "obs"]

@@ -61,7 +61,7 @@ submenu_path = "./extras/menu.toml"
 
 [[menu_items]]
 name = "Terminal Tools"
-description = "Terminal emulators, shell tools, and command-line utilities"
+description = "Shell enhancements, CLI utilities, and command-line tools"
 action_type = "submenu"
 submenu_path = "./terminal/menu.toml"
 

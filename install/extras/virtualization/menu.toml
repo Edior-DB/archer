@@ -1,0 +1,55 @@
+# Virtualization Tools Menu
+# Virtual machines, containers, and virtualization utilities
+
+[menu]
+name = "Virtualization Tools"
+description = "VirtualBox, QEMU, Docker, and VM management tools"
+icon = "📦"
+level = "submenu"
+
+[options]
+# Virtualization software
+1 = { display = "Virtual Machine Manager (Recommended)", action = "script", target = "virt-manager-install.sh" }
+2 = { display = "VirtualBox", action = "script", target = "virtualbox-install.sh" }
+3 = { display = "QEMU/KVM", action = "script", target = "qemu-kvm-install.sh" }
+4 = { display = "Docker", action = "script", target = "docker-install.sh" }
+5 = { display = "Docker Compose", action = "script", target = "docker-compose-install.sh" }
+6 = { display = "Podman", action = "script", target = "podman-install.sh" }
+
+# Quick installations
+"all" = { display = "Install All Virtualization Tools", action = "install", target = "install.sh" }
+"essential" = { display = "Essential VM Tools (Virt Manager + VirtualBox)", action = "custom", target = "install_essential" }
+"containers" = { display = "Container Tools Only (Docker + Podman)", action = "custom", target = "install_containers" }
+
+# Navigation
+"up" = { display = "← Back to Extras Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "virt-manager-install.sh",
+    "virtualbox-install.sh"
+]
+
+install_containers = [
+    "docker-install.sh",
+    "docker-compose-install.sh",
+    "podman-install.sh"
+]
+
+install_all = [
+    "virt-manager-install.sh",
+    "virtualbox-install.sh",
+    "qemu-kvm-install.sh",
+    "docker-install.sh",
+    "docker-compose-install.sh",
+    "podman-install.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-20 minutes"
+dependencies = ["base-system", "development-tools"]
+categories = ["virtualization", "containers", "vm"]

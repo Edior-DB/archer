@@ -1,0 +1,61 @@
+# Content Creation Menu
+# Video editing, image manipulation, audio production
+
+[menu]
+name = "Content Creation"
+description = "Video editing, image manipulation, audio production tools"
+icon = "🎨"
+level = "submenu"
+
+[options]
+# Content creation applications
+1 = { display = "Video Editing (Kdenlive, OpenShot)", action = "script", target = "video-editing.sh" }
+2 = { display = "Image Editing (GIMP, Krita)", action = "script", target = "image-editing.sh" }
+3 = { display = "Audio Production (Audacity, Ardour)", action = "script", target = "audio-production.sh" }
+4 = { display = "3D Graphics (Blender, FreeCAD)", action = "script", target = "3d-graphics.sh" }
+5 = { display = "Vector Graphics (Inkscape)", action = "script", target = "vector-graphics.sh" }
+6 = { display = "Animation Tools", action = "script", target = "animation-tools.sh" }
+
+# Quick installations
+"all" = { display = "Install All Creation Tools", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Tools (GIMP + Kdenlive)", action = "custom", target = "install_essential" }
+"video" = { display = "Video Tools Only", action = "custom", target = "install_video" }
+"graphics" = { display = "Graphics Tools Only", action = "custom", target = "install_graphics" }
+
+# Navigation
+"up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "image-editing.sh",
+    "video-editing.sh"
+]
+
+install_video = [
+    "video-editing.sh",
+    "animation-tools.sh"
+]
+
+install_graphics = [
+    "image-editing.sh",
+    "vector-graphics.sh",
+    "3d-graphics.sh"
+]
+
+install_all = [
+    "video-editing.sh",
+    "image-editing.sh",
+    "audio-production.sh",
+    "3d-graphics.sh",
+    "vector-graphics.sh",
+    "animation-tools.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-25 minutes"
+dependencies = ["base-system", "graphics-drivers"]
+categories = ["multimedia", "content-creation", "graphics", "video"]

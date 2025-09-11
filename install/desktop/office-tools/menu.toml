@@ -1,0 +1,53 @@
+# Office Tools Menu
+# LibreOffice and productivity applications
+
+[menu]
+name = "Office Tools"
+description = "LibreOffice, productivity applications, and office utilities"
+icon = "📄"
+level = "submenu"
+
+[options]
+# Office applications
+1 = { display = "LibreOffice Suite (Complete)", action = "script", target = "office-suite.sh" }
+2 = { display = "LibreOffice Writer Only", action = "script", target = "libreoffice-writer.sh" }
+3 = { display = "LibreOffice Calc Only", action = "script", target = "libreoffice-calc.sh" }
+4 = { display = "LibreOffice Impress Only", action = "script", target = "libreoffice-impress.sh" }
+5 = { display = "PDF Tools", action = "script", target = "pdf-tools.sh" }
+6 = { display = "Document Viewers", action = "script", target = "document-viewers.sh" }
+7 = { display = "Note Taking Apps", action = "script", target = "note-apps.sh" }
+
+# Quick installations
+"all" = { display = "Install All Office Tools", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Office (LibreOffice + PDF)", action = "custom", target = "install_essential" }
+"minimal" = { display = "Minimal Office (Writer + Calc)", action = "custom", target = "install_minimal" }
+
+# Navigation
+"up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "office-suite.sh",
+    "pdf-tools.sh"
+]
+
+install_minimal = [
+    "libreoffice-writer.sh",
+    "libreoffice-calc.sh"
+]
+
+install_all = [
+    "office-suite.sh",
+    "pdf-tools.sh",
+    "document-viewers.sh",
+    "note-apps.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = false
+estimated_time = "5-10 minutes"
+dependencies = ["base-system"]
+categories = ["office", "productivity", "documents"]

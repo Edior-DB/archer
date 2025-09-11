@@ -5,7 +5,7 @@
 name = "Component Name"
 description = "Detailed description of what this component provides"
 icon = "🔧"
-level = "sub"
+level = "submenu"
 
 [options]
 # Individual components
@@ -15,22 +15,22 @@ level = "sub"
 
 # Bulk actions
 "all" = { display = "Install All", action = "install", target = "install.sh" }
-"multi" = { display = "Select Multiple", action = "multiselect", target = "available_scripts" }
-
-# Configuration
-"config" = { display = "Configure Settings", action = "script", target = "configure.sh" }
+"essential" = { display = "Essential Only", action = "custom", target = "install_essential" }
 
 # Navigation
 "up" = { display = "← Back to Category", action = "back", target = ".." }
-"main" = { display = "← Main Menu", action = "back", target = "../.." }
 "0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[multiselect]
-# Available scripts for multiple selection
-available_scripts = [
-    { file = "core.sh", display = "Core Component", description = "Essential functionality" },
-    { file = "extended.sh", display = "Extended Features", description = "Additional tools" },
-    { file = "optional.sh", display = "Optional Tools", description = "Nice-to-have utilities" }
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "core.sh"
+]
+
+install_all = [
+    "core.sh",
+    "extended.sh",
+    "optional.sh"
 ]
 
 [metadata]

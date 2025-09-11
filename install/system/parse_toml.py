@@ -87,18 +87,47 @@ def main():
 
         # Handle legacy format (options section)
         elif options:
-            option_list = []
-            for key, value in options.items():
-                # Skip non-numeric keys for option ordering
-                try:
-                    option_num = int(key)
-                    option_list.append((option_num, key, value))
-                except ValueError:
-                    # Handle named options like "all", "essential", etc.
-                    option_list.append((999 + len(option_list), key, value))
+            main_options = []
+            quick_options = []
+            navigation_options = []
 
-            # Sort by option number
-            option_list.sort(key=lambda x: x[0])
+            for key, value in options.items():
+                if isinstance(value, dict):
+                    action_type = value.get('action', 'unknown')
+
+                    # Categorize options
+                    if action_type in ['back', 'exit']:
+                        # Navigation items go at the end
+                        # Give "back" a lower order than "exit"
+                        if action_type == 'back':
+                            nav_order = 1000
+                        elif action_type == 'exit':
+                            nav_order = 2000
+                        else:
+                            nav_order = 1500
+                        navigation_options.append((nav_order, key, value))
+                    elif action_type in ['install', 'custom'] or key in ['all', 'essential', 'editors', 'terminals', 'languages_core', 'scientific']:
+                        # Quick install options go in middle
+                        try:
+                            quick_order = int(key) if key.isdigit() else 100 + len(quick_options)
+                        except ValueError:
+                            quick_order = 100 + len(quick_options)
+                        quick_options.append((quick_order, key, value))
+                    else:
+                        # Main menu items go first
+                        try:
+                            main_order = int(key)
+                        except ValueError:
+                            main_order = 50 + len(main_options)
+                        main_options.append((main_order, key, value))
+
+            # Sort each category
+            main_options.sort(key=lambda x: x[0])
+            quick_options.sort(key=lambda x: x[0])
+            navigation_options.sort(key=lambda x: x[0])
+
+            # Combine in proper order: main items, quick actions, navigation
+            option_list = main_options + quick_options + navigation_options
 
             for i, (_, key, value) in enumerate(option_list):
                 if isinstance(value, dict):

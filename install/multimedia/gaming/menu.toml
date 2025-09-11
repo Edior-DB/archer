@@ -1,53 +1,49 @@
-# Gaming Platforms & Tools
-heading_color = "red"
+# Gaming Platforms & Tools Menu
+# Steam, Lutris, emulators, and gaming utilities
+
+[menu]
+name = "Gaming Platforms & Tools"
 description = "Steam, Lutris, emulators, and gaming utilities"
+icon = "🎮"
+level = "submenu"
 
-[[quick_actions]]
-name = "Essential Gaming"
-description = "Steam and basic gaming tools"
-command = "./install.sh --essential"
+[options]
+# Gaming categories
+1 = { display = "Gaming Platforms", action = "script", target = "gaming-platforms.sh" }
+2 = { display = "Game Emulators", action = "script", target = "emulators.sh" }
+3 = { display = "Gaming Tools", action = "script", target = "gaming-tools.sh" }
+4 = { display = "Wine & Compatibility", action = "script", target = "wine-tools.sh" }
 
-[[quick_actions]]
-name = "Complete Gaming Setup"
-description = "All gaming platforms and tools"
-command = "./install.sh --all"
+# Quick installations
+"all" = { display = "Complete Gaming Setup", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Gaming (Steam + Tools)", action = "custom", target = "install_essential" }
+"platforms" = { display = "Gaming Platforms Only", action = "custom", target = "install_platforms" }
 
-[[quick_actions]]
-name = "Gaming Platforms Only"
-description = "Steam, Lutris, Epic Games, GOG launchers"
-command = "./gaming-platforms.sh"
+# Navigation
+"up" = { display = "← Back to Multimedia Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[[menu_items]]
-name = "Gaming Platforms"
-description = "Steam, Lutris, Epic Games, GOG, and other launchers"
-action_type = "script"
-script_path = "./gaming-platforms.sh"
-
-[[menu_items]]
-name = "Game Emulators"
-description = "RetroArch, console emulators, and ROMs management"
-action_type = "script"
-script_path = "./emulators.sh"
-
-[[menu_items]]
-name = "Gaming Tools"
-description = "Discord, GameMode, performance tools"
-action_type = "script"
-script_path = "./gaming-tools.sh"
-
-[[menu_items]]
-name = "Wine & Compatibility"
-description = "Wine, Bottles, Windows game compatibility"
-action_type = "script"
-script_path = "./wine-tools.sh"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific gaming components"
-action_type = "multiselect"
-items = [
-    { name = "Gaming Platforms", script = "./gaming-platforms.sh" },
-    { name = "Game Emulators", script = "./emulators.sh" },
-    { name = "Gaming Tools", script = "./gaming-tools.sh" },
-    { name = "Wine & Compatibility", script = "./wine-tools.sh" }
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "gaming-platforms.sh",
+    "gaming-tools.sh"
 ]
+
+install_platforms = [
+    "gaming-platforms.sh"
+]
+
+install_all = [
+    "gaming-platforms.sh",
+    "emulators.sh",
+    "gaming-tools.sh",
+    "wine-tools.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-20 minutes"
+dependencies = ["base-system", "graphics-drivers"]
+categories = ["gaming", "entertainment", "steam"]

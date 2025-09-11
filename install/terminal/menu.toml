@@ -1,0 +1,56 @@
+# Terminal Tools Menu
+# Shell utilities, command-line tools, and terminal enhancements
+
+[menu]
+name = "Terminal Tools"
+description = "Shell utilities, command-line tools, and terminal enhancements"
+icon = "💻"
+level = "main"
+
+[options]
+# Terminal tool categories
+1 = { display = "Shell Enhancements", action = "submenu", target = "shell/" }
+2 = { display = "Command Line Tools", action = "submenu", target = "cli-tools/" }
+3 = { display = "System Monitoring", action = "submenu", target = "monitoring/" }
+4 = { display = "Text Processing", action = "submenu", target = "text-tools/" }
+5 = { display = "File Management", action = "submenu", target = "file-tools/" }
+6 = { display = "Network Tools", action = "submenu", target = "network-tools/" }
+
+# Quick installations
+"all" = { display = "Install All Terminal Tools", action = "install", target = "install.sh" }
+"essential" = { display = "Essential CLI Tools", action = "custom", target = "install_essential" }
+"modern" = { display = "Modern CLI Replacements", action = "custom", target = "install_modern" }
+
+# Navigation
+"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "shell/zsh-setup.sh",
+    "cli-tools/essential-tools.sh",
+    "monitoring/htop-btop.sh"
+]
+
+install_modern = [
+    "cli-tools/modern-replacements.sh",
+    "file-tools/modern-file-tools.sh",
+    "text-tools/modern-text-tools.sh"
+]
+
+install_all = [
+    "shell/install.sh",
+    "cli-tools/install.sh",
+    "monitoring/install.sh",
+    "text-tools/install.sh",
+    "file-tools/install.sh",
+    "network-tools/install.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-25 minutes"
+dependencies = ["base-system"]
+categories = ["terminal", "cli", "shell", "tools"]
