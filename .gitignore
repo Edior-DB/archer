@@ -5,4 +5,29 @@ notes/*
 # Ignore private development notes
 .archer-prompts/private/
 .archer-prompts/*.private.md
-bin/__pycache__/
+
+# Python cache and temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyc
+*.pyo
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.backup
+*~
+.DS_Store
+
+# Test files
+test_*.py
+*_test.py
+
+# Development scripts
+clean_*.sh
+fix_*.sh
+convert_*.py
+convert_*.sh
+parse_*.py
