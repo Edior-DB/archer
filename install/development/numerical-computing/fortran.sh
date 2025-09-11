@@ -30,7 +30,7 @@ install_gfortran() {
     # Verify installation
     if command -v gfortran &>/dev/null; then
         local version=$(gfortran --version | head -n 1)
-        log_success "GFortran installed: $version"
+        echo -e "${GREEN}✓ GFortran installed: $version${NC}"
     else
         log_error "Failed to install GFortran"
         return 1
@@ -52,7 +52,7 @@ install_lfortran() {
     # Verify installation
     if command -v lfortran &>/dev/null; then
         local version=$(lfortran --version 2>/dev/null | head -n 1 || echo "LFortran installed")
-        log_success "LFortran installed: $version"
+        echo -e "${GREEN}✓ LFortran installed: $version${NC}"
     else
         log_warning "LFortran installation may have failed, but GFortran is available"
     fi
@@ -148,7 +148,7 @@ main() {
     # Show information
     print_fortran_info
 
-    log_success "$TOOL_NAME installation completed!"
+    echo -e "${GREEN}✓ $TOOL_NAME installation completed!${NC}"
 }
 
 # Execute main function

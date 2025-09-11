@@ -329,6 +329,8 @@ install_development_base() {
         "python-pip"
         "python-rich"
         "mise"
+        "gd"
+        "re2c"
 
         # System tools
         "htop"

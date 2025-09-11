@@ -38,6 +38,10 @@ if ! install_with_retries gd; then
     echo -e "${YELLOW}Warning: Could not install some PHP dependencies${NC}"
 fi
 
+if ! install_with_retries gd; then
+    echo -e "${YELLOW}Warning: Could not install some PHP dependencies${NC}"
+fi
+
 echo -e "${BLUE}Installing PHP via Mise...${NC}"
 
 if mise install php@latest; then
