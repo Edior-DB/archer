@@ -279,60 +279,61 @@ class ArcherUI:
                 if output:
                     line = output.strip()
                     output_lines.append(line)
+                    current_operation = line
 
                     # Update status based on common script patterns
                     line_lower = line.lower()
                     if any(pattern in line_lower for pattern in ['installing', 'install ']):
                         if 'gfortran' in line_lower:
-                            current_operation = "Installing GFortran compiler..."
+                            current_operation += "Installing GFortran compiler..."
                         elif 'lfortran' in line_lower:
                             current_operation = "Building LFortran (this may take 20-45 minutes)..."
                         elif any(pkg in line_lower for pkg in ['dlang', 'dmd', 'ldc']):
-                            current_operation = "Installing D compiler..."
+                            current_operation += "Installing D compiler..."
                         elif 'nim' in line_lower:
-                            current_operation = "Installing Nim language..."
+                            current_operation += "Installing Nim language..."
                         elif 'zig' in line_lower:
-                            current_operation = "Installing Zig language..."
+                            current_operation += "Installing Zig language..."
                         elif 'rust' in line_lower:
-                            current_operation = "Installing Rust toolchain..."
+                            current_operation += "Installing Rust toolchain..."
                         elif 'go' in line_lower:
-                            current_operation = "Installing Go language..."
+                            current_operation += "Installing Go language..."
                         elif 'postgresql' in line_lower:
-                            current_operation = "Installing PostgreSQL database..."
+                            current_operation += "Installing PostgreSQL database..."
                         elif 'mariadb' in line_lower or 'mysql' in line_lower:
-                            current_operation = "Installing MariaDB database..."
+                            current_operation += "Installing MariaDB database..."
                         elif 'redis' in line_lower:
-                            current_operation = "Installing Redis cache..."
+                            current_operation += "Installing Redis cache..."
                         elif 'sqlite' in line_lower:
-                            current_operation = "Installing SQLite database..."
+                            current_operation += "Installing SQLite database..."
                         elif 'mongodb' in line_lower:
-                            current_operation = "Installing MongoDB database..."
+                            current_operation += "Installing MongoDB database..."
                         elif 'dbeaver' in line_lower:
-                            current_operation = "Installing DBeaver GUI client..."
+                            current_operation += "Installing DBeaver GUI client..."
                         elif 'dbmate' in line_lower:
-                            current_operation = "Installing DBmate migration tool..."
+                            current_operation += "Installing DBmate migration tool..."
                         else:
-                            current_operation = "Installing packages..."
+                            current_operation += "Installing packages..."
                     elif 'downloading' in line_lower:
-                        current_operation = "Downloading packages..."
+                        current_operation += "Downloading packages..."
                     elif 'building' in line_lower or 'compiling' in line_lower:
                         # Special handling for LFortran build process
                         if 'lfortran' in line_lower or any(word in line_lower for word in ['bison', 'parser', 'grammar']):
-                            current_operation = "Building LFortran (bison parser generation - please be patient)..."
+                            current_operation += "Building LFortran (bison parser generation - please be patient)..."
                         else:
-                            current_operation = "Building from source..."
+                            current_operation += "Building from source..."
                     elif 'configuring' in line_lower:
-                        current_operation = "Configuring installation..."
+                        current_operation += "Configuring installation..."
                     elif 'complete' in line_lower or 'success' in line_lower:
-                        current_operation = "Installation completing..."
+                        current_operation += "Installation completing..."
                     elif 'mise install' in line_lower:
-                        current_operation = "Installing via Mise..."
+                        current_operation += "Installing via Mise..."
                     elif 'yay -s' in line_lower or 'pacman -s' in line_lower:
-                        current_operation = "Installing from repositories..."
+                        current_operation += "Installing from repositories..."
                     elif 'systemctl enable' in line_lower:
-                        current_operation = "Enabling system services..."
+                        current_operation += "Enabling system services..."
                     elif 'service' in line_lower and 'start' in line_lower:
-                        current_operation = "Starting services..."
+                        current_operation += "Starting services..."
 
                     # Update progress task and display
                     progress.update(task, description=f"Running {description}...")
