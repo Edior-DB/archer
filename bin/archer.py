@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 import time
+import argparse
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -26,9 +27,10 @@ from rich.tree import Tree
 class ArcherUI:
     """Enhanced UI using Rich library"""
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.console = Console()
         self.archer_dir = os.environ.get('ARCHER_DIR', str(Path(__file__).parent.parent))
+        self.verbose = verbose
 
     def print_banner(self):
         """Display the Archer banner"""
@@ -130,11 +132,21 @@ class ArcherUI:
 
         combined_text = f"{command_lower} {script_content}"
 
-        # Quick installers that don't benefit from detailed progress bars
-        quick_patterns = [
+        # Check for mise first - it has its own excellent progress bars
+        mise_patterns = [
             'mise install',
             'mise plugin',
             'curl https://mise.run',
+            'eval.*mise.*activate',
+            'source.*mise',
+            'mise use',
+            'mise exec',
+        ]
+        if any(pattern in combined_text for pattern in mise_patterns):
+            return 'mise'
+
+        # Quick installers that don't benefit from detailed progress bars
+        quick_patterns = [
             'npm install -g',
             'pip install',
             'cargo install',
@@ -201,6 +213,57 @@ class ArcherUI:
         # Default for complex installations
         return 'standard'
 
+    def show_verbose_passthrough(self, description: str, command: str) -> bool:
+        """Show raw command output without any progress wrapper (verbose mode)"""
+        self.console.print(f"\n[bold blue]🔧 {description}[/bold blue]")
+        self.console.print(f"[dim]Command: {command}[/dim]")
+        self.console.print(f"[dim]Running in verbose mode - showing raw output[/dim]\n")
+
+        # Execute command and show raw output directly
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                check=False,
+                text=True
+            )
+
+            if result.returncode == 0:
+                self.console.print(f"\n[bold green]✓ {description} completed successfully! (exit code: 0)[/bold green]")
+                return True
+            else:
+                self.console.print(f"\n[bold red]✗ {description} failed (exit code: {result.returncode})[/bold red]")
+                return False
+
+        except Exception as e:
+            self.console.print(f"\n[bold red]✗ {description} failed: {str(e)}[/bold red]")
+            return False
+
+    def show_mise_passthrough(self, description: str, command: str) -> bool:
+        """Show mise output directly without any progress wrapper"""
+        self.console.print(f"\n[bold blue]⚡ {description}[/bold blue]")
+        self.console.print(f"[dim]Using mise package manager with native progress display[/dim]\n")
+
+        # Execute command and let mise show its own progress
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                check=False,
+                text=True
+            )
+
+            if result.returncode == 0:
+                self.console.print(f"\n[bold green]✓ {description} completed successfully![/bold green]")
+                return True
+            else:
+                self.console.print(f"\n[bold red]✗ {description} failed (exit code: {result.returncode})[/bold red]")
+                return False
+
+        except Exception as e:
+            self.console.print(f"\n[bold red]✗ {description} failed: {str(e)}[/bold red]")
+            return False
+
     def show_simple_progress(self, description: str, command: str) -> bool:
         """Show simple spinner-based progress for quick installations"""
         self.console.print(f"\n[bold blue]⚡ {description}[/bold blue]")
@@ -265,41 +328,47 @@ class ArcherUI:
                 return False
 
     def show_multi_package_progress(self, description: str, packages: List[str], command_template: str) -> bool:
-        """Show nala-style multi-package installation progress"""
+        """Show nala-style progress with one main bar and changing status text"""
         self.console.print(f"\n[bold blue]📦 {description}[/bold blue]")
         self.console.print(f"[dim]Installing {len(packages)} packages[/dim]\n")
 
-        # Create nala-style multi-progress display
+        # Create nala-style progress display with ONE main progress bar
         with Progress(
             TextColumn("[bold blue]{task.description}"),
-            BarColumn(bar_width=30),
+            BarColumn(bar_width=40),
             TaskProgressColumn(),
             TextColumn("•"),
             TimeElapsedColumn(),
-            TextColumn("•"),
-            TextColumn("[cyan]{task.fields[status]}"),
             console=self.console,
             transient=False,
             expand=False
         ) as progress:
 
-            # Overall progress
-            overall_task = progress.add_task(
-                f"[bold]{description}",
-                total=len(packages),
-                status="Starting..."
+            # Single main progress task
+            main_task = progress.add_task(
+                f"{description}",
+                total=len(packages)
             )
 
+            # Status display below the progress bar
+            status_text = ""
             success_count = 0
             failed_packages = []
 
             for i, package in enumerate(packages, 1):
-                # Create task for this package
-                package_task = progress.add_task(
-                    f"  [{i}/{len(packages)}] {package}",
-                    total=100,
-                    status="Queued"
-                )
+                # Update main progress bar
+                progress.update(main_task, completed=i-1)
+
+                # Update status text below the bar
+                current_status = f"[{i}/{len(packages)}] Installing {package}..."
+
+                # Clear previous status and show new one
+                if status_text:
+                    # Move cursor up and clear the line
+                    self.console.print("\033[1A\033[K", end="")
+
+                self.console.print(f"[cyan]{current_status}[/cyan]")
+                status_text = current_status
 
                 # Execute package installation
                 command = command_template.format(package=package)
@@ -313,11 +382,9 @@ class ArcherUI:
                     universal_newlines=True
                 )
 
-                progress.update(package_task, completed=10, status="Downloading")
-
                 output_lines = []
-                package_progress = 10
 
+                # Show sub-status updates
                 while True:
                     output = process.stdout.readline()
                     if output == '' and process.poll() is not None:
@@ -328,57 +395,52 @@ class ArcherUI:
                         output_lines.append(line)
                         line_lower = line.lower()
 
-                        # Update progress based on output
+                        # Update sub-status based on output
+                        sub_status = ""
                         if 'downloading' in line_lower:
-                            package_progress = min(package_progress + 5, 40)
-                            progress.update(package_task, completed=package_progress, status="Downloading")
+                            sub_status = f"[{i}/{len(packages)}] Downloading {package}..."
                         elif 'installing' in line_lower:
-                            package_progress = min(package_progress + 10, 80)
-                            progress.update(package_task, completed=package_progress, status="Installing")
+                            sub_status = f"[{i}/{len(packages)}] Installing {package}..."
                         elif 'configuring' in line_lower:
-                            package_progress = min(package_progress + 5, 90)
-                            progress.update(package_task, completed=package_progress, status="Configuring")
+                            sub_status = f"[{i}/{len(packages)}] Configuring {package}..."
+                        elif 'building' in line_lower:
+                            sub_status = f"[{i}/{len(packages)}] Building {package}..."
+
+                        if sub_status and sub_status != status_text:
+                            # Update status text
+                            self.console.print("\033[1A\033[K", end="")  # Clear line
+                            self.console.print(f"[cyan]{sub_status}[/cyan]")
+                            status_text = sub_status
 
                 return_code = process.poll()
 
+                # Final status for this package
                 if return_code == 0:
-                    progress.update(
-                        package_task,
-                        completed=100,
-                        status="✓ Installed"
-                    )
+                    final_status = f"[{i}/{len(packages)}] ✓ {package} installed"
                     success_count += 1
                 else:
-                    progress.update(
-                        package_task,
-                        completed=package_progress,
-                        status="✗ Failed"
-                    )
+                    final_status = f"[{i}/{len(packages)}] ✗ {package} failed"
                     failed_packages.append(package)
 
-                # Update overall progress
-                progress.update(
-                    overall_task,
-                    completed=i,
-                    status=f"Processing ({success_count}/{i} successful)"
-                )
+                # Update status text
+                self.console.print("\033[1A\033[K", end="")  # Clear line
+                self.console.print(f"[cyan]{final_status}[/cyan]")
+                status_text = final_status
 
-                time.sleep(0.1)  # Brief pause between packages
+                time.sleep(0.3)  # Brief pause to show status
 
-            # Final status
+            # Complete the main progress bar
+            progress.update(main_task, completed=len(packages))
+
+            # Clear the last status line and show final result
+            self.console.print("\033[1A\033[K", end="")  # Clear line
+
+            # Final summary
             if success_count == len(packages):
-                progress.update(
-                    overall_task,
-                    status=f"✓ All {len(packages)} packages installed"
-                )
-                self.console.print(f"\n[bold green]✓ All packages installed successfully![/bold green]")
+                self.console.print(f"[bold green]✓ All {len(packages)} packages installed successfully![/bold green]")
                 return True
             else:
-                progress.update(
-                    overall_task,
-                    status=f"⚠ {success_count}/{len(packages)} successful"
-                )
-                self.console.print(f"\n[bold yellow]⚠ {success_count}/{len(packages)} packages installed[/bold yellow]")
+                self.console.print(f"[bold yellow]⚠ {success_count}/{len(packages)} packages installed[/bold yellow]")
                 if failed_packages:
                     self.console.print(f"[red]Failed packages: {', '.join(failed_packages)}[/red]")
                 return success_count > 0
@@ -386,11 +448,18 @@ class ArcherUI:
     def show_progress(self, description: str, command: str, script_path: str = "") -> bool:
         """Show progress with intelligent detection of installation type"""
 
+        # Verbose mode: bypass all progress wrappers and show raw output
+        if self.verbose:
+            return self.show_verbose_passthrough(description, command)
+
         # Detect installation type and choose appropriate progress display
         install_type = self._detect_installation_type(command, script_path)
 
-        if install_type == 'quick':
-            # Use simple spinner for quick installers (mise, npm, pip, etc.)
+        if install_type == 'mise':
+            # Let mise show its own native progress bars
+            return self.show_mise_passthrough(description, command)
+        elif install_type == 'quick':
+            # Use simple spinner for quick installers (npm, pip, cargo, etc.)
             return self.show_simple_progress(description, command)
         else:
             # Use full nala-style progress bar for package managers and builds
@@ -917,21 +986,31 @@ class ArcherMenu:
 
 def main():
     """Main entry point"""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Archer Linux Enhancement Suite')
+    parser.add_argument('--debug', action='store_true', help='Show discovered menu structure and exit')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Show raw command output without progress bars')
+    args = parser.parse_args()
+
     # Set up environment
     archer_dir = str(Path(__file__).parent.parent)
     os.environ['ARCHER_DIR'] = archer_dir
     os.chdir(archer_dir)
 
-    # Initialize UI and menu system
-    ui = ArcherUI()
+    # Initialize UI and menu system with verbose flag
+    ui = ArcherUI(verbose=args.verbose)
     menu = ArcherMenu(ui)
 
     try:
         # Display banner
         ui.print_banner()
 
+        # Show verbose mode notice
+        if args.verbose:
+            ui.console.print("[yellow]🔧 Verbose mode enabled - showing raw command output[/yellow]\n")
+
         # Debug option: show discovered structure if requested
-        if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+        if args.debug:
             menu.print_discovered_structure()
             return
 
