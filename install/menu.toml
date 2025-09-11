@@ -49,3 +49,14 @@ name = "Terminal Tools"
 description = "Shell enhancements, CLI utilities, and command-line tools"
 action_type = "submenu"
 submenu_path = "./terminal/menu.toml"
+
+[[menu_items]]
+name = "Install Everything"
+description = "Install all components (may take a long time)"
+action_type = "script"
+script_path = "./install.sh"
+
+[[menu_items]]
+name = "Exit Archer"
+description = "Exit the installation system"
+action_type = "exit"

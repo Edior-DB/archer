@@ -1,37 +1,29 @@
-# Desktop Themes
-heading_color = "blue"
+# Desktop Themes Menu
+# Cupertini, Redmondi, Vanilla themes and desktop customizations
+
+[menu]
+name = "Desktop Themes"
 description = "Cupertini, Redmondi, Vanilla themes and desktop customizations"
+icon = "🎨"
+level = "submenu"
 
-[[menu_items]]
-name = "Cupertini Theme"
-description = "macOS-inspired KDE theme with dock and aesthetics"
-action_type = "script"
-script_path = "./cupertini.sh"
+[options]
+# Theme options
+1 = { display = "Cupertini Theme", action = "script", target = "cupertini.sh", description = "macOS-inspired KDE theme with dock and aesthetics" }
+2 = { display = "Redmondi Theme", action = "script", target = "redmondi.sh", description = "Windows-inspired theme with taskbar layout" }
+3 = { display = "Vanilla Theme", action = "script", target = "vanilla.sh", description = "Clean minimal theme with default KDE aesthetics" }
+4 = { display = "Theme Uninstaller", action = "script", target = "de-installer.sh", description = "Remove installed themes and restore defaults" }
 
-[[menu_items]]
-name = "Redmondi Theme"
-description = "Windows-inspired theme with taskbar layout"
-action_type = "script"
-script_path = "./redmondi.sh"
+# Quick installations
+"all" = { display = "Install All Themes", action = "install", target = "install.sh" }
 
-[[menu_items]]
-name = "Vanilla Theme"
-description = "Clean minimal theme with default KDE aesthetics"
-action_type = "script"
-script_path = "./vanilla.sh"
+# Navigation
+"up" = { display = "← Back to Desktop Menu", action = "back", target = ".." }
+"main" = { display = "← Main Menu", action = "back", target = "../.." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[[menu_items]]
-name = "Theme Uninstaller"
-description = "Remove installed themes and restore defaults"
-action_type = "script"
-script_path = "./de-installer.sh"
-
-[[menu_items]]
-name = "Custom Theme Selection"
-description = "Select specific themes to install"
-action_type = "multiselect"
-items = [
-    { name = "Cupertini Theme", script = "./cupertini.sh" },
-    { name = "Redmondi Theme", script = "./redmondi.sh" },
-    { name = "Vanilla Theme", script = "./vanilla.sh" }
-]
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "5-15 minutes"
+categories = ["themes", "desktop", "kde"]

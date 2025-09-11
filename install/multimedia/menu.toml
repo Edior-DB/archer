@@ -44,3 +44,20 @@ items = [
     { name = "OBS Studio", script = "./streaming/obs-studio.sh" },
     { name = "Streaming Tools", script = "./streaming/streaming-tools.sh" }
 ]
+
+[[menu_items]]
+name = "Install Everything"
+description = "Install all components from this category"
+action_type = "script"
+script_path = "./install.sh"
+
+[[menu_items]]
+name = "← Back to Main Menu"
+description = "Return to main menu"
+action_type = "back"
+target = ".."
+
+[[menu_items]]
+name = "Exit Archer"
+description = "Exit the installation system"
+action_type = "exit"

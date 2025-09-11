@@ -1,44 +1,29 @@
-# Desktop Environment & Themes
-heading_color = "blue"
+# Desktop Environment & Themes Menu
+# Desktop themes, office tools, fonts, and UI customization
+
+[menu]
+name = "Desktop Environment"
 description = "Desktop themes, office tools, fonts, and UI customization"
+icon = "🖥️"
+level = "main"
 
-[[menu_items]]
-name = "Desktop Themes"
-description = "Cupertini, Redmondi, Vanilla themes and customizations"
-action_type = "submenu"
-submenu_path = "./themes/menu.toml"
+[options]
+# Desktop categories
+1 = { display = "Desktop Themes", action = "submenu", target = "themes/" }
+2 = { display = "Fonts", action = "submenu", target = "fonts/" }
+3 = { display = "Office Tools", action = "submenu", target = "office-tools/" }
+4 = { display = "Desktop Utilities", action = "submenu", target = "utilities/" }
 
-[[menu_items]]
-name = "Fonts"
-description = "System fonts, programming fonts, icon fonts"
-action_type = "submenu"
-submenu_path = "./fonts/menu.toml"
+# Quick installations
+"all" = { display = "Install All Desktop Tools", action = "install", target = "install.sh" }
 
-[[menu_items]]
-name = "Office Tools"
-description = "LibreOffice, productivity applications"
-action_type = "submenu"
-submenu_path = "./office-tools/menu.toml"
+# Navigation
+"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
 
-[[menu_items]]
-name = "Desktop Utilities"
-description = "Desktop widgets, launchers, system utilities"
-action_type = "submenu"
-submenu_path = "./utilities/menu.toml"
-
-[[menu_items]]
-name = "Custom Selection"
-description = "Select specific desktop components"
-action_type = "multiselect"
-items = [
-    { name = "Cupertini Theme", script = "./themes/cupertini.sh" },
-    { name = "Redmondi Theme", script = "./themes/redmondi.sh" },
-    { name = "Vanilla Theme", script = "./themes/vanilla.sh" },
-    { name = "Programming Fonts", script = "./fonts/programming-fonts.sh" },
-    { name = "System Fonts", script = "./fonts/system-fonts.sh" },
-    { name = "Icon Fonts", script = "./fonts/icon-fonts.sh" },
-    { name = "LibreOffice Suite", script = "./office-tools/libreoffice.sh" },
-    { name = "Productivity Apps", script = "./office-tools/productivity.sh" },
-    { name = "Desktop Launchers", script = "./utilities/launchers.sh" },
-    { name = "System Widgets", script = "./utilities/widgets.sh" }
-]
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-20 minutes"
+dependencies = ["base-system"]
+categories = ["desktop", "themes", "fonts", "office"]

@@ -25,3 +25,26 @@ name = "Media Streaming"
 description = "DLNA/UPnP media streaming servers"
 action_type = "script"
 script_path = "./media-streaming.sh"
+
+[[menu_items]]
+name = "Install All"
+description = "Install all tools from this category"
+action_type = "script"
+script_path = "./install.sh"
+
+[[menu_items]]
+name = "← Back to Parent Menu"
+description = "Return to parent menu"
+action_type = "back"
+target = ".."
+
+[[menu_items]]
+name = "← Main Menu"
+description = "Return to main menu"
+action_type = "back"
+target = "../.."
+
+[[menu_items]]
+name = "Exit Archer"
+description = "Exit the installation system"
+action_type = "exit"
