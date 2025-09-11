@@ -713,7 +713,7 @@ class ArcherUI:
         current_operation = "Starting installation..."
         operations_seen = set()
 
-        with Live(console=self.console, refresh_per_second=4, transient=False) as live:
+        with Live(console=self.console, refresh_per_second=8, transient=False) as live:
 
             def update_display():
                 # Create status text
@@ -750,24 +750,75 @@ class ArcherUI:
                     # Parse different types of operations for progress estimation
                     line_lower = line.lower()
 
-                    # Detect different phases
+                    # Always update with most recent meaningful output for better feedback
+                    previous_operation = current_operation
+
+                    # Detect different phases and update progress
                     if any(keyword in line_lower for keyword in ['downloading', 'download']):
                         if 'downloading' not in operations_seen:
                             operations_seen.add('downloading')
                             main_progress = min(main_progress + 20, 90)
-                        current_operation = "Downloading packages..."
+
+                        # Extract specific package/file being downloaded
+                        if any(pkg in line_lower for pkg in ['http', 'ftp', '.tar', '.zip', '.gz', '.xz']):
+                            # Extract filename from URL or path
+                            words = line.split()
+                            for word in words:
+                                if any(ext in word.lower() for ext in ['.tar', '.zip', '.gz', '.xz', '.deb', '.rpm']):
+                                    filename = word.split('/')[-1][:40]
+                                    current_operation = f"Downloading {filename}..."
+                                    break
+                            else:
+                                current_operation = "Downloading packages..."
+                        else:
+                            current_operation = "Downloading packages..."
 
                     elif any(keyword in line_lower for keyword in ['installing', 'install']):
                         if 'installing' not in operations_seen:
                             operations_seen.add('installing')
                             main_progress = min(main_progress + 25, 90)
-                        current_operation = "Installing packages..."
 
-                    elif any(keyword in line_lower for keyword in ['building', 'compiling', 'compile']):
+                        # Extract specific package name being installed
+                        import re
+                        package_patterns = [
+                            r'installing\s+(\w+[-\w]*)',
+                            r'install:\s+(\w+[-\w]*)',
+                            r'package\s+(\w+[-\w]*)',
+                            r'setting up\s+(\w+[-\w]*)',
+                            r'unpacking\s+(\w+[-\w]*)'
+                        ]
+                        for pattern in package_patterns:
+                            match = re.search(pattern, line_lower)
+                            if match:
+                                package_name = match.group(1)[:20]
+                                current_operation = f"Installing {package_name}..."
+                                break
+                        else:
+                            current_operation = "Installing packages..."
+
+                    elif any(keyword in line_lower for keyword in ['building', 'compiling', 'compile', 'make', 'gcc', 'clang']):
                         if 'building' not in operations_seen:
                             operations_seen.add('building')
                             main_progress = min(main_progress + 30, 90)
-                        current_operation = "Building from source..."
+
+                        # Show specific file being compiled
+                        if any(ext in line_lower for ext in ['.c', '.cpp', '.cc', '.cxx', '.h', '.hpp']):
+                            words = line.split()
+                            for word in words:
+                                if any(ext in word.lower() for ext in ['.c', '.cpp', '.cc', '.cxx']):
+                                    filename = word.split('/')[-1][:30]
+                                    current_operation = f"Compiling {filename}..."
+                                    break
+                            else:
+                                current_operation = "Building from source..."
+                        elif 'makepkg' in line_lower:
+                            current_operation = "Building package with makepkg..."
+                        elif 'cargo' in line_lower and 'build' in line_lower:
+                            current_operation = "Building Rust project..."
+                        elif 'npm' in line_lower and any(cmd in line_lower for cmd in ['build', 'compile']):
+                            current_operation = "Building Node.js project..."
+                        else:
+                            current_operation = "Building from source..."
 
                     elif any(keyword in line_lower for keyword in ['configuring', 'configure']):
                         if 'configuring' not in operations_seen:
@@ -788,114 +839,46 @@ class ArcherUI:
                         current_operation = "Completing installation..."
                         main_progress = min(main_progress + 10, 100)
 
-                    # Update with specific package/file info if available
-                    if len(line) > 0 and not any(skip in line_lower for skip in ['warning:', 'note:', 'info:']):
-                        # Try to extract meaningful package names or files
-                        display_line = line[:80] + "..." if len(line) > 80 else line
-                        if any(keyword in line_lower for keyword in ['package', 'installing', 'downloading']):
+                    # More granular detection for specific operations
+                    elif 'resolving dependencies' in line_lower:
+                        current_operation = "Resolving dependencies..."
+                    elif 'checking for conflicts' in line_lower:
+                        current_operation = "Checking for conflicts..."
+                    elif 'checking keys' in line_lower or 'validating' in line_lower:
+                        current_operation = "Validating packages..."
+                    elif 'loading packages' in line_lower:
+                        current_operation = "Loading package files..."
+                    elif 'checking integrity' in line_lower:
+                        current_operation = "Checking package integrity..."
+                    elif 'preparing' in line_lower:
+                        current_operation = "Preparing installation..."
+                    elif 'updating' in line_lower and 'database' in line_lower:
+                        current_operation = "Updating package database..."
+                    elif 'synchronizing' in line_lower:
+                        current_operation = "Synchronizing package databases..."
+                    elif 'retrieving' in line_lower:
+                        current_operation = "Retrieving packages..."
+
+                    # Show recent output for any line that contains useful info
+                    elif len(line) > 10 and not any(skip in line_lower for skip in [
+                        'warning:', 'note:', 'info:', 'debug:', 'trace:',
+                        '==>', '-->', ':::', '   ', '    '  # Skip indented/formatted lines
+                    ]):
+                        # Show last meaningful output line (truncated)
+                        display_line = line[:60] + "..." if len(line) > 60 else line
+                        if not display_line.isspace() and len(display_line.strip()) > 5:
                             current_operation = f"Processing: {display_line}"
 
-                    # Update progress bar
-                    progress.update(main_task, completed=main_progress)
+                    # Always update display if operation changed or periodically for activity indication
+                    if current_operation != previous_operation or len(output_lines) % 2 == 0:
+                        # Update progress bar
+                        progress.update(main_task, completed=main_progress)
 
-                    # Update display
-                    update_display()
+                        # Update display
+                        update_display()
 
-                    # Small delay to make progress visible
-                    time.sleep(0.05)
-
-            # Final completion
-            return_code = process.poll()
-
-            if return_code == 0:
-                progress.update(main_task, completed=100)
-                current_operation = f"✓ {description} completed successfully!"
-                update_display()
-                time.sleep(1)  # Show completion for a moment
-                return True
-            else:
-                current_operation = f"✗ {description} failed (exit code: {return_code})"
-                update_display()
-                time.sleep(1)  # Show error for a moment
-
-                # Show error details after the live display ends
-                if output_lines:
-                    self.console.print(f"\n[yellow]Last output (for debugging):[/yellow]")
-                    for line in output_lines[-5:]:
-                        if line.strip():
-                            self.console.print(f"  [dim]{line}[/dim]")
-
-                return False
-
-            while True:
-                output = process.stdout.readline()
-                if output == '' and process.poll() is not None:
-                    break
-
-                if output:
-                    line = output.strip()
-                    output_lines.append(line)
-
-                    # Keep only last 50 lines
-                    if len(output_lines) > 50:
-                        output_lines = output_lines[-25:]
-
-                    # Parse different types of operations for progress estimation
-                    line_lower = line.lower()
-
-                    # Detect different phases
-                    if any(keyword in line_lower for keyword in ['downloading', 'download']):
-                        if 'downloading' not in operations_seen:
-                            operations_seen.add('downloading')
-                            main_progress = min(main_progress + 20, 90)
-                        current_operation = "Downloading packages..."
-
-                    elif any(keyword in line_lower for keyword in ['installing', 'install']):
-                        if 'installing' not in operations_seen:
-                            operations_seen.add('installing')
-                            main_progress = min(main_progress + 25, 90)
-                        current_operation = "Installing packages..."
-
-                    elif any(keyword in line_lower for keyword in ['building', 'compiling', 'compile']):
-                        if 'building' not in operations_seen:
-                            operations_seen.add('building')
-                            main_progress = min(main_progress + 30, 90)
-                        current_operation = "Building from source..."
-
-                    elif any(keyword in line_lower for keyword in ['configuring', 'configure']):
-                        if 'configuring' not in operations_seen:
-                            operations_seen.add('configuring')
-                            main_progress = min(main_progress + 15, 90)
-                        current_operation = "Configuring installation..."
-
-                    elif any(keyword in line_lower for keyword in ['extracting', 'extract']):
-                        if 'extracting' not in operations_seen:
-                            operations_seen.add('extracting')
-                            main_progress = min(main_progress + 10, 90)
-                        current_operation = "Extracting packages..."
-
-                    elif any(keyword in line_lower for keyword in ['processing', 'process']):
-                        current_operation = "Processing installation..."
-
-                    elif any(keyword in line_lower for keyword in ['complete', 'finished', 'done', 'success']):
-                        current_operation = "Completing installation..."
-                        main_progress = min(main_progress + 10, 100)
-
-                    # Update with specific package/file info if available
-                    if len(line) > 0 and not any(skip in line_lower for skip in ['warning:', 'note:', 'info:']):
-                        # Try to extract meaningful package names or files
-                        display_line = line[:80] + "..." if len(line) > 80 else line
-                        if any(keyword in line_lower for keyword in ['package', 'installing', 'downloading']):
-                            current_operation = f"Processing: {display_line}"
-
-                    # Update progress bar
-                    progress.update(main_task, completed=main_progress)
-
-                    # Update display
-                    update_display()
-
-                    # Small delay to make progress visible
-                    time.sleep(0.05)
+                    # Reduced delay for more responsive updates
+                    time.sleep(0.01)
 
             # Final completion
             return_code = process.poll()
