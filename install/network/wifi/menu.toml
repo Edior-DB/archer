@@ -1,0 +1,37 @@
+# WiFi Configuration & Setup
+heading_color = "cyan"
+description = "WiFi drivers, setup, and connectivity tools"
+
+[[quick_actions]]
+name = "Complete WiFi Setup"
+description = "Install drivers and configure WiFi"
+command = "./wifi-setup.sh && ./wifi-install.sh"
+
+[[quick_actions]]
+name = "WiFi Setup Only"
+description = "Configure existing WiFi (no driver install)"
+command = "./wifi-setup.sh"
+
+[[menu_items]]
+name = "WiFi Drivers Installation"
+description = "Install WiFi drivers and firmware"
+action_type = "script"
+script_path = "./wifi-install.sh"
+
+[[menu_items]]
+name = "WiFi Configuration"
+description = "Setup WiFi connections and network profiles"
+action_type = "script"
+script_path = "./wifi-setup.sh"
+
+[[menu_items]]
+name = "WiFi Troubleshooting"
+description = "Diagnose and fix WiFi connectivity issues"
+action_type = "script"
+script_path = "./wifi-troubleshooting.sh"
+
+[[menu_items]]
+name = "Advanced WiFi Tools"
+description = "WiFi analysis and management tools"
+action_type = "script"
+script_path = "./wifi-tools.sh"

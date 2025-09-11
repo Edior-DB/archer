@@ -1,0 +1,57 @@
+# Security & Privacy Tools
+heading_color = "red"
+description = "System security, privacy tools, and encryption"
+
+[[quick_actions]]
+name = "Essential Security"
+description = "Basic security setup (firewall, antivirus, encryption)"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "Complete Security Suite"
+description = "All security and privacy tools"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "Privacy Focus"
+description = "Privacy tools and anonymity software"
+command = "./privacy/tor-setup.sh && ./privacy/privacy-tools.sh"
+
+[[menu_items]]
+name = "System Security"
+description = "Firewall, antivirus, system hardening"
+action_type = "submenu"
+submenu_path = "./system/menu.toml"
+
+[[menu_items]]
+name = "Encryption & Keys"
+description = "Disk encryption, GPG, password managers"
+action_type = "submenu"
+submenu_path = "./encryption/menu.toml"
+
+[[menu_items]]
+name = "Privacy Tools"
+description = "Tor, VPN, anonymity and privacy tools"
+action_type = "submenu"
+submenu_path = "./privacy/menu.toml"
+
+[[menu_items]]
+name = "Security Analysis"
+description = "Penetration testing, vulnerability scanning"
+action_type = "submenu"
+submenu_path = "./analysis/menu.toml"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific security components"
+action_type = "multiselect"
+items = [
+    { name = "Firewall Setup", script = "./system/firewall.sh" },
+    { name = "Antivirus", script = "./system/antivirus.sh" },
+    { name = "Password Manager", script = "./encryption/password-manager.sh" },
+    { name = "GPG Setup", script = "./encryption/gpg-setup.sh" },
+    { name = "Tor Browser", script = "./privacy/tor-setup.sh" },
+    { name = "VPN Tools", script = "./privacy/vpn-tools.sh" },
+    { name = "Security Audit", script = "./analysis/security-audit.sh" },
+    { name = "Backup Tools", script = "./system/backup-tools.sh" }
+]

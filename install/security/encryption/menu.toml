@@ -1,0 +1,43 @@
+# Encryption & Key Management
+heading_color = "yellow"
+description = "Disk encryption, GPG, and password managers"
+
+[[quick_actions]]
+name = "Essential Encryption"
+description = "GPG and password manager setup"
+command = "./gpg-setup.sh && ./password-manager.sh"
+
+[[quick_actions]]
+name = "Complete Encryption Suite"
+description = "All encryption and key management tools"
+command = "./gpg-setup.sh && ./password-manager.sh && ./disk-encryption.sh"
+
+[[menu_items]]
+name = "GPG Setup"
+description = "GNU Privacy Guard setup and configuration"
+action_type = "script"
+script_path = "./gpg-setup.sh"
+
+[[menu_items]]
+name = "Password Managers"
+description = "Bitwarden, KeePass, and other password managers"
+action_type = "script"
+script_path = "./password-manager.sh"
+
+[[menu_items]]
+name = "Disk Encryption"
+description = "LUKS, VeraCrypt, and disk encryption tools"
+action_type = "script"
+script_path = "./disk-encryption.sh"
+
+[[menu_items]]
+name = "SSH Key Management"
+description = "SSH key generation and management"
+action_type = "script"
+script_path = "./ssh-keys.sh"
+
+[[menu_items]]
+name = "Certificate Management"
+description = "SSL/TLS certificate tools"
+action_type = "script"
+script_path = "./certificates.sh"

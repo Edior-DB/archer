@@ -1,0 +1,43 @@
+# Security Analysis & Testing
+heading_color = "orange"
+description = "Penetration testing, vulnerability scanning, and security auditing"
+
+[[quick_actions]]
+name = "Basic Security Audit"
+description = "Basic security auditing tools"
+command = "./security-audit.sh"
+
+[[quick_actions]]
+name = "Complete Security Analysis"
+description = "All security analysis and testing tools"
+command = "./security-audit.sh && ./vulnerability-scanning.sh && ./penetration-testing.sh"
+
+[[menu_items]]
+name = "Security Audit"
+description = "System security auditing tools"
+action_type = "script"
+script_path = "./security-audit.sh"
+
+[[menu_items]]
+name = "Vulnerability Scanning"
+description = "Network and system vulnerability scanners"
+action_type = "script"
+script_path = "./vulnerability-scanning.sh"
+
+[[menu_items]]
+name = "Penetration Testing"
+description = "Penetration testing and ethical hacking tools"
+action_type = "script"
+script_path = "./penetration-testing.sh"
+
+[[menu_items]]
+name = "Network Analysis"
+description = "Network security analysis tools"
+action_type = "script"
+script_path = "./network-analysis.sh"
+
+[[menu_items]]
+name = "Forensics Tools"
+description = "Digital forensics and investigation tools"
+action_type = "script"
+script_path = "./forensics.sh"

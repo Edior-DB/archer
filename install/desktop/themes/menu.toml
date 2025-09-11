@@ -1,0 +1,57 @@
+# Desktop Themes
+heading_color = "blue"
+description = "Cupertini, Redmondi, Vanilla themes and desktop customizations"
+
+[[quick_actions]]
+name = "Cupertini Theme"
+description = "macOS-inspired desktop theme"
+command = "./cupertini.sh"
+
+[[quick_actions]]
+name = "Redmondi Theme"
+description = "Windows-inspired desktop theme"
+command = "./redmondi.sh"
+
+[[quick_actions]]
+name = "Vanilla Theme"
+description = "Clean minimal desktop theme"
+command = "./vanilla.sh"
+
+[[quick_actions]]
+name = "All Themes"
+description = "Install all available themes"
+command = "./install.sh --all"
+
+[[menu_items]]
+name = "Cupertini Theme"
+description = "macOS-inspired KDE theme with dock and aesthetics"
+action_type = "script"
+script_path = "./cupertini.sh"
+
+[[menu_items]]
+name = "Redmondi Theme"
+description = "Windows-inspired theme with taskbar layout"
+action_type = "script"
+script_path = "./redmondi.sh"
+
+[[menu_items]]
+name = "Vanilla Theme"
+description = "Clean minimal theme with default KDE aesthetics"
+action_type = "script"
+script_path = "./vanilla.sh"
+
+[[menu_items]]
+name = "Theme Uninstaller"
+description = "Remove installed themes and restore defaults"
+action_type = "script"
+script_path = "./de-installer.sh"
+
+[[menu_items]]
+name = "Custom Theme Selection"
+description = "Select specific themes to install"
+action_type = "multiselect"
+items = [
+    { name = "Cupertini Theme", script = "./cupertini.sh" },
+    { name = "Redmondi Theme", script = "./redmondi.sh" },
+    { name = "Vanilla Theme", script = "./vanilla.sh" }
+]

@@ -1,0 +1,37 @@
+# Network Security & VPN
+heading_color = "red"
+description = "VPN clients, firewall, and network security"
+
+[[quick_actions]]
+name = "Essential Security"
+description = "Basic firewall and VPN setup"
+command = "./firewall-setup.sh && ./vpn-clients.sh"
+
+[[quick_actions]]
+name = "Complete Security Suite"
+description = "All network security tools"
+command = "./firewall-setup.sh && ./vpn-clients.sh && ./network-security.sh"
+
+[[menu_items]]
+name = "Firewall Setup"
+description = "Configure UFW/iptables firewall"
+action_type = "script"
+script_path = "./firewall-setup.sh"
+
+[[menu_items]]
+name = "VPN Clients"
+description = "OpenVPN, WireGuard, and other VPN clients"
+action_type = "script"
+script_path = "./vpn-clients.sh"
+
+[[menu_items]]
+name = "Network Security Tools"
+description = "Security scanning and monitoring tools"
+action_type = "script"
+script_path = "./network-security.sh"
+
+[[menu_items]]
+name = "Intrusion Detection"
+description = "Network intrusion detection systems"
+action_type = "script"
+script_path = "./intrusion-detection.sh"

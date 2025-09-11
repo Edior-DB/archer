@@ -1,187 +1,173 @@
 #!/bin/bash
 
-# System Enhancement Fonts Installer
-# Essential fonts for better system typography
+# Font Installation Manager for Archer
+# Comprehensive font collection installer with user choice
 
 set -e
 
 # Source common functions
-source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../../..}/install/system/common-funcs.sh"
+source "${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../..}/install/system/common-funcs.sh"
 
-show_banner "System Enhancement Fonts Installation"
+show_banner "Font Installation Manager"
 
-install_system_fonts() {
-    echo -e "${BLUE}Installing system enhancement fonts...${NC}"
+# Create fonts directory if it doesn't exist
+ensure_fonts_directory() {
+    mkdir -p ~/.local/share/fonts
+    mkdir -p /tmp/archer-fonts
+}
 
-    # Essential system fonts
-    echo -e "${YELLOW}Installing essential system fonts...${NC}"
+# Clean up temporary files
+cleanup_temp() {
+    rm -rf /tmp/archer-fonts
+}
 
-    local essential_fonts=(
-        "ttf-dejavu"              # High-quality default fonts
-        "ttf-liberation"          # Microsoft-compatible fonts
-        "noto-fonts"              # Google's comprehensive Unicode fonts
-        "noto-fonts-emoji"        # Emoji support
-        "ttf-droid"               # Android fonts (VERIFIED CORRECT NAME)
-        "cantarell-fonts"         # GNOME default
-    )
+# Refresh font cache
+refresh_fonts() {
+    echo -e "${BLUE}Refreshing font cache...${NC}"
+    fc-cache -fv
+    echo -e "${GREEN}Font cache updated${NC}"
+}
 
-    for font in "${essential_fonts[@]}"; do
-        if install_with_retries "$font"; then
-            echo -e "${GREEN}✓ $font installed${NC}"
-        else
-            echo -e "${YELLOW}⚠ $font not available${NC}"
-        fi
-    done
+# Font installation functions
+install_font_collection() {
+    local collection="$1"
 
-    # International language support
-    if confirm_action "Install extended language support fonts?"; then
-        echo -e "${CYAN}Installing international fonts...${NC}"
+    ensure_fonts_directory
 
-        local intl_fonts=(
-            "noto-fonts-cjk"         # Chinese, Japanese, Korean (VERIFIED AVAILABLE)
-            "noto-fonts-extra"       # Additional scripts
-            "ttf-arphic-ukai"        # Chinese Kaiti (VERIFIED AVAILABLE)
-            "ttf-arphic-uming"       # Chinese Ming (VERIFIED AVAILABLE)
-            "ttf-baekmuk"            # Korean fonts (VERIFIED AVAILABLE)
-            "adobe-source-han-sans-otc-fonts"  # CJK sans (CORRECTED NAME)
-            "adobe-source-han-serif-otc-fonts" # CJK serif (CORRECTED NAME)
-        )
+    case "$collection" in
+        "nerd-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/nerd-fonts.sh"
+            ;;
+        "google-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/google-fonts.sh"
+            ;;
+        "adobe-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/adobe-fonts.sh"
+            ;;
+        "coding-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/coding-fonts.sh"
+            ;;
+        "system-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/system-fonts.sh"
+            ;;
+        "apple-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/apple-fonts.sh"
+            ;;
+        "microsoft-fonts")
+            bash "${ARCHER_DIR}/install/desktop/fonts/microsoft-fonts.sh"
+            ;;
+        *)
+            echo -e "${RED}Unknown font collection: $collection${NC}"
+            return 1
+            ;;
+    esac
 
-        for font in "${intl_fonts[@]}"; do
-            if install_with_retries "$font"; then
-                echo -e "${GREEN}✓ $font installed${NC}"
-            else
-                echo -e "${YELLOW}⚠ $font not available${NC}"
-            fi
-        done
-    fi
+    refresh_fonts
+}
 
-    # Mathematical and scientific fonts
-    if confirm_action "Install mathematical and scientific fonts?"; then
-        echo -e "${CYAN}Installing math/science fonts...${NC}"
-
-        local math_fonts=(
-            "texlive-fontsextra"     # LaTeX math fonts
-            "otf-latin-modern"       # Modern LaTeX fonts
-        )
-
-        for font in "${math_fonts[@]}"; do
-            if install_with_retries "$font"; then
-                echo -e "${GREEN}✓ $font installed${NC}"
-            else
-                echo -e "${YELLOW}⚠ $font not available${NC}"
-            fi
-        done
-    fi
-
-    # Configure fontconfig for better rendering
-    if confirm_action "Configure fontconfig for better font rendering?"; then
-        echo -e "${CYAN}Configuring fontconfig...${NC}"
-
-        mkdir -p ~/.config/fontconfig
-        cat > ~/.config/fontconfig/fonts.conf << 'EOF'
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-  <!-- Enable sub-pixel rendering -->
-  <match target="font">
-    <edit name="rgba" mode="assign"><const>rgb</const></edit>
-  </match>
-
-  <!-- Enable hinting -->
-  <match target="font">
-    <edit name="hinting" mode="assign"><bool>true</bool></edit>
-  </match>
-
-  <!-- Hinting style -->
-  <match target="font">
-    <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>
-  </match>
-
-  <!-- Anti-aliasing -->
-  <match target="font">
-    <edit name="antialias" mode="assign"><bool>true</bool></edit>
-  </match>
-
-  <!-- Font substitutions for better defaults -->
-  <alias>
-    <family>serif</family>
-    <prefer>
-      <family>Noto Serif</family>
-      <family>Liberation Serif</family>
-      <family>DejaVu Serif</family>
-    </prefer>
-  </alias>
-
-  <alias>
-    <family>sans-serif</family>
-    <prefer>
-      <family>Noto Sans</family>
-      <family>Liberation Sans</family>
-      <family>DejaVu Sans</family>
-    </prefer>
-  </alias>
-
-  <alias>
-    <family>monospace</family>
-    <prefer>
-      <family>Noto Sans Mono</family>
-      <family>Liberation Mono</family>
-      <family>DejaVu Sans Mono</family>
-    </prefer>
-  </alias>
-</fontconfig>
-EOF
-        echo -e "${GREEN}✓ Fontconfig configured for better rendering${NC}"
-    fi
-
-    # Modern coding and display fonts
-    if confirm_action "Install modern coding and display fonts?"; then
-        echo -e "${CYAN}Installing modern fonts...${NC}"
-
-        local modern_fonts=(
-            "ttf-jetbrains-mono"     # JetBrains coding font with ligatures
-            "ttf-cascadia-code"      # Microsoft's coding font
-            "ttf-hack"               # Hand groomed coding font
-            "ttf-fira-code"          # Monospace with ligatures
-            "ttf-fira-sans"          # Mozilla's sans-serif
-            "ttf-fira-mono"          # Mozilla's monospace
-            "ttf-inconsolata"        # Monospace for code listings
-            "ttf-lato"               # Modern sans-serif
-        )
-
-        for font in "${modern_fonts[@]}"; do
-            if install_with_retries "$font"; then
-                echo -e "${GREEN}✓ $font installed${NC}"
-            else
-                echo -e "${YELLOW}⚠ $font not available${NC}"
-            fi
-        done
-    fi
-
-    # Update font cache
-    echo -e "${CYAN}Updating font cache...${NC}"
-    fc-cache -fv >/dev/null 2>&1
-
-    # Set improved default fonts
-    if confirm_action "Set Noto fonts as system defaults?"; then
-        if command -v gsettings &> /dev/null; then
-            gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
-            gsettings set org.gnome.desktop.interface document-font-name "Noto Serif 11"
-            gsettings set org.gnome.desktop.interface monospace-font-name "Noto Sans Mono 10"
-            echo -e "${GREEN}GNOME fonts updated to Noto family${NC}"
-        fi
-
-        # For KDE
-        if command -v kwriteconfig5 &> /dev/null; then
-            kwriteconfig5 --file kdeglobals --group General --key font "Noto Sans,11,-1,5,50,0,0,0,0,0"
-            kwriteconfig5 --file kdeglobals --group General --key fixed "Noto Sans Mono,10,-1,5,50,0,0,0,0,0"
-            echo -e "${GREEN}KDE fonts updated to Noto family${NC}"
-        fi
-    fi
+# Main font installation menu
+show_font_menu() {
+    echo -e "${CYAN}===============================================${NC}"
+    echo -e "${CYAN}         Font Collection Installer            ${NC}"
+    echo -e "${CYAN}===============================================${NC}"
+    echo ""
+    echo -e "${GREEN}Programming & Development:${NC}"
+    echo "  1) Nerd Fonts Collection (JetBrains, Fira Code, etc.)"
+    echo "  2) Coding Fonts (iA Writer, SF Mono, Source Code Pro)"
+    echo ""
+    echo -e "${GREEN}System & UI Fonts:${NC}"
+    echo "  3) Google Fonts Collection (Roboto, Open Sans, etc.)"
+    echo "  4) Adobe Source Fonts (Source Sans, Source Serif)"
+    echo "  5) System Enhancement Fonts (Better defaults)"
+    echo ""
+    echo -e "${GREEN}Commercial Fonts:${NC}"
+    echo "  6) Apple Fonts (SF Pro, NY, Monaco)"
+    echo "  7) Microsoft Fonts (Segoe UI, Cascadia Code)"
+    echo ""
+    echo -e "${YELLOW}Quick Install:${NC}"
+    echo "  8) Essential Developer Fonts (Nerd + Coding)"
+    echo "  9) Complete Font Package (All collections)"
+    echo ""
+    echo "  0) Exit"
+    echo ""
+    echo -e "${CYAN}===============================================${NC}"
 }
 
 # Main execution
+main() {
+    echo -e "${YELLOW}This will install font collections to improve your system typography.${NC}"
+    if ! confirm_action "Continue with font installation?"; then
+        echo -e "${YELLOW}Font installation cancelled.${NC}"
+        exit 0
+    fi
+
+    while true; do
+        show_font_menu
+
+        choice=$(get_input "Enter your choice (0-9):" "1")
+
+        case $choice in
+            1)
+                echo -e "${BLUE}Installing Nerd Fonts Collection...${NC}"
+                install_font_collection "nerd-fonts"
+                ;;
+            2)
+                echo -e "${BLUE}Installing Coding Fonts...${NC}"
+                install_font_collection "coding-fonts"
+                ;;
+            3)
+                echo -e "${BLUE}Installing Google Fonts...${NC}"
+                install_font_collection "google-fonts"
+                ;;
+            4)
+                echo -e "${BLUE}Installing Adobe Fonts...${NC}"
+                install_font_collection "adobe-fonts"
+                ;;
+            5)
+                echo -e "${BLUE}Installing System Enhancement Fonts...${NC}"
+                install_font_collection "system-fonts"
+                ;;
+            6)
+                echo -e "${BLUE}Installing Apple Fonts...${NC}"
+                install_font_collection "apple-fonts"
+                ;;
+            7)
+                echo -e "${BLUE}Installing Microsoft Fonts...${NC}"
+                install_font_collection "microsoft-fonts"
+                ;;
+            8)
+                echo -e "${BLUE}Installing Essential Developer Fonts...${NC}"
+                install_font_collection "nerd-fonts"
+                install_font_collection "coding-fonts"
+                ;;
+            9)
+                echo -e "${BLUE}Installing Complete Font Package...${NC}"
+                if confirm_action "This will install ALL font collections. Continue?"; then
+                    install_font_collection "nerd-fonts"
+                    install_font_collection "coding-fonts"
+                    install_font_collection "google-fonts"
+                    install_font_collection "adobe-fonts"
+                    install_font_collection "system-fonts"
+                    install_font_collection "apple-fonts"
+                    install_font_collection "microsoft-fonts"
+                fi
+                ;;
+            0)
+                echo -e "${GREEN}Font installation completed!${NC}"
+                cleanup_temp
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}Invalid choice. Please try again.${NC}"
+                ;;
+        esac
+
+        echo ""
+        wait_for_input "Press Enter to continue..."
+    done
+}
+
+# Run main function
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    install_system_fonts
+    main "$@"
 fi

@@ -1,0 +1,37 @@
+# Network Sharing & File Services
+heading_color = "orange"
+description = "Samba, NFS, and network file sharing"
+
+[[quick_actions]]
+name = "Samba Setup"
+description = "Install and configure Samba sharing"
+command = "./samba.sh"
+
+[[quick_actions]]
+name = "Complete Sharing Suite"
+description = "All file sharing protocols"
+command = "./samba.sh && ./nfs.sh && ./ftp.sh"
+
+[[menu_items]]
+name = "Samba File Sharing"
+description = "Windows-compatible file sharing (SMB/CIFS)"
+action_type = "script"
+script_path = "./samba.sh"
+
+[[menu_items]]
+name = "NFS File Sharing"
+description = "Unix/Linux network file system"
+action_type = "script"
+script_path = "./nfs.sh"
+
+[[menu_items]]
+name = "FTP Server"
+description = "FTP/SFTP server setup"
+action_type = "script"
+script_path = "./ftp.sh"
+
+[[menu_items]]
+name = "Media Streaming"
+description = "DLNA/UPnP media streaming servers"
+action_type = "script"
+script_path = "./media-streaming.sh"

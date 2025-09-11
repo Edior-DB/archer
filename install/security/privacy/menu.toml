@@ -1,0 +1,43 @@
+# Privacy & Anonymity Tools
+heading_color = "purple"
+description = "Tor, VPN, and privacy protection tools"
+
+[[quick_actions]]
+name = "Essential Privacy"
+description = "Tor browser and basic privacy tools"
+command = "./tor-setup.sh && ./privacy-tools.sh"
+
+[[quick_actions]]
+name = "Complete Privacy Suite"
+description = "All privacy and anonymity tools"
+command = "./tor-setup.sh && ./vpn-tools.sh && ./privacy-tools.sh && ./anonymity-tools.sh"
+
+[[menu_items]]
+name = "Tor Setup"
+description = "Tor browser and network anonymity"
+action_type = "script"
+script_path = "./tor-setup.sh"
+
+[[menu_items]]
+name = "VPN Tools"
+description = "VPN clients and privacy VPN tools"
+action_type = "script"
+script_path = "./vpn-tools.sh"
+
+[[menu_items]]
+name = "Privacy Tools"
+description = "Privacy-focused browsers and tools"
+action_type = "script"
+script_path = "./privacy-tools.sh"
+
+[[menu_items]]
+name = "Anonymity Tools"
+description = "Advanced anonymity and privacy tools"
+action_type = "script"
+script_path = "./anonymity-tools.sh"
+
+[[menu_items]]
+name = "Secure Communication"
+description = "Encrypted messaging and communication"
+action_type = "script"
+script_path = "./secure-communication.sh"

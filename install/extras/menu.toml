@@ -1,0 +1,63 @@
+# Additional Software & Tools
+heading_color = "green"
+description = "Web browsers, virtualization, and extra applications"
+
+[[quick_actions]]
+name = "Essential Extras"
+description = "Popular browsers and basic tools"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "All Extra Tools"
+description = "Complete extra software collection"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "Browsers Only"
+description = "Install web browsers (Firefox, Brave, etc.)"
+command = "./install.sh --browsers"
+
+[[quick_actions]]
+name = "Virtualization Only"
+description = "VM tools and containerization"
+command = "./install.sh --virtualization"
+
+[[menu_items]]
+name = "Web Browsers"
+description = "Firefox, Brave, Chrome, and other browsers"
+action_type = "submenu"
+submenu_path = "./browsers/menu.toml"
+
+[[menu_items]]
+name = "Virtualization"
+description = "VirtualBox, QEMU, Docker, and VM management"
+action_type = "submenu"
+submenu_path = "./virtualization/menu.toml"
+
+[[menu_items]]
+name = "Communication"
+description = "Discord, Slack, messaging applications"
+action_type = "submenu"
+submenu_path = "./communication/menu.toml"
+
+[[menu_items]]
+name = "Utilities"
+description = "Archive tools, file managers, system utilities"
+action_type = "submenu"
+submenu_path = "./utilities/menu.toml"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific extra applications"
+action_type = "multiselect"
+items = [
+    { name = "Firefox Browser", script = "./browsers/firefox-install.sh" },
+    { name = "Brave Browser", script = "./browsers/brave-install.sh" },
+    { name = "Google Chrome", script = "./browsers/chrome-install.sh" },
+    { name = "VirtualBox", script = "./virtualization/virtualbox.sh" },
+    { name = "QEMU/KVM", script = "./virtualization/qemu-kvm.sh" },
+    { name = "Virt Manager", script = "./virtualization/virt-manager-install.sh" },
+    { name = "Discord", script = "./communication/discord.sh" },
+    { name = "Archive Tools", script = "./utilities/archive-tools.sh" },
+    { name = "File Managers", script = "./utilities/file-managers.sh" }
+]

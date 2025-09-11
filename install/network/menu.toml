@@ -1,0 +1,57 @@
+# Network Configuration & Tools
+heading_color = "purple"
+description = "WiFi setup, network tools, and connectivity"
+
+[[quick_actions]]
+name = "Essential Network"
+description = "WiFi setup and basic network tools"
+command = "./install.sh --essential"
+
+[[quick_actions]]
+name = "Complete Network Suite"
+description = "All network tools and utilities"
+command = "./install.sh --all"
+
+[[quick_actions]]
+name = "WiFi Setup Only"
+description = "Configure WiFi connectivity"
+command = "./wifi-setup.sh"
+
+[[menu_items]]
+name = "WiFi Configuration"
+description = "WiFi drivers, setup, and troubleshooting"
+action_type = "submenu"
+submenu_path = "./wifi/menu.toml"
+
+[[menu_items]]
+name = "Network Tools"
+description = "Network monitoring, testing, and diagnostics"
+action_type = "submenu"
+submenu_path = "./tools/menu.toml"
+
+[[menu_items]]
+name = "VPN & Security"
+description = "VPN clients, firewall, network security"
+action_type = "submenu"
+submenu_path = "./security/menu.toml"
+
+[[menu_items]]
+name = "Network Sharing"
+description = "Samba, NFS, file sharing protocols"
+action_type = "submenu"
+submenu_path = "./sharing/menu.toml"
+
+[[menu_items]]
+name = "Custom Selection"
+description = "Select specific network components"
+action_type = "multiselect"
+items = [
+    { name = "WiFi Setup", script = "./wifi/wifi-setup.sh" },
+    { name = "WiFi Drivers", script = "./wifi/wifi-install.sh" },
+    { name = "Network Monitoring", script = "./tools/network-monitoring.sh" },
+    { name = "Network Diagnostics", script = "./tools/network-diagnostics.sh" },
+    { name = "VPN Clients", script = "./security/vpn-clients.sh" },
+    { name = "Firewall Setup", script = "./security/firewall-setup.sh" },
+    { name = "Samba Sharing", script = "./sharing/samba.sh" },
+    { name = "SSH Tools", script = "./tools/ssh-tools.sh" }
+]

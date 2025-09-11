@@ -1,0 +1,43 @@
+# Network Tools & Utilities
+heading_color = "green"
+description = "Network monitoring, diagnostics, and utilities"
+
+[[quick_actions]]
+name = "Essential Network Tools"
+description = "Basic network utilities"
+command = "./basic-tools.sh"
+
+[[quick_actions]]
+name = "Complete Tool Suite"
+description = "All network tools and utilities"
+command = "./basic-tools.sh && ./network-monitoring.sh && ./network-diagnostics.sh && ./ssh-tools.sh"
+
+[[menu_items]]
+name = "Basic Network Tools"
+description = "Essential network utilities (ping, wget, curl, etc.)"
+action_type = "script"
+script_path = "./basic-tools.sh"
+
+[[menu_items]]
+name = "Network Monitoring"
+description = "Real-time network monitoring tools"
+action_type = "script"
+script_path = "./network-monitoring.sh"
+
+[[menu_items]]
+name = "Network Diagnostics"
+description = "Network scanning and diagnostic tools"
+action_type = "script"
+script_path = "./network-diagnostics.sh"
+
+[[menu_items]]
+name = "SSH Tools"
+description = "SSH client, server, and key management"
+action_type = "script"
+script_path = "./ssh-tools.sh"
+
+[[menu_items]]
+name = "Network Utilities"
+description = "Advanced network utilities and tools"
+action_type = "script"
+script_path = "./network-utilities.sh"
