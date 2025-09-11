@@ -29,7 +29,6 @@ install_all_scripts() {
         "elixir.sh"
         "typescript.sh"
         "uv.sh"
-        "lua.sh"
     )
 
     local total=${#scripts[@]}
@@ -188,7 +187,6 @@ main() {
                 echo "  elixir.sh        Elixir and Erlang"
                 echo "  typescript.sh    TypeScript (via npm)"
                 echo "  uv.sh            UV Python package manager"
-                echo "  lua.sh           Lua programming language"
                 echo ""
                 echo "Examples:"
                 echo "  $0                                    # Install all languages"

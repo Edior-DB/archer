@@ -14,8 +14,12 @@ files = []
 directories = []
 
 [display]
-"install.sh" = "Install"
-"nodejs.sh" = "Nodejs"
-"ruby.sh" = "Ruby"
-"uv.sh" = "Uv"
-"scripting-web/" = "Scripting Web"
+"install.sh" = "Install All Scripting & Web Languages"
+"nodejs.sh" = "Node.js (JavaScript Runtime)"
+"ruby.sh" = "Ruby (Dynamic Programming)"
+"uv.sh" = "UV (Python Package Manager)"
+"php.sh" = "PHP (Web Development)"
+"perl.sh" = "Perl (Text Processing)"
+"raku.sh" = "Raku (Modern Perl)"
+"elixir.sh" = "Elixir (Functional/Concurrent)"
+"typescript.sh" = "TypeScript (Typed JavaScript)"
