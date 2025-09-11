@@ -219,17 +219,10 @@ class ArcherUI:
 
     def show_script_progress(self, description: str, command: str) -> bool:
         """Show progress for shell script execution with panel interface"""
-        from rich.layout import Layout
         from rich.live import Live
         from rich.panel import Panel
         from rich.text import Text
-
-        # Create layout structure
-        layout = Layout()
-        layout.split_column(
-            Layout(name="progress_panel", size=6),
-            Layout(name="status", size=1)
-        )
+        from rich.console import Group
 
         # Initialize progress components
         progress = Progress(
@@ -255,19 +248,23 @@ class ArcherUI:
         output_lines = []
         current_operation = "Starting installation..."
 
-        with Live(layout, console=self.console, refresh_per_second=4, transient=False) as live:
+        with Live(console=self.console, refresh_per_second=4, transient=False) as live:
 
             def update_display():
-                # Update progress panel
-                progress_panel = Panel(
-                    progress,
+                # Create status text
+                status_text = Text(current_operation, style="cyan")
+
+                # Group progress and status together
+                content_group = Group(progress, "", status_text)
+
+                # Create panel with both progress and status inside
+                panel = Panel(
+                    content_group,
                     title=f"[bold blue]🔧 {description}[/bold blue]",
                     border_style="blue",
                     padding=(0, 1)
                 )
-                layout["progress_panel"].update(progress_panel)
-
-                # Update status line
+                live.update(panel)
                 status_text = Text(current_operation, style="cyan")
                 layout["status"].update(status_text)
 
@@ -417,17 +414,10 @@ class ArcherUI:
 
     def show_simple_progress(self, description: str, command: str) -> bool:
         """Show simple spinner-based progress with panel interface for quick installations"""
-        from rich.layout import Layout
         from rich.live import Live
         from rich.panel import Panel
         from rich.text import Text
-
-        # Create layout structure
-        layout = Layout()
-        layout.split_column(
-            Layout(name="progress_panel", size=6),
-            Layout(name="status", size=1)
-        )
+        from rich.console import Group
 
         # Initialize progress components
         progress = Progress(
@@ -527,17 +517,10 @@ class ArcherUI:
 
     def show_multi_package_progress(self, description: str, packages: List[str], command_template: str) -> bool:
         """Show nala-style progress with panel for multiple packages"""
-        from rich.layout import Layout
         from rich.live import Live
         from rich.panel import Panel
         from rich.text import Text
-
-        # Create layout structure
-        layout = Layout()
-        layout.split_column(
-            Layout(name="progress_panel", size=6),
-            Layout(name="status", size=1)
-        )
+        from rich.console import Group
 
         # Initialize progress components
         progress = Progress(
@@ -555,6 +538,24 @@ class ArcherUI:
         success_count = 0
         failed_packages = []
         current_status = "Starting installation..."
+
+        with Live(console=self.console, refresh_per_second=4, transient=False) as live:
+
+            def update_display():
+                # Create status text
+                status_text = Text(current_status, style="cyan")
+
+                # Group progress and status together
+                content_group = Group(progress, "", status_text)
+
+                # Create panel with both progress and status inside
+                panel = Panel(
+                    content_group,
+                    title=f"[bold blue]📦 {description}[/bold blue]",
+                    border_style="blue",
+                    padding=(0, 1)
+                )
+                live.update(panel)
 
         with Live(layout, console=self.console, refresh_per_second=4, transient=False) as live:
 
@@ -678,16 +679,20 @@ class ArcherUI:
 
     def show_nala_progress(self, description: str, command: str) -> bool:
         """Show progress while executing a command with nala-style interface using panel"""
-        from rich.layout import Layout
         from rich.live import Live
         from rich.panel import Panel
         from rich.text import Text
+        from rich.console import Group
 
-        # Create layout structure
-        layout = Layout()
-        layout.split_column(
-            Layout(name="progress_panel", size=6),
-            Layout(name="status", size=1)
+        # Start the subprocess
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         )
 
         # Initialize progress components
@@ -702,41 +707,125 @@ class ArcherUI:
 
         main_task = progress.add_task(f"[bold]{description}", total=100)
 
-        # Start the subprocess
-        process = subprocess.Popen(
-            command,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
-
         # Progress tracking variables
         output_lines = []
         main_progress = 0
-        current_operation = "Starting..."
+        current_operation = "Starting installation..."
         operations_seen = set()
 
-        with Live(layout, console=self.console, refresh_per_second=4, transient=False) as live:
+        with Live(console=self.console, refresh_per_second=4, transient=False) as live:
 
             def update_display():
-                # Update progress panel
-                progress_panel = Panel(
-                    progress,
+                # Create status text
+                status_text = Text(current_operation, style="cyan")
+
+                # Group progress and status together
+                content_group = Group(progress, "", status_text)
+
+                # Create panel with both progress and status inside
+                panel = Panel(
+                    content_group,
                     title=f"[bold blue]📦 {description}[/bold blue]",
                     border_style="blue",
                     padding=(0, 1)
                 )
-                layout["progress_panel"].update(progress_panel)
-
-                # Update status line
-                status_text = Text(current_operation, style="cyan")
-                layout["status"].update(status_text)
+                live.update(panel)
 
             # Initial display
             update_display()
+
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+
+                if output:
+                    line = output.strip()
+                    output_lines.append(line)
+
+                    # Keep only last 50 lines
+                    if len(output_lines) > 50:
+                        output_lines = output_lines[-25:]
+
+                    # Parse different types of operations for progress estimation
+                    line_lower = line.lower()
+
+                    # Detect different phases
+                    if any(keyword in line_lower for keyword in ['downloading', 'download']):
+                        if 'downloading' not in operations_seen:
+                            operations_seen.add('downloading')
+                            main_progress = min(main_progress + 20, 90)
+                        current_operation = "Downloading packages..."
+
+                    elif any(keyword in line_lower for keyword in ['installing', 'install']):
+                        if 'installing' not in operations_seen:
+                            operations_seen.add('installing')
+                            main_progress = min(main_progress + 25, 90)
+                        current_operation = "Installing packages..."
+
+                    elif any(keyword in line_lower for keyword in ['building', 'compiling', 'compile']):
+                        if 'building' not in operations_seen:
+                            operations_seen.add('building')
+                            main_progress = min(main_progress + 30, 90)
+                        current_operation = "Building from source..."
+
+                    elif any(keyword in line_lower for keyword in ['configuring', 'configure']):
+                        if 'configuring' not in operations_seen:
+                            operations_seen.add('configuring')
+                            main_progress = min(main_progress + 15, 90)
+                        current_operation = "Configuring installation..."
+
+                    elif any(keyword in line_lower for keyword in ['extracting', 'extract']):
+                        if 'extracting' not in operations_seen:
+                            operations_seen.add('extracting')
+                            main_progress = min(main_progress + 10, 90)
+                        current_operation = "Extracting packages..."
+
+                    elif any(keyword in line_lower for keyword in ['processing', 'process']):
+                        current_operation = "Processing installation..."
+
+                    elif any(keyword in line_lower for keyword in ['complete', 'finished', 'done', 'success']):
+                        current_operation = "Completing installation..."
+                        main_progress = min(main_progress + 10, 100)
+
+                    # Update with specific package/file info if available
+                    if len(line) > 0 and not any(skip in line_lower for skip in ['warning:', 'note:', 'info:']):
+                        # Try to extract meaningful package names or files
+                        display_line = line[:80] + "..." if len(line) > 80 else line
+                        if any(keyword in line_lower for keyword in ['package', 'installing', 'downloading']):
+                            current_operation = f"Processing: {display_line}"
+
+                    # Update progress bar
+                    progress.update(main_task, completed=main_progress)
+
+                    # Update display
+                    update_display()
+
+                    # Small delay to make progress visible
+                    time.sleep(0.05)
+
+            # Final completion
+            return_code = process.poll()
+
+            if return_code == 0:
+                progress.update(main_task, completed=100)
+                current_operation = f"✓ {description} completed successfully!"
+                update_display()
+                time.sleep(1)  # Show completion for a moment
+                return True
+            else:
+                current_operation = f"✗ {description} failed (exit code: {return_code})"
+                update_display()
+                time.sleep(1)  # Show error for a moment
+
+                # Show error details after the live display ends
+                if output_lines:
+                    self.console.print(f"\n[yellow]Last output (for debugging):[/yellow]")
+                    for line in output_lines[-5:]:
+                        if line.strip():
+                            self.console.print(f"  [dim]{line}[/dim]")
+
+                return False
 
             while True:
                 output = process.stdout.readline()
