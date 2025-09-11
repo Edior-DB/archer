@@ -21,7 +21,6 @@ install_all_components() {
 
     # Array of all installation scripts and subdirectories in order
     local components=(
-        "dev-tools.sh"
         "editors/install.sh"
         "terminals/install.sh"
         "system-programming/install.sh"

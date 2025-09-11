@@ -19,5 +19,4 @@ files = []
 directories = []
 
 [display]
-"dev-tools.sh" = "General Development Tools"
 "install.sh" = "Install All Development Tools"

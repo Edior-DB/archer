@@ -14,5 +14,11 @@ files = []
 directories = []
 
 [display]
-"install.sh" = "Install"
-"database-tools/" = "Database Tools"
+"install.sh" = "All Database Tools"
+"postgresql.sh" = "PostgreSQL Server"
+"mariadb.sh" = "MariaDB/MySQL Server"
+"redis.sh" = "Redis Cache/Store"
+"sqlite.sh" = "SQLite Database"
+"mongodb.sh" = "MongoDB NoSQL"
+"dbeaver.sh" = "DBeaver GUI Client"
+"dbmate.sh" = "DBmate Migration Tool"
