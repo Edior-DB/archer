@@ -1,0 +1,67 @@
+# Scripting & Web Programming Menu
+# Dynamic languages for web development and scripting
+
+[menu]
+name = "Scripting & Web"
+description = "Dynamic languages for web development, scripting, and rapid prototyping"
+icon = "🌐"
+level = "sub"
+
+[options]
+# Individual languages
+1 = { display = "Node.js & npm", action = "script", target = "nodejs.sh" }
+2 = { display = "Ruby Programming Language", action = "script", target = "ruby.sh" }
+3 = { display = "PHP Programming Language", action = "script", target = "php.sh" }
+4 = { display = "Perl Programming Language", action = "script", target = "perl.sh" }
+5 = { display = "Raku (Perl 6)", action = "script", target = "raku.sh" }
+6 = { display = "Elixir & Erlang", action = "script", target = "elixir.sh" }
+7 = { display = "TypeScript (via npm)", action = "script", target = "typescript.sh" }
+8 = { display = "UV Python Package Manager", action = "script", target = "uv.sh" }
+9 = { display = "Lua & LuaRocks", action = "script", target = "lua.sh" }
+
+# Bulk actions
+"all" = { display = "Install All Scripting Languages", action = "install", target = "install.sh" }
+"web" = { display = "Web Development Stack", action = "custom", target = "install_web" }
+"essential" = { display = "Essential Only (Node.js, Ruby, PHP)", action = "custom", target = "install_essential" }
+"multi" = { display = "Select Multiple Languages", action = "multiselect", target = "available_scripts" }
+
+# Navigation
+"up" = { display = "← Back to Development", action = "back", target = ".." }
+"main" = { display = "← Main Menu", action = "back", target = "../.." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[multiselect]
+# Available scripting languages for multiple selection
+available_scripts = [
+    { file = "nodejs.sh", display = "Node.js", description = "JavaScript runtime for server-side development" },
+    { file = "ruby.sh", display = "Ruby", description = "Dynamic, open source programming language" },
+    { file = "php.sh", display = "PHP", description = "Popular general-purpose scripting language" },
+    { file = "perl.sh", display = "Perl", description = "Practical extraction and reporting language" },
+    { file = "raku.sh", display = "Raku", description = "Modern evolution of Perl" },
+    { file = "elixir.sh", display = "Elixir", description = "Dynamic, functional language for scalable applications" },
+    { file = "typescript.sh", display = "TypeScript", description = "Typed superset of JavaScript" },
+    { file = "uv.sh", display = "UV", description = "Fast Python package manager" },
+    { file = "lua.sh", display = "Lua", description = "Lightweight, embeddable scripting language" }
+]
+
+[quick_actions]
+# Define installation combinations
+install_essential = [
+    "nodejs.sh",
+    "ruby.sh",
+    "php.sh"
+]
+
+install_web = [
+    "nodejs.sh",
+    "typescript.sh",
+    "php.sh",
+    "uv.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "10-20 minutes"
+dependencies = ["base-system", "mise"]
+categories = ["development", "scripting", "web", "languages"]

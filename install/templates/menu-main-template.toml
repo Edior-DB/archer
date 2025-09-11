@@ -1,0 +1,34 @@
+# Standard Main Menu Template
+# Use this template for top-level category menus
+
+[menu]
+name = "Category Name"
+description = "Brief description of what this category contains"
+icon = "📁"
+level = "main"
+
+[options]
+# Numbered options for subcategories
+1 = { display = "Subcategory 1", action = "submenu", target = "subcategory1/" }
+2 = { display = "Subcategory 2", action = "submenu", target = "subcategory2/" }
+
+# Quick actions
+"all" = { display = "Install All Components", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Components Only", action = "custom", target = "install_essential" }
+
+# Navigation
+"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "component1.sh",
+    "component2.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = false
+estimated_time = "10-20 minutes"
+categories = ["main", "category"]

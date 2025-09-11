@@ -51,6 +51,376 @@ select_option() {
 }
 
 # ============================================================================
+# TOML MENU SYSTEM FUNCTIONS
+# ============================================================================
+
+# Check if Python3 and TOML module are available
+check_toml_requirements() {
+    # Check for Python 3.11+ with built-in tomllib support
+    if ! python3 -c "import tomllib" >/dev/null 2>&1; then
+        log_error "Python3 with tomllib is required for TOML menu support"
+        log_info "This requires Python 3.11+ which should be available in current Arch Linux"
+        log_info "If you're on an older system, install python311 via pacman:"
+        log_info "  sudo pacman -S python3"
+        log_info "Or update your system:"
+        log_info "  sudo pacman -Syu"
+        return 1
+    fi
+
+    # Check Python version to ensure 3.11+
+    local python_version
+    python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    local required_version="3.11"
+
+    if [[ "$(printf '%s
+' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]]; then
+        log_error "Python 3.11+ is required for built-in TOML support (found: $python_version)"
+        log_info "Please update Python via pacman:"
+        log_info "  sudo pacman -S python"
+        return 1
+    fi
+
+    log_debug "TOML requirements satisfied (Python $python_version with built-in tomllib)"
+    return 0
+}
+
+# Parse TOML menu configuration
+parse_menu_toml() {
+    local toml_file="$1"
+    local temp_script="/tmp/archer_toml_$$"
+
+    if [[ ! -f "$toml_file" ]]; then
+        echo -e "${RED}TOML file not found: $toml_file${NC}"
+        return 1
+    fi
+
+    # Ensure TOML requirements are met
+    if ! check_toml_requirements; then
+        return 1
+    fi
+
+    # Convert TOML to bash variables
+    python3 -c "
+import tomllib
+import sys
+import os
+
+try:
+    with open('$toml_file', 'rb') as f:
+        config = tomllib.load(f)
+    menu = config.get('menu', {})
+
+    print(f\"MENU_NAME='{menu.get('name', 'Unknown')}')\")
+    print(f\"MENU_DESCRIPTION='{menu.get('description', '')}')\")
+    print(f\"MENU_ICON='{menu.get('icon', '📁')}')\")
+    print(f\"MENU_LEVEL='{menu.get('level', 'main')}')\")
+
+    options = config.get('options', {})
+    for key, value in options.items():
+        display = value.get('display', str(key))
+        action = value.get('action', 'unknown')
+        target = value.get('target', '')
+        print(f\"OPTION_{key}='{display}|{action}|{target}')\")
+
+    # Export quick actions
+    quick_actions = config.get('quick_actions', {})
+    if quick_actions:
+        print(f\"QUICK_ACTIONS_AVAILABLE='true')\")
+        for action_name, items in quick_actions.items():
+            items_str = ','.join(items)
+            print(f\"QUICK_ACTION_{action_name}='{items_str}')\")
+
+except Exception as e:
+    print(f\"echo 'Error parsing TOML: {e}' >&2; exit 1\", file=sys.stderr)
+    sys.exit(1)
+" > "$temp_script"
+
+    if [[ $? -eq 0 ]]; then
+        source "$temp_script"
+        rm -f "$temp_script"
+        return 0
+    else
+        rm -f "$temp_script"
+        return 1
+    fi
+}
+
+# Discover TOML menus in directory
+discover_toml_menus() {
+    local base_dir="$1"
+    local menus=()
+
+    if [[ ! -d "$base_dir" ]]; then
+        return 1
+    fi
+
+    for dir in "$base_dir"/*; do
+        if [[ -d "$dir" && -f "$dir/menu.toml" ]]; then
+            menus+=("$(basename "$dir")")
+        fi
+    done
+
+    printf '%s\n' "${menus[@]}"
+}
+
+# Execute installation with gum progress indication
+execute_with_progress() {
+    local title="$1"
+    local command="$2"
+    shift 2
+    local args=("$@")
+
+    if [[ "$ARCHER_VERBOSE" == "true" ]]; then
+        echo -e "${BLUE}$title${NC}"
+        eval "$command" "${args[@]}"
+    else
+        gum spin --title="$title" --spinner="dot" --show-error -- \
+            bash -c "$command $(printf '%q ' "${args[@]}")"
+    fi
+}
+
+# Execute custom action from TOML
+execute_custom_action() {
+    local action_name="$1"
+    local toml_file="$2"
+    local menu_path="$3"
+
+    # Parse quick_actions from TOML
+    local action_items
+    action_items=$(python3 -c "
+import tomllib
+try:
+    with open('$toml_file', 'rb') as f:
+        config = tomllib.load(f)
+    quick_actions = config.get('quick_actions', {})
+    if '$action_name' in quick_actions:
+        for item in quick_actions['$action_name']:
+            print(item)
+except Exception:
+    pass
+")
+
+    if [[ -z "$action_items" ]]; then
+        echo -e "${RED}Custom action '$action_name' not defined${NC}"
+        wait_for_input
+        return 1
+    fi
+
+    echo -e "${BLUE}Executing custom action: $action_name${NC}"
+
+    while IFS= read -r item; do
+        if [[ -n "$item" ]]; then
+            if [[ "$ARCHER_VERBOSE" == "true" ]]; then
+                echo -e "${CYAN}Processing: $item${NC}"
+            fi
+
+            # Try to install as package first, then as script
+            if ! install_with_retries "$item"; then
+                local script_path="$menu_path/${item}.sh"
+                if [[ -f "$script_path" ]]; then
+                    echo -e "${YELLOW}Running script: $item${NC}"
+                    bash "$script_path"
+                else
+                    echo -e "${YELLOW}⚠ Could not find package or script: $item${NC}"
+                fi
+            fi
+        fi
+    done <<< "$action_items"
+
+    echo -e "${GREEN}✓ Custom action completed${NC}"
+    wait_for_input "Press Enter to return to menu..."
+}
+
+# Navigate to TOML-based menu
+navigate_to_toml_menu() {
+    local menu_path="$1"
+    local menu_file="$menu_path/menu.toml"
+
+    if [[ -f "$menu_file" ]]; then
+        show_toml_menu "$menu_file" "$menu_path"
+    else
+        echo -e "${RED}Menu not found: $menu_path${NC}"
+        wait_for_input "Press Enter to return to previous menu..."
+        return 1
+    fi
+}
+
+# Display and handle TOML-based menu
+show_toml_menu() {
+    local toml_file="$1"
+    local menu_path="$2"
+
+    # Parse TOML configuration
+    if ! parse_menu_toml "$toml_file"; then
+        echo -e "${RED}Failed to parse menu configuration${NC}"
+        wait_for_input
+        return 1
+    fi
+
+    while true; do
+        clear
+        show_menu_breadcrumb "$menu_path"
+
+        echo -e "${BLUE}${MENU_ICON} ${MENU_NAME}${NC}"
+        echo -e "${CYAN}${MENU_DESCRIPTION}${NC}"
+        echo ""
+
+        # Build options array from parsed TOML for gum
+        local gum_options=()
+        local option_actions=()
+        local option_targets=()
+        local option_keys=()
+
+        # Extract options from environment variables set by parse_menu_toml
+        for var in $(compgen -v OPTION_); do
+            local key="${var#OPTION_}"
+            local value="${!var}"
+            IFS='|' read -r display action target <<< "$value"
+            gum_options+=("$display")
+            option_actions+=("$action")
+            option_targets+=("$target")
+            option_keys+=("$key")
+        done
+
+        if [[ ${#gum_options[@]} -eq 0 ]]; then
+            echo -e "${RED}No menu options found${NC}"
+            wait_for_input
+            return 1
+        fi
+
+        # Use gum-based select_option() from common-funcs.sh
+        local selection=$(select_option "${gum_options[@]}")
+        local choice_index=-1
+
+        # Find selected option index
+        for i in "${!gum_options[@]}"; do
+            if [[ "${gum_options[$i]}" == "$selection" ]]; then
+                choice_index=$i
+                break
+            fi
+        done
+
+        if [[ $choice_index -eq -1 ]]; then
+            continue
+        fi
+
+        # Handle selection based on action type
+        local action="${option_actions[$choice_index]}"
+        local target="${option_targets[$choice_index]}"
+        local key="${option_keys[$choice_index]}"
+
+        case "$action" in
+            "submenu")
+                navigate_to_toml_menu "$menu_path/$target"
+                ;;
+            "install")
+                if confirm_action "Proceed with installation of $target?"; then
+                    execute_installer "$menu_path/$target" "$menu_path"
+                fi
+                ;;
+            "custom")
+                if confirm_action "Execute custom action: $target?"; then
+                    execute_custom_action "$target" "$toml_file" "$menu_path"
+                fi
+                ;;
+            "back")
+                return 0
+                ;;
+            "exit")
+                if confirm_action "Exit Archer?"; then
+                    exit 0
+                fi
+                ;;
+            *)
+                echo -e "${RED}Unknown action: $action${NC}"
+                wait_for_input
+                ;;
+        esac
+    done
+}
+
+# Execute installation script and return to menu
+execute_installer() {
+    local script_path="$1"
+    local menu_path="$2"
+
+    if [[ -f "$script_path" ]]; then
+        local script_name=$(basename "$script_path")
+
+        if execute_with_progress "Installing $script_name..." bash "$script_path"; then
+            echo -e "${GREEN}✓ Installation completed successfully${NC}"
+        else
+            echo -e "${RED}✗ Installation failed${NC}"
+            if confirm_action "Would you like to retry this installation?"; then
+                execute_installer "$script_path" "$menu_path"
+                return
+            fi
+        fi
+
+        wait_for_input "Press Enter to return to menu..."
+    else
+        echo -e "${RED}Script not found: $script_path${NC}"
+        wait_for_input
+    fi
+}
+
+# Show breadcrumb navigation
+show_menu_breadcrumb() {
+    local current_path="$1"
+    local relative_path="${current_path#${ARCHER_DIR}/install/}"
+
+    if [[ "$relative_path" != "." && -n "$relative_path" ]]; then
+        echo -e "${CYAN}📍 Location: ${relative_path//\// → }${NC}"
+        echo ""
+    fi
+}
+
+# Build main TOML menu
+build_main_toml_menu() {
+    local install_dir="${ARCHER_DIR}/install"
+    local menus
+    menus=($(discover_toml_menus "$install_dir"))
+    local menu_options=()
+
+    for menu in "${menus[@]}"; do
+        # Parse TOML to get metadata
+        if parse_menu_toml "$install_dir/$menu/menu.toml"; then
+            menu_options+=("${MENU_ICON} ${MENU_NAME}")
+        else
+            menu_options+=("📁 $menu")
+        fi
+    done
+
+    # Add exit option
+    menu_options+=("🚪 Exit Archer")
+
+    # Use select_option() from common-funcs.sh (gum-based)
+    echo -e "${BLUE}Archer - System Management & Customization${NC}"
+    echo -e "${CYAN}Select a category to configure:${NC}"
+    echo ""
+
+    local selection=$(select_option "${menu_options[@]}")
+
+    if [[ "$selection" == "🚪 Exit Archer" ]]; then
+        return 1
+    fi
+
+    # Find corresponding menu and navigate
+    local menu_index=0
+    for i in "${!menu_options[@]}"; do
+        if [[ "${menu_options[$i]}" == "$selection" ]]; then
+            menu_index=$i
+            break
+        fi
+    done
+
+    if [[ $menu_index -lt ${#menus[@]} ]]; then
+        local selected_menu="${menus[$menu_index]}"
+        navigate_to_toml_menu "${install_dir}/${selected_menu}"
+    fi
+}
+
+# ============================================================================
 # PACKAGE INSTALLATION WITH RETRY LOGIC
 # ============================================================================
 

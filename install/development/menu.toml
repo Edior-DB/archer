@@ -1,0 +1,68 @@
+# Development Tools Menu
+# Programming environments, editors, terminals, and development utilities
+
+[menu]
+name = "Development Tools"
+description = "Programming environments, code editors, terminals, and development utilities"
+icon = "⚒️"
+level = "main"
+
+[options]
+# Development categories
+1 = { display = "Code Editors & IDEs", action = "submenu", target = "editors/" }
+2 = { display = "Terminal Emulators", action = "submenu", target = "terminals/" }
+3 = { display = "System Programming", action = "submenu", target = "system-programming/" }
+4 = { display = "Numerical Computing", action = "submenu", target = "numerical-computing/" }
+5 = { display = "Scripting & Web", action = "submenu", target = "scripting-web/" }
+6 = { display = "DevOps & Mobile", action = "submenu", target = "devops-mobile/" }
+7 = { display = "Database Tools", action = "submenu", target = "database-tools/" }
+8 = { display = "General Dev Tools", action = "script", target = "dev-tools.sh" }
+
+# Quick installations
+"all" = { display = "Install All Development Tools", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Dev Environment", action = "custom", target = "install_essential" }
+"editors" = { display = "All Editors Only", action = "custom", target = "install_editors" }
+"terminals" = { display = "All Terminals Only", action = "custom", target = "install_terminals" }
+
+# Navigation
+"up" = { display = "← Back to Main Menu", action = "back", target = ".." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[quick_actions]
+# Define custom installation combinations
+install_essential = [
+    "dev-tools.sh",
+    "editors/app-vscode.sh",
+    "terminals/terminal-kitty.sh",
+    "system-programming/rust.sh",
+    "scripting-web/nodejs.sh"
+]
+
+install_editors = [
+    "editors/app-vscode.sh",
+    "editors/app-vscodium.sh"
+]
+
+install_terminals = [
+    "terminals/terminal-alacritty.sh",
+    "terminals/terminal-kitty.sh",
+    "terminals/terminal-wezterm.sh",
+    "terminals/terminal-hyper.sh"
+]
+
+install_languages_core = [
+    "system-programming/install.sh",
+    "scripting-web/install.sh"
+]
+
+install_scientific = [
+    "numerical-computing/install.sh",
+    "database-tools/install.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "15-30 minutes"
+dependencies = ["base-system", "package-manager"]
+categories = ["development", "programming", "tools"]

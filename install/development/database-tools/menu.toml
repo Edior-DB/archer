@@ -1,0 +1,67 @@
+# Database Tools Menu
+# Database management, clients, and development tools
+
+[menu]
+name = "Database Tools"
+description = "Database clients, servers, and development tools"
+icon = "🗄️"
+level = "sub"
+
+[options]
+# Database clients and libraries
+1 = { display = "SQLite Database", action = "script", target = "sqlite.sh" }
+2 = { display = "PostgreSQL Client & Libs", action = "script", target = "postgresql-client.sh" }
+3 = { display = "MariaDB Client", action = "script", target = "mariadb-client.sh" }
+
+# Database servers (native)
+4 = { display = "PostgreSQL Server", action = "script", target = "postgresql-server.sh" }
+5 = { display = "MariaDB Server", action = "script", target = "mariadb-server.sh" }
+6 = { display = "Redis Server", action = "script", target = "redis.sh" }
+
+# Docker-based setup
+7 = { display = "Docker Database Setup", action = "script", target = "docker-databases.sh" }
+
+# Bulk actions
+"all" = { display = "Install All Database Tools", action = "install", target = "install.sh" }
+"clients" = { display = "Database Clients Only", action = "custom", target = "install_clients" }
+"servers" = { display = "Database Servers", action = "custom", target = "install_servers" }
+"docker" = { display = "Docker Databases Setup", action = "script", target = "docker-databases.sh" }
+"multi" = { display = "Select Multiple Tools", action = "multiselect", target = "available_scripts" }
+
+# Navigation
+"up" = { display = "← Back to Development", action = "back", target = ".." }
+"main" = { display = "← Main Menu", action = "back", target = "../.." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[multiselect]
+# Available database tools for multiple selection
+available_scripts = [
+    { file = "sqlite.sh", display = "SQLite", description = "Lightweight embedded database" },
+    { file = "postgresql-client.sh", display = "PostgreSQL Client", description = "PostgreSQL client libraries and tools" },
+    { file = "mariadb-client.sh", display = "MariaDB Client", description = "MariaDB/MySQL client tools" },
+    { file = "postgresql-server.sh", display = "PostgreSQL Server", description = "Full PostgreSQL database server" },
+    { file = "mariadb-server.sh", display = "MariaDB Server", description = "Full MariaDB database server" },
+    { file = "redis.sh", display = "Redis", description = "In-memory data structure store" },
+    { file = "docker-databases.sh", display = "Docker Setup", description = "Development databases via Docker" }
+]
+
+[quick_actions]
+# Define database combinations
+install_clients = [
+    "sqlite.sh",
+    "postgresql-client.sh",
+    "mariadb-client.sh"
+]
+
+install_servers = [
+    "postgresql-server.sh",
+    "mariadb-server.sh",
+    "redis.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "5-15 minutes"
+dependencies = ["base-system"]
+categories = ["development", "database", "servers"]

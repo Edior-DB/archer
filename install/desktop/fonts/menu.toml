@@ -1,0 +1,58 @@
+# Fonts Installation Menu
+# Font packages for desktop environments and development
+
+[menu]
+name = "Font Packages"
+description = "Essential fonts for desktop and development environments"
+icon = "🔤"
+level = "sub"
+
+[options]
+# Font categories
+1 = { display = "System Fonts", action = "script", target = "system-fonts.sh" }
+2 = { display = "Coding Fonts", action = "script", target = "coding-fonts.sh" }
+3 = { display = "Google Fonts", action = "script", target = "google-fonts.sh" }
+4 = { display = "Microsoft Fonts", action = "script", target = "microsoft-fonts.sh" }
+5 = { display = "Apple Fonts", action = "script", target = "apple-fonts.sh" }
+6 = { display = "Adobe Fonts", action = "script", target = "adobe-fonts.sh" }
+7 = { display = "Nerd Fonts", action = "script", target = "nerd-fonts.sh" }
+
+# Bulk actions
+"all" = { display = "Install All Fonts", action = "install", target = "install.sh" }
+"essential" = { display = "Essential Fonts Only", action = "custom", target = "install_essential" }
+"multi" = { display = "Select Multiple Font Packages", action = "multiselect", target = "available_scripts" }
+
+# Configuration
+"config" = { display = "Font Configuration", action = "script", target = "../font-config.sh" }
+
+# Navigation
+"up" = { display = "← Back to Desktop", action = "back", target = ".." }
+"main" = { display = "← Main Menu", action = "back", target = "../.." }
+"0" = { display = "Exit Archer", action = "exit", target = "" }
+
+[multiselect]
+# Available font packages for multiple selection
+available_scripts = [
+    { file = "system-fonts.sh", display = "System Fonts", description = "Core system fonts and emoji support" },
+    { file = "coding-fonts.sh", display = "Coding Fonts", description = "Monospace fonts for programming" },
+    { file = "google-fonts.sh", display = "Google Fonts", description = "Popular web fonts from Google" },
+    { file = "microsoft-fonts.sh", display = "Microsoft Fonts", description = "Arial, Times New Roman, etc." },
+    { file = "apple-fonts.sh", display = "Apple Fonts", description = "SF Pro, Helvetica Neue, etc." },
+    { file = "adobe-fonts.sh", display = "Adobe Fonts", description = "Source Sans, Source Code Pro" },
+    { file = "nerd-fonts.sh", display = "Nerd Fonts", description = "Programming fonts with icons" }
+]
+
+[quick_actions]
+# Define essential font combinations
+install_essential = [
+    "system-fonts.sh",
+    "coding-fonts.sh",
+    "nerd-fonts.sh"
+]
+
+[metadata]
+requires_network = true
+requires_aur = true
+estimated_time = "5-15 minutes"
+dependencies = ["base-system", "package-manager"]
+categories = ["desktop", "fonts", "development"]
