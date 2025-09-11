@@ -328,6 +328,7 @@ install_development_base() {
         "clang"
         "python"
         "python-pip"
+        "python-rich"
         "mise"
 
         # System tools
