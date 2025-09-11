@@ -203,6 +203,10 @@ class ArcherUI:
         if any(pattern in combined_text for pattern in build_patterns):
             return 'build'
 
+        # Check for shell script execution
+        if 'bash ' in command_lower and '.sh' in command_lower:
+            return 'script'
+
         # Check for specific script types that typically use quick installers
         if script_path:
             script_name = os.path.basename(script_path).lower()
@@ -212,6 +216,97 @@ class ArcherUI:
 
         # Default for complex installations
         return 'standard'
+
+    def show_script_progress(self, description: str, command: str) -> bool:
+        """Show progress for shell script execution with proper completion detection"""
+        self.console.print(f"\n[bold blue]🔧 {description}[/bold blue]")
+        self.console.print(f"[dim]Executing installation script...[/dim]\n")
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TimeElapsedColumn(),
+            console=self.console,
+            transient=False
+        ) as progress:
+
+            task = progress.add_task(f"Running {description}...", total=None)
+
+            # Start the script process
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+
+            output_lines = []
+            current_operation = "Starting installation..."
+
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                if output:
+                    line = output.strip()
+                    output_lines.append(line)
+
+                    # Update status based on common script patterns
+                    line_lower = line.lower()
+                    if any(pattern in line_lower for pattern in ['installing', 'install ']):
+                        if 'gfortran' in line_lower:
+                            current_operation = "Installing GFortran..."
+                        elif 'lfortran' in line_lower:
+                            current_operation = "Installing LFortran..."
+                        elif any(pkg in line_lower for pkg in ['dlang', 'dmd', 'ldc']):
+                            current_operation = "Installing D compiler..."
+                        elif 'nim' in line_lower:
+                            current_operation = "Installing Nim..."
+                        elif 'zig' in line_lower:
+                            current_operation = "Installing Zig..."
+                        elif 'rust' in line_lower:
+                            current_operation = "Installing Rust..."
+                        elif 'go' in line_lower:
+                            current_operation = "Installing Go..."
+                        else:
+                            current_operation = "Installing packages..."
+                    elif 'downloading' in line_lower:
+                        current_operation = "Downloading packages..."
+                    elif 'building' in line_lower or 'compiling' in line_lower:
+                        current_operation = "Building from source..."
+                    elif 'configuring' in line_lower:
+                        current_operation = "Configuring installation..."
+                    elif 'complete' in line_lower or 'success' in line_lower:
+                        current_operation = "Installation completing..."
+                    elif 'mise install' in line_lower:
+                        current_operation = "Installing via Mise..."
+                    elif 'yay -s' in line_lower or 'pacman -s' in line_lower:
+                        current_operation = "Installing packages..."
+
+                    # Update progress task with current operation
+                    progress.update(task, description=current_operation)
+
+            return_code = process.poll()
+
+            if return_code == 0:
+                progress.update(task, description=f"✓ {description} completed successfully")
+                self.console.print(f"\n[bold green]✓ {description} completed successfully![/bold green]")
+                return True
+            else:
+                progress.update(task, description=f"✗ {description} failed")
+                self.console.print(f"\n[bold red]✗ {description} failed (exit code: {return_code})[/bold red]")
+
+                # Show last few lines for debugging
+                if output_lines:
+                    self.console.print("\n[yellow]Last output (for debugging):[/yellow]")
+                    for line in output_lines[-5:]:
+                        if line.strip():  # Only show non-empty lines
+                            self.console.print(f"  [dim]{line}[/dim]")
+
+                return False
 
     def show_verbose_passthrough(self, description: str, command: str) -> bool:
         """Show raw command output without any progress wrapper (verbose mode)"""
@@ -455,7 +550,10 @@ class ArcherUI:
         # Detect installation type and choose appropriate progress display
         install_type = self._detect_installation_type(command, script_path)
 
-        if install_type == 'mise':
+        if install_type == 'script':
+            # Use script-specific progress for shell script execution
+            return self.show_script_progress(description, command)
+        elif install_type == 'mise':
             # Let mise show its own native progress bars
             return self.show_mise_passthrough(description, command)
         elif install_type == 'quick':
