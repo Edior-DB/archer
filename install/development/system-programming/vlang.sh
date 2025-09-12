@@ -37,13 +37,17 @@ echo -e "${BLUE}Cloning and building V language...${NC}"
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 
-if git clone https://github.com/vlang/v; then
-    cd v
+if sudo git clone --depth=1 https://github.com/vlang/v /opt/vlang; then
+
+    sudo chown -R "$USER":"$USER" /opt/vlang
+    sudo chgroup -R "$USER" /opt/vlang
+
+    cd /opt/vlang
 
     echo -e "${BLUE}Building V compiler...${NC}"
     if make; then
         echo -e "${BLUE}Installing V to /usr/local/bin...${NC}"
-        if sudo cp v /usr/local/bin/; then
+        if sudo v symlink; then
             echo -e "${GREEN}✓ V language installed successfully!${NC}"
         else
             echo -e "${RED}✗ Failed to install V binary${NC}"

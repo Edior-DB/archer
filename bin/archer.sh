@@ -22,19 +22,16 @@ check_python() {
         echo -e "${RED}Error: python3 is not installed or not in PATH${NC}"
         echo -e "${YELLOW}Please install Python 3 before running Archer${NC}"
         echo "On Arch Linux: sudo pacman -S python"
-
         exit 1
     fi
 }
 
-# Function to check if python-rich is available
-check_rich() {
-    if ! python3 -c "import rich" 2>/dev/null; then
-        echo -e "${RED}Error: python-rich is not installed${NC}"
-        echo -e "${YELLOW}Please install python-rich before running Archer${NC}"
-        echo "On Arch Linux: sudo pacman -S python-rich"
-
-        echo "Or via pip: pip3 install rich"
+# Function to check if textual is available
+check_textual() {
+    if ! python3 -c "import textual" 2>/dev/null; then
+        echo -e "${RED}Error: textual is not installed${NC}"
+        echo -e "${YELLOW}Please install textual before running Archer TUI${NC}"
+        echo "On Arch Linux: sudo pacman -S python-textual"
         exit 1
     fi
 }
@@ -52,9 +49,11 @@ OPTIONS:
     --help, -h      Show this help message
     --version, -v   Show version information
     --check         Check system requirements
+    --classic       Use the classic GUM-based interface (archer-old.sh)
 
 EXAMPLES:
-    archer.sh                 # Start the interactive menu
+    archer.sh                 # Start the TUI interface (default)
+    archer.sh --classic       # Use the classic GUM-based interface
     archer.sh --debug         # Debug: show menu structure
     archer.sh --check         # Check if all dependencies are installed
 
@@ -68,7 +67,7 @@ HELP
 # Function to show version
 show_version() {
     echo "Archer Linux Enhancement Suite"
-    echo "Python Implementation with Rich UI"
+    echo "TUI Implementation with Textual Framework"
     echo
     echo "Repository: https://github.com/Edior-DB/archer"
     echo "License: MIT"
@@ -88,12 +87,20 @@ check_requirements() {
         return 1
     fi
 
-    # Check Rich
-    if python3 -c "import rich" 2>/dev/null; then
-        echo -e "${GREEN}✓ python-rich found${NC}"
+    # Check Textual for TUI
+    if python3 -c "import textual" 2>/dev/null; then
+        echo -e "${GREEN}✓ textual found${NC}"
     else
-        echo -e "${RED}✗ python-rich not found${NC}"
+        echo -e "${RED}✗ textual not found${NC}"
+        echo -e "${YELLOW}  Install with: sudo pacman -S python-textual${NC}"
         return 1
+    fi
+
+    # Check gum for classic interface
+    if command -v gum &> /dev/null; then
+        echo -e "${GREEN}✓ gum found${NC}"
+    else
+        echo -e "${YELLOW}~ gum not found (classic interface unavailable)${NC}"
     fi
 
     # Check Archer directory
@@ -104,13 +111,21 @@ check_requirements() {
         return 1
     fi
 
-    # Check Python script
-    PYTHON_SCRIPT="$ARCHER_DIR/bin/archer.py"
-    if [[ -f "$PYTHON_SCRIPT" ]]; then
-        echo -e "${GREEN}✓ Archer Python script found${NC}"
+    # Check TUI script
+    TUI_SCRIPT="$ARCHER_DIR/bin/archer-tui.py"
+    if [[ -f "$TUI_SCRIPT" ]]; then
+        echo -e "${GREEN}✓ Archer TUI script found${NC}"
     else
-        echo -e "${RED}✗ Archer Python script not found:${NC} $PYTHON_SCRIPT"
+        echo -e "${RED}✗ Archer TUI script not found:${NC} $TUI_SCRIPT"
         return 1
+    fi
+
+    # Check Classic script
+    CLASSIC_SCRIPT="$ARCHER_DIR/bin/archer-old.sh"
+    if [[ -f "$CLASSIC_SCRIPT" ]]; then
+        echo -e "${GREEN}✓ Archer Classic script found${NC}"
+    else
+        echo -e "${YELLOW}~ Archer Classic script not found (optional)${NC}"
     fi
 
     echo
@@ -136,16 +151,21 @@ main() {
             ;;
         --debug|-d)
             check_python
-            check_rich
+            check_textual
             cd "$ARCHER_DIR"
-            exec python3 bin/archer.py --debug
+            exec python3 bin/archer-tui.py --debug
+            ;;
+        --classic)
+            # Use classic GUM-based interface
+            cd "$ARCHER_DIR"
+            exec ./bin/archer-old.sh
             ;;
         "")
-            # No arguments - run normally
+            # No arguments - run TUI by default
             check_python
-            check_rich
+            check_textual
             cd "$ARCHER_DIR"
-            exec python3 bin/archer.py
+            exec python3 bin/archer-tui.py
             ;;
         *)
             echo -e "${RED}Error: Unknown option '$1'${NC}"

@@ -1107,6 +1107,37 @@ class ArcherMenu:
 
         return menu_name, menu_description, options
 
+    def get_menu_options_filtered(self, menu_key: str = "main") -> Tuple[str, str, List[Dict]]:
+        """Get filtered menu options for TUI (removes navigation and bulk actions)"""
+        menu_name, menu_description, all_options = self.get_menu_options(menu_key)
+
+        # Filter out unwanted options for TUI
+        unwanted_patterns = [
+            'install all',
+            'back',
+            'exit',
+            'main menu',
+            'return to',
+            '←'
+        ]
+
+        filtered_options = []
+        for option in all_options:
+            display_lower = option['display'].lower()
+            action = option['action']
+
+            # Skip navigation actions
+            if action in ['back', 'exit']:
+                continue
+
+            # Skip options with unwanted patterns in display name
+            if any(pattern in display_lower for pattern in unwanted_patterns):
+                continue
+
+            filtered_options.append(option)
+
+        return menu_name, menu_description, filtered_options
+
     def _get_parent_menu_key(self, menu_key: str) -> str:
         """Get the parent menu key for navigation"""
         if '/' not in menu_key:

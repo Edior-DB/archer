@@ -328,6 +328,7 @@ install_development_base() {
         "python"
         "python-pip"
         "python-rich"
+        "python-textual"
         "mise"
         "gd"
         "re2c"
