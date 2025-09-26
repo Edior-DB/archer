@@ -641,35 +641,6 @@ class ArcherTUIApp(App):
             progress.update(progress=progress_value)
 
         output.add_output("[bold green]🎉 All installations completed![/bold green]")
-                        cmd,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.STDOUT
-                    )
-                    while True:
-                        line = await proc.stdout.readline()
-                        if not line:
-                            break
-                        line_text = line.decode().strip()
-                        if line_text:
-                            display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
-                            output.add_output(f"[dim]{display_line}[/dim]")
-                    await proc.wait()
-                    if proc.returncode != 0:
-                        raise Exception(f"Failed to install {pkg_name} with install_with_retries")
-                else:
-                    # Simulate installation for non-script actions
-                    await self._simulate_installation(package_name, i, total_packages)
-
-                output.add_output(f"[green]✓[/green] {package_name} installed successfully")
-
-            except Exception as e:
-                output.add_output(f"[red]✗ Failed to install {package_name}: {str(e)}[/red]")
-
-            # Update progress
-            progress_value = ((i + 1) * 100)
-            progress.update(progress=progress_value)
-
-        output.add_output("[bold green]🎉 All installations completed![/bold green]")
 
     async def _execute_script_async(self, option: Dict, script_path: str, index: int, total: int):
         """Execute installation script asynchronously with progress updates"""
