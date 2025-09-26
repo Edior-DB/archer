@@ -284,51 +284,46 @@ class ArcherTUIApp(App):
     def compose(self) -> ComposeResult:
         """Create the application layout"""
         yield Header()
-
-        # Leftmost vertical split: Top for Main menu, bottom for installation output
-        with Vertical(id="left_panel"):
-            tree = ArcherMenuTree(self.archer_menu)
-            tree.id = "menu_tree"
-            yield tree
-            yield InstallationOutputPanel(id="output_panel")
-
-        # Rightmost vertical panel: Sub-Topics, Package Selection, Buttons, Progress Bar
-        with Vertical(id="right_panel"):
-            with Vertical(id="selection_panel"):
-                yield Static("Sub-Topics:", classes="panel-title")
-                yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
-            with Vertical(id="package_panel"):
-                yield Static("Select Tools and Packages:", classes="panel-title")
-                yield DynamicPackageTable(id="toolsets_panel")
-            yield ActionButtonsPanel(id="actions_panel")
-            yield ProgressPanel(id="progress_panel")
+        with Horizontal():
+            with Vertical(id="left_panel"):
+                tree = ArcherMenuTree(self.archer_menu)
+                tree.id = "menu_tree"
+                yield tree
+                yield InstallationOutputPanel(id="output_panel")
+            with Vertical(id="right_panel"):
+                with Vertical(id="selection_panel"):
+                    yield Static("Sub-Topics:", classes="panel-title")
+                    yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
+                with Vertical(id="package_panel"):
+                    yield Static("Select Tools and Packages:", classes="panel-title")
+                    yield DynamicPackageTable(id="toolsets_panel")
+                yield ActionButtonsPanel(id="actions_panel")
+                yield ProgressPanel(id="progress_panel")
 
     CSS = """
     Screen {
-        layout: grid;
-        grid-size: 3 6;
-        grid-gutter: 1;
+        layout: none;
         padding: 1;
     }
-    #left_panel {
-        column-span: 1;
-        row-span: 6;
-        border: solid $primary;
+    Horizontal {
+        width: 100%;
         height: 100%;
-        layout: vertical;
-        width: 1fr;
+    }
+    #left_panel {
+        width: 33%;
         min-width: 30%;
         max-width: 33%;
+        height: 100%;
+        border: solid $primary;
+        layout: vertical;
     }
     #right_panel {
-        column-span: 2;
-        row-span: 6;
-        border: solid $secondary;
-        height: 100%;
-        layout: vertical;
-        width: 2fr;
+        width: 67%;
         min-width: 67%;
         max-width: 70%;
+        height: 100%;
+        border: solid $secondary;
+        layout: vertical;
     }
     #menu_tree {
         height: 60%;
@@ -386,7 +381,8 @@ class ArcherTUIApp(App):
         package_panel = self.query_one("#toolsets_panel", DynamicPackageTable)
         # Find the menu_key for the selected subtopic
         for k in self.archer_menu.discovered_menus.keys():
-            if k.endswith('/' + subtopic.lower().replace(' ', '-')):
+            # Match subtopic with menu_key
+            if k.split('/')[-1].replace('-', ' ').title() == subtopic:
                 _, _, options = self.archer_menu.get_menu_options_filtered(k)
                 package_panel.packages = options
                 package_panel.visible = True
