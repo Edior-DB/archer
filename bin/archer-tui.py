@@ -519,30 +519,33 @@ class ArcherTUIApp(App):
         - If 'install_all_mode' is True: run install.sh in the current menu/category directory.
         - If 'install_all_mode' is False: run the corresponding script for each selected package.
         """
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        progress = self.query_one("#main_progress", ProgressBar)
+        try:
+            output = self.query_one("#output_panel", InstallationOutputPanel)
+            output.add_output("[red]🚨 ENTERED _install_packages METHOD[/red]")
 
-        total_packages = len(options)
-        progress.update(total=total_packages)
+            progress = self.query_one("#main_progress", ProgressBar)
 
-        # Debug output
-        output.add_output(f"[yellow]🔧 DEBUG: Starting _install_packages[/yellow]")
-        output.add_output(f"[dim]DEBUG: install_all_mode={install_all_mode}, {total_packages} packages[/dim]")
+            total_packages = len(options)
+            progress.update(total=total_packages)
 
-        if total_packages == 0:
-            output.add_output("[red]ERROR: No packages provided to install![/red]")
-            output.add_output("[bold green]🎉 All installations completed![/bold green]")
-            return
+            # Debug output
+            output.add_output(f"[yellow]🔧 DEBUG: Starting _install_packages[/yellow]")
+            output.add_output(f"[dim]DEBUG: install_all_mode={install_all_mode}, {total_packages} packages[/dim]")
 
-        if options:
-            output.add_output(f"[dim]DEBUG: First option keys: {list(options[0].keys())}[/dim]")
-            output.add_output(f"[dim]DEBUG: install_dir = {options[0].get('install_dir', 'NOT_FOUND')}[/dim]")
+            if total_packages == 0:
+                output.add_output("[red]ERROR: No packages provided to install![/red]")
+                output.add_output("[bold green]🎉 All installations completed![/bold green]")
+                return
 
-        if install_all_mode:
-            output.add_output("[yellow]🔧 DEBUG: Entering install_all_mode branch[/yellow]")
-            # Run install.sh in the current menu/category directory
-            # Assume all options share the same install_dir
             if options:
+                output.add_output(f"[dim]DEBUG: First option keys: {list(options[0].keys())}[/dim]")
+                output.add_output(f"[dim]DEBUG: install_dir = {options[0].get('install_dir', 'NOT_FOUND')}[/dim]")
+
+            if install_all_mode:
+                output.add_output("[yellow]🔧 DEBUG: Entering install_all_mode branch[/yellow]")
+                # Run install.sh in the current menu/category directory
+                # Assume all options share the same install_dir
+                if options:
                 install_dir = options[0].get('install_dir', '')
                 install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
                 output.add_output(f"[dim]DEBUG: Looking for install.sh at: {install_sh}[/dim]")
@@ -636,6 +639,17 @@ class ArcherTUIApp(App):
             progress.advance(1)
 
         output.add_output("[bold green]🎉 All installations completed![/bold green]")
+
+        except Exception as e:
+            try:
+                output = self.query_one("#output_panel", InstallationOutputPanel)
+                output.add_output(f"[red]🚨 EXCEPTION in _install_packages: {str(e)}[/red]")
+                output.add_output(f"[red]Exception type: {type(e).__name__}[/red]")
+                import traceback
+                output.add_output(f"[red]Traceback: {traceback.format_exc()}[/red]")
+            except:
+                print(f"CRITICAL ERROR: Exception in _install_packages: {e}")
+            output.add_output("[bold green]🎉 All installations completed![/bold green]")
 
     async def _execute_script_async(self, option: Dict, script_path: str, index: int, total: int):
         """Execute installation script asynchronously with progress updates"""
