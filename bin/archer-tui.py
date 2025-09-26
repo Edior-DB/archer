@@ -422,13 +422,15 @@ class ArcherTUIApp(App):
         tree.id = "menu_tree"
         yield tree
 
-        # Right top panel: Sub-topics of the selected main topic
+        # Right top panel: Sub-topics of the selected main topic (single-select)
         with Vertical(id="selection_panel"):
             yield Static("Sub-Topics:", classes="panel-title")
-            yield DynamicPackageTable(id="subtopics_panel")
+            yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True, height=6)
 
-        # Right middle panel: Toolsets of the selected sub-topic
-        yield DynamicPackageTable(id="package_panel")
+        # Right middle panel: Toolsets of the selected sub-topic (multi-select)
+        with Vertical(id="package_panel"):
+            yield Static("Select Tools and Packages:", classes="panel-title")
+            yield DynamicPackageTable(id="toolsets_panel")
 
         # Right bottom panel: Action buttons
         yield ActionButtonsPanel(id="actions_panel")
@@ -442,32 +444,52 @@ class ArcherTUIApp(App):
         self.current_menu_key = message.menu_key
         self.current_options = message.options
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        subtopics_panel = self.query_one("#subtopics_panel", DynamicPackageTable)
+        package_panel = self.query_one("#toolsets_panel", DynamicPackageTable)
+        subtopics_table = self.query_one("#subtopics_panel", DataTable)
 
         # Determine if this is a top-level menu (main topic)
         is_top_level = '/' not in message.menu_key
         if is_top_level:
-            # Show sub-topics in subtopics_panel (single-select)
+            # Show sub-topics in subtopics_table (single-select)
             submenus = [
-                {"display": k.split('/')[-1].replace('-', ' ').title(), "menu_key": k}
+                k.split('/')[-1].replace('-', ' ').title()
                 for k in self.archer_menu.discovered_menus.keys()
                 if k.startswith(message.menu_key + '/') and k.count('/') == 1
             ]
-            subtopics_panel.packages = submenus
-            subtopics_panel.visible = True
+            subtopics_table.clear(columns=True)
+            subtopics_table.add_columns("Sub-Topic")
+            for submenu in submenus:
+                subtopics_table.add_row(submenu)
+            subtopics_table.visible = True
             package_panel.visible = False
             output.add_output(f"[blue]Selected main topic:[/blue] {message.menu_key}")
-            output.add_output(f"[green]Sub-topics presented: {', '.join([s['display'] for s in submenus])}[/green]")
+            output.add_output(f"[green]Sub-topics presented: {', '.join(submenus)}[/green]")
         else:
             # Show toolsets in package_panel (multi-select)
             package_panel.packages = message.options
             package_panel.visible = True
-            subtopics_panel.visible = False
+            subtopics_table.visible = False
             output.add_output(f"[blue]Selected sub-topic:[/blue] {message.menu_key}")
             output.add_output(f"[green]Toolsets presented: {len(message.options)} options[/green]")
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected):
+        """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
+        subtopic = event.row[0]
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        package_panel = self.query_one("#toolsets_panel", DynamicPackageTable)
+        # Find the menu_key for the selected subtopic
+        for k in self.archer_menu.discovered_menus.keys():
+            if k.endswith('/' + subtopic.lower().replace(' ', '-')):
+                _, _, options = self.archer_menu.get_menu_options_filtered(k)
+                package_panel.packages = options
+                package_panel.visible = True
+                output.add_output(f"[blue]Selected sub-topic:[/blue] {subtopic}")
+                output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
+                for opt in options:
+                    output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
+                break
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
