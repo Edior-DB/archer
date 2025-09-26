@@ -343,7 +343,7 @@ class ArcherTUIApp(App):
         self.current_menu_key = message.menu_key
         self.current_options = message.options
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        package_panel = self.query_one("#toolsets_panel", DynamicPackageTable)
+        package_panel = self.query_one("#package_panel", DynamicPackageTable)
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
 
         # Determine if this is a top-level menu (main topic)
