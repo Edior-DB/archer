@@ -322,12 +322,7 @@ class ArcherTUIApp(App):
         border: solid $secondary;
         layout: vertical;
     }
-    #bottom_panel {
-        height: 33%;
-        min-height: 8;
-        max-height: 15;
-        layout: horizontal;
-        border-top: solid $primary;
+
     }
     #selection_panel {
         height: 35%;
@@ -356,7 +351,7 @@ class ArcherTUIApp(App):
         min-height: 12;
     }
     #output_panel {
-        height: 100%;
+        height: 33%;
         min-height: 20;
         max-height: 55%;
     }
