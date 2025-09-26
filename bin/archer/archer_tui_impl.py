@@ -273,7 +273,9 @@ class ArcherTUIApp(App):
 
     def __init__(self):
         super().__init__()
-        self.archer_dir = os.environ.get('ARCHER_DIR', str(Path(__file__).parent.parent))
+    # Default to project root (two levels up from bin/archer)
+    default_archer_dir = str(Path(__file__).resolve().parents[2])
+    self.archer_dir = os.environ.get('ARCHER_DIR', default_archer_dir)
 
         # Initialize the existing ArcherMenu system
         self.archer_ui = ArcherUI(verbose=False)
@@ -804,8 +806,8 @@ def main():
             print("[archer-tui] Exiting due to terminal size")
             sys.exit(1)
 
-    # Set up environment
-    archer_dir = str(Path(__file__).parent.parent)
+    # Set up environment: default to project root (two levels up from bin/archer)
+    archer_dir = str(Path(__file__).resolve().parents[2])
     os.environ['ARCHER_DIR'] = archer_dir
     try:
         os.chdir(archer_dir)

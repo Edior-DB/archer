@@ -1,0 +1,11 @@
+# install_dirs.toml - configuration for archer install discovery
+
+[metadata]
+name = "archer"
+
+[dirs]
+paths = ["../install"]
+
+[home]
+# optional: specify archer project dir using env-style variable or literal
+# archer_dir = "$ARCHER_DIR"

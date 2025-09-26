@@ -21,6 +21,7 @@ import asyncio
 import subprocess
 from typing import Dict, List, Tuple, Optional
 import time
+import tomllib
 
 
 class ArcherUI:
@@ -68,8 +69,12 @@ class ArcherMenu:
 
     def __init__(self, ui: Optional[ArcherUI] = None):
         self.ui = ui or ArcherUI(verbose=False)
-        self.project_root = Path(__file__).parent.parent
-        self.install_root = self.project_root / 'install'
+        # Resolve project root (two levels up from this file: bin/archer -> project)
+        self.project_root = Path(__file__).resolve().parents[2]
+        # Resolve install roots from config file or defaults
+        self.install_roots = self._load_install_roots_from_config()
+        # For backwards compatibility, set primary install_root to first found
+        self.install_root = self.install_roots[0] if self.install_roots else (self.project_root / 'install')
         self.discovered_menus: Dict[str, Dict] = {}
         self._discover_menus()
 
@@ -81,14 +86,17 @@ class ArcherMenu:
         directory path and install script path (if present).
         """
         self.discovered_menus.clear()
-        if not self.install_root.exists():
+        if not self.install_roots:
             return
 
-        for root, dirs, files in os.walk(self.install_root):
-            root_path = Path(root)
+        for install_root in self.install_roots:
+            if not install_root.exists():
+                continue
+            for root, dirs, files in os.walk(install_root):
+                root_path = Path(root)
             # compute relative path from install_root
             try:
-                rel = root_path.relative_to(self.install_root)
+                    rel = root_path.relative_to(install_root)
             except Exception:
                 continue
             if rel == Path('.'):
@@ -99,10 +107,85 @@ class ArcherMenu:
             if (root_path / 'install.sh').exists():
                 install_sh = str((root_path / 'install.sh').resolve())
             # record discovered menu
-            self.discovered_menus[key] = {
+                # If multiple install roots contain the same relative key, later ones will override
+                self.discovered_menus[key] = {
                 'path': str(root_path.resolve()),
                 'install': install_sh,
             }
+
+    def _load_install_roots_from_config(self) -> List[Path]:
+        """Load install root paths from `bin/install_dirs.toml` if present.
+
+        Expected structure in TOML (example):
+
+        [metadata]
+        name = "archer"
+
+        [dirs]
+        paths = ["../install"]
+
+        [home]
+        archer_dir = "$ARCHER_DIR"
+
+        Paths are expanded for environment variables and resolved relative to project_root.
+        """
+        config_file = self.project_root / 'bin' / 'install_dirs.toml'
+        roots: List[Path] = []
+        if not config_file.exists():
+            # default single install dir
+            default = self.project_root / 'install'
+            return [default]
+
+        try:
+            with open(config_file, 'rb') as fh:
+                cfg = tomllib.load(fh)
+        except Exception:
+            # On parse error, fallback to default
+            return [self.project_root / 'install']
+
+        # Check for explicit home setting
+        home_dir = None
+        if isinstance(cfg.get('home'), dict):
+            home_dir = cfg['home'].get('archer_dir')
+
+        # If ARCHER_DIR env var is set, prefer it
+        env_archer = os.environ.get('ARCHER_DIR') or os.environ.get('ARCHER_HOME')
+        if env_archer:
+            # allow using $ENV in paths if provided in cfg
+            # but if env var is present, use it to resolve any $ARCHER_* tokens
+            pass
+
+        # Load paths under [dirs].paths
+        paths = []
+        if isinstance(cfg.get('dirs'), dict):
+            paths = cfg['dirs'].get('paths', []) or []
+
+        for p in paths:
+            if not isinstance(p, str):
+                continue
+            # Expand environment variables like $ARCHER_DIR or $HOME
+            expanded = os.path.expandvars(p)
+            # If path is relative, resolve against project_root
+            candidate = Path(expanded)
+            if not candidate.is_absolute():
+                candidate = (self.project_root / candidate).resolve()
+            roots.append(candidate)
+
+        # If no paths resolved, fallback to home_dir or env or default
+        if not roots:
+            if home_dir:
+                hd = os.path.expandvars(home_dir)
+                candidate = Path(hd)
+                if not candidate.is_absolute():
+                    candidate = (self.project_root / candidate).resolve()
+                roots.append(candidate)
+            elif env_archer:
+                candidate = Path(env_archer) / 'install'
+                roots.append(candidate)
+            else:
+                roots.append(self.project_root / 'install')
+
+        return roots
 
     def get_sub_menus(self, top_key: str) -> Dict[str, str]:
         """Return mapping {display_name: submenu_key} for immediate children of top_key.
