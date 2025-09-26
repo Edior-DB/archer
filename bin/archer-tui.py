@@ -428,9 +428,7 @@ class ArcherTUIApp(App):
             yield DynamicPackageTable(id="subtopics_panel")
 
         # Right middle panel: Toolsets of the selected sub-topic
-        with Vertical(id="package_panel"):
-            yield Static("Toolsets:", classes="panel-title")
-            yield DynamicPackageTable(id="toolsets_panel")
+        yield DynamicPackageTable(id="package_panel")
 
         # Right bottom panel: Action buttons
         yield ActionButtonsPanel(id="actions_panel")
