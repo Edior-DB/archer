@@ -108,6 +108,24 @@ install_network_tools() {
     fi
 }
 
+install_all_scripts() {
+    log_info "Installing all scripts in the terminal directory..."
+    for script in $(find "$SCRIPT_DIR" -name "install.sh" -type f); do
+        bash "$script" --all
+    done
+}
+
+install_custom_selection() {
+    log_info "Installing selected scripts in the terminal directory..."
+    for script in "$@"; do
+        if [[ -f "$script" ]]; then
+            bash "$script"
+        else
+            log_warning "Script not found: $script"
+        fi
+    done
+}
+
 # Main installation logic
 main() {
     check_system_requirements

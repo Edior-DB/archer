@@ -124,32 +124,22 @@ install_streaming_only() {
     log_success "Streaming modules installed!"
 }
 
+install_all_scripts() {
+    log_info "Installing all scripts in the multimedia directory..."
+    for script in $(find "$COMPONENT_DIR" -name "install.sh" -type f); do
+        bash "$script" --all
+    done
+}
+
 install_custom_selection() {
-    local scripts=("$@")
-
-    if [[ ${#scripts[@]} -eq 0 ]]; then
-        log_error "No multimedia scripts specified for custom installation"
-        return 1
-    fi
-
-    log_info "Installing selected $COMPONENT_NAME modules..."
-
-    local total=${#scripts[@]}
-    local current=0
-
-    for script in "${scripts[@]}"; do
-        current=$((current + 1))
-        local script_path="$COMPONENT_DIR/$script"
-
-        if [[ -f "$script_path" ]]; then
-            log_info "[$current/$total] Installing $(basename "$script" .sh | sed 's/-/ /g')..."
-            execute_with_progress "bash '$script_path'" "Installing $(basename "$script" .sh)..."
+    log_info "Installing selected scripts in the multimedia directory..."
+    for script in "$@"; do
+        if [[ -f "$script" ]]; then
+            bash "$script"
         else
             log_warning "Script not found: $script"
         fi
     done
-
-    log_success "Selected $COMPONENT_NAME modules installed!"
 }
 
 # ==============================================================================

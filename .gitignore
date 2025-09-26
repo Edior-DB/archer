@@ -1,6 +1,7 @@
 # Ignore memo files
 *.memo
 *.code-workspace
+.ai-context
 notes/*
 
 # Ignore private development notes

@@ -51,7 +51,8 @@ install_all_components() {
     done
 
     log_success "All $CATEGORY_NAME installed!"
-}install_essential_components() {
+}
+install_essential_components() {
     log_info "Installing essential $CATEGORY_NAME..."
 
     # Array of essential development components
@@ -79,48 +80,35 @@ install_all_components() {
     log_success "Essential $CATEGORY_NAME installed!"
 }
 
-install_editors_only() {
-    log_info "Installing all editors..."
+install_custom_selection() {
+    local scripts=("$@")
 
-    local editors_script="$CATEGORY_DIR/editors/install.sh"
-    if [[ -f "$editors_script" ]]; then
-        execute_with_progress "bash '$editors_script'" "Installing all editors..."
-    else
-        log_warning "Editors installation script not found"
+    if [[ ${#scripts[@]} -eq 0 ]]; then
+        log_error "No development scripts specified for custom installation"
+        return 1
     fi
 
-    log_success "All editors installed!"
-}
+    log_info "Installing selected $CATEGORY_NAME components..."
 
-install_languages_only() {
-    log_info "Installing core programming languages..."
+    local total=${#scripts[@]}
+    local current=0
 
-    local languages_scripts=("$CATEGORY_DIR/system-programming/install.sh" "$CATEGORY_DIR/scripting-web/install.sh")
-    for script in "${languages_scripts[@]}"; do
-        if [[ -f "$script" ]]; then
-            execute_with_progress "bash '$script'" "Installing $(basename "$(dirname "$script")" | sed 's/-/ /g')..."
+    for script in "${scripts[@]}"; do
+        current=$((current + 1))
+        local script_path="$CATEGORY_DIR/$script"
+
+        if [[ -f "$script_path" ]]; then
+            log_info "[$current/$total] Installing $(basename "$script" .sh | sed 's/-/ /g')..."
+            execute_with_progress "bash '$script_path'" "Installing $(basename "$script" .sh)..."
         else
-            log_warning "Language installation script not found: $script"
+            log_warning "Script not found: $script"
         fi
     done
 
-    log_success "Core programming languages installed!"
+    log_success "Selected $CATEGORY_NAME components installed!"
 }
 
-install_scientific_only() {
-    log_info "Installing scientific computing tools..."
-
-    local scientific_scripts=("$CATEGORY_DIR/numerical-computing/install.sh" "$CATEGORY_DIR/database-tools/install.sh")
-    for script in "${scientific_scripts[@]}"; do
-        if [[ -f "$script" ]]; then
-            execute_with_progress "bash '$script'" "Installing $(basename "$(dirname "$script")" | sed 's/-/ /g')..."
-        else
-            log_warning "Scientific installation script not found: $script"
-        fi
-    done
-
-    log_success "Scientific computing tools installed!"
-}# ==============================================================================
+# ==============================================================================
 # MAIN EXECUTION
 # ==============================================================================
 
@@ -129,6 +117,7 @@ main() {
 
     # Parse command line arguments
     local install_mode="all"
+    local custom_scripts=()
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -140,42 +129,28 @@ main() {
                 install_mode="all"
                 shift
                 ;;
-            --editors)
-                install_mode="editors"
+            --scripts)
+                install_mode="custom"
                 shift
-                ;;
-            --terminals)
-                install_mode="terminals"
-                shift
-                ;;
-            --languages)
-                install_mode="languages"
-                shift
-                ;;
-            --scientific)
-                install_mode="scientific"
-                shift
+                # Collect script names until next option or end
+                while [[ $# -gt 0 && ! "$1" =~ ^-- ]]; do
+                    custom_scripts+=("$1")
+                    shift
+                done
                 ;;
             --help)
-                echo "Usage: $0 [--all|--essential|--editors|--terminals] [--help]"
+                echo "Usage: $0 [--all|--essential|--scripts script1 script2 ...] [--help]"
                 echo ""
                 echo "Development tools installation options:"
                 echo "  --all         Install all development tools (default)"
                 echo "  --essential   Install essential dev environment (dev-tools, VS Code, Kitty)"
-                echo "  --editors     Install all code editors and IDEs"
-                echo "  --terminals   Install all terminal emulators"
+                echo "  --scripts     Install specific module scripts"
                 echo "  --help        Show this help message"
-                echo ""
-                echo "Components included:"
-                echo "  dev-tools.sh       General development tools and utilities"
-                echo "  editors/           Code editors and IDEs (VS Code, VSCodium, etc.)"
-                echo "  terminals/         Terminal emulators (Alacritty, Kitty, WezTerm, Hyper)"
                 echo ""
                 echo "Examples:"
                 echo "  $0                 # Install everything"
                 echo "  $0 --essential     # Install essential development environment"
-                echo "  $0 --editors       # Install all editors only"
-                echo "  $0 --terminals     # Install all terminals only"
+                echo "  $0 --scripts editors/install.sh terminals/install.sh"
                 exit 0
                 ;;
             *)
@@ -190,11 +165,8 @@ main() {
         "essential")
             install_essential_components
             ;;
-        "editors")
-            install_editors_only
-            ;;
-        "terminals")
-            install_terminals_only
+        "custom")
+            install_custom_selection "${custom_scripts[@]}"
             ;;
         "all"|*)
             install_all_components

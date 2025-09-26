@@ -22,3 +22,11 @@ directories = []
 "network-tools/" = "Network Tools"
 "shell/" = "Shell"
 "text-tools/" = "Text Tools"
+
+[dependencies]
+directories = ["../system", "../common-funcs.sh"]
+files = []
+
+[install]
+install_all_scripts = "Install all terminal tools"
+install_custom_selection = "Install selected terminal tools"

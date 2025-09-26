@@ -72,58 +72,6 @@ install_essential_modules() {
     log_success "Essential $COMPONENT_NAME modules installed!"
 }
 
-install_themes_only() {
-    log_info "Installing desktop themes..."
-
-    local themes_path="$COMPONENT_DIR/themes"
-    if [[ -d "$themes_path" && -f "$themes_path/install.sh" ]]; then
-        execute_with_progress "bash '$themes_path/install.sh' --all" "Installing themes..."
-    else
-        log_warning "Themes module not found"
-    fi
-
-    log_success "Desktop themes installed!"
-}
-
-install_fonts_only() {
-    log_info "Installing fonts..."
-
-    local fonts_path="$COMPONENT_DIR/fonts"
-    if [[ -d "$fonts_path" && -f "$fonts_path/install.sh" ]]; then
-        execute_with_progress "bash '$fonts_path/install.sh' --all" "Installing fonts..."
-    else
-        log_warning "Fonts module not found"
-    fi
-
-    log_success "Fonts installed!"
-}
-
-install_office_only() {
-    log_info "Installing office tools..."
-
-    local office_path="$COMPONENT_DIR/office-tools"
-    if [[ -d "$office_path" && -f "$office_path/install.sh" ]]; then
-        execute_with_progress "bash '$office_path/install.sh' --all" "Installing office tools..."
-    else
-        log_warning "Office tools module not found"
-    fi
-
-    log_success "Office tools installed!"
-}
-
-install_utilities_only() {
-    log_info "Installing desktop utilities..."
-
-    local utilities_path="$COMPONENT_DIR/utilities"
-    if [[ -d "$utilities_path" && -f "$utilities_path/install.sh" ]]; then
-        execute_with_progress "bash '$utilities_path/install.sh' --all" "Installing utilities..."
-    else
-        log_warning "Utilities module not found"
-    fi
-
-    log_success "Desktop utilities installed!"
-}
-
 install_custom_selection() {
     local scripts=("$@")
 
@@ -169,22 +117,6 @@ main() {
                 install_mode="essential"
                 shift
                 ;;
-            --themes)
-                install_mode="themes"
-                shift
-                ;;
-            --fonts)
-                install_mode="fonts"
-                shift
-                ;;
-            --office)
-                install_mode="office"
-                shift
-                ;;
-            --utilities)
-                install_mode="utilities"
-                shift
-                ;;
             --all)
                 install_mode="all"
                 shift
@@ -199,29 +131,18 @@ main() {
                 done
                 ;;
             --help)
-                echo "Usage: $0 [--all|--essential|--themes|--fonts|--office|--utilities|--scripts script1 script2 ...] [--help]"
+                echo "Usage: $0 [--all|--essential|--scripts script1 script2 ...] [--help]"
                 echo ""
                 echo "Desktop environment installation options:"
                 echo "  --all            Install all desktop modules (default)"
                 echo "  --essential      Install essential modules (fonts, office)"
-                echo "  --themes         Install desktop themes (Cupertini, Redmondi, Vanilla)"
-                echo "  --fonts          Install fonts (programming, system, icons)"
-                echo "  --office         Install office tools (LibreOffice, productivity)"
-                echo "  --utilities      Install desktop utilities (launchers, widgets)"
                 echo "  --scripts        Install specific module scripts"
                 echo "  --help           Show this help message"
                 echo ""
-                echo "Available modules:"
-                echo "  Themes:      Cupertini, Redmondi, Vanilla desktop themes"
-                echo "  Fonts:       Programming fonts, system fonts, icon fonts"
-                echo "  Office:      LibreOffice suite, productivity applications"
-                echo "  Utilities:   Desktop launchers, widgets, system utilities"
-                echo ""
                 echo "Examples:"
                 echo "  $0                                    # Install all modules"
-                echo "  $0 --essential                       # Install fonts and office"
-                echo "  $0 --themes                          # Install desktop themes"
-                echo "  $0 --scripts themes/cupertini.sh fonts/programming-fonts.sh"
+                echo "  $0 --essential                       # Install essential modules"
+                echo "  $0 --scripts fonts/install.sh themes/install.sh"
                 exit 0
                 ;;
             *)
@@ -235,18 +156,6 @@ main() {
     case "$install_mode" in
         "essential")
             install_essential_modules
-            ;;
-        "themes")
-            install_themes_only
-            ;;
-        "fonts")
-            install_fonts_only
-            ;;
-        "office")
-            install_office_only
-            ;;
-        "utilities")
-            install_utilities_only
             ;;
         "custom")
             install_custom_selection "${custom_scripts[@]}"

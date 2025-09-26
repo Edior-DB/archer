@@ -21,3 +21,11 @@ directories = []
 "system/" = "System"
 "hardware/" = "Hardware"
 "packages/" = "Packages"
+
+[dependencies]
+directories = ["../common-funcs.sh"]
+files = []
+
+[install]
+install_all_scripts = "Install all system components"
+install_custom_selection = "Install selected system components"

@@ -23,3 +23,11 @@ directories = []
 "extras/" = "Extra Applications"
 "terminal/" = "Terminal Tools"
 "install.sh" = "Install Everything"
+
+[dependencies]
+directories = []
+files = []
+
+[install]
+install_all_scripts = "Install all components in the suite"
+install_custom_selection = "Install selected components"

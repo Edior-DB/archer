@@ -96,6 +96,24 @@ install_component() {
     esac
 }
 
+install_all_scripts() {
+    log_info "Installing all scripts in the security directory..."
+    for script in $(find "$SCRIPT_DIR" -name "install.sh" -type f); do
+        bash "$script" --all
+    done
+}
+
+install_custom_selection() {
+    log_info "Installing selected scripts in the security directory..."
+    for script in "$@"; do
+        if [[ -f "$script" ]]; then
+            bash "$script"
+        else
+            log_warning "Script not found: $script"
+        fi
+    done
+}
+
 # Function to show help
 show_help() {
     cat << EOF

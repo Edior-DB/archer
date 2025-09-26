@@ -20,3 +20,11 @@ directories = []
 "gaming/" = "Gaming"
 "media-players/" = "Media Players"
 "streaming/" = "Streaming"
+
+[dependencies]
+directories = ["../system", "../common-funcs.sh"]
+files = []
+
+[install]
+install_all_scripts = "Install all multimedia components"
+install_custom_selection = "Install selected multimedia components"

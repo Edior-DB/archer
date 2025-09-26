@@ -422,17 +422,23 @@ class ArcherTUIApp(App):
         tree.id = "menu_tree"
         yield tree
 
-        # Middle right: Dynamic package table
-        yield DynamicPackageTable(id="package_panel")
+        # Right top panel: Sub-topics of the selected main topic
+        with Vertical(id="selection_panel"):
+            yield Static("Sub-Topics:", classes="panel-title")
+            yield DynamicPackageTable(id="subtopics_panel")
 
-        # Installation output
-        yield InstallationOutputPanel(id="output_panel")
+        # Right middle panel: Toolsets of the selected sub-topic
+        with Vertical(id="package_panel"):
+            yield Static("Toolsets:", classes="panel-title")
+            yield DynamicPackageTable(id="toolsets_panel")
 
-        # Progress panel (for installation progress)
-        yield ProgressPanel(id="progress_panel")
-
-        # Action buttons panel (bottom)
+        # Right bottom panel: Action buttons
         yield ActionButtonsPanel(id="actions_panel")
+
+        # Bottom panel: Installation output and progress bar
+        with Vertical(id="output_panel"):
+            yield InstallationOutputPanel(id="install_output")
+            yield ProgressPanel(id="progress_panel")
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
         """Handle menu selection from tree"""
@@ -486,8 +492,16 @@ class ArcherTUIApp(App):
                 return
 
             progress_panel.show_panel()
-            output.add_output(f"[green]Installing selected packages:[/green] {', '.join([p.get('display', '') for p in selected_pkgs])}")
-            await self._install_packages(selected_pkgs, install_all_mode=False)
+            selected_scripts = [pkg.get('script_path') for pkg in selected_pkgs if pkg.get('script_path')]
+            output.add_output(f"[green]Installing selected packages:[/green] {', '.join(selected_scripts)}")
+
+            # Invoke install_custom_selection with the selected scripts
+            install_dir = selected_pkgs[0].get('install_dir', '') if selected_pkgs else ''
+            if install_dir:
+                install_sh = os.path.join(install_dir, 'install.sh')
+                cmd = f"bash '{install_sh}' --custom {' '.join(selected_scripts)}"
+                output.add_output(f"[dim]Executing:[/dim] {cmd}")
+                await self._run_command(cmd, install_dir)
 
         elif event.button.id == "install_all_btn":
             output.add_output(f"[dim]DEBUG: Current options count: {len(self.current_options) if self.current_options else 0}[/dim]")
@@ -497,151 +511,111 @@ class ArcherTUIApp(App):
 
             progress_panel.show_panel()
             output.add_output(f"[green]Installing all packages from:[/green] {self.current_menu_key}")
-            await self._install_packages(self.current_options, install_all_mode=True)
 
-        elif event.button.id == "queue_btn":
-            if self.current_options:
-                output.add_output(f"[blue]Queued {len(self.current_options)} packages for installation[/blue]")
-                progress.update(total=len(self.current_options))
-            else:
-                output.add_output("[yellow]No packages to queue! Select a menu first.[/yellow]")
+            # Invoke install_all_scripts
+            install_dir = self.current_options[0].get('install_dir', '') if self.current_options else ''
+            if install_dir:
+                install_sh = os.path.join(install_dir, 'install.sh')
+                cmd = f"bash '{install_sh}' --all"
+                output.add_output(f"[dim]Executing:[/dim] {cmd}")
+                await self._run_command(cmd, install_dir)
 
-        elif event.button.id == "clear_btn":
-            package_panel = self.query_one("#package_panel", DynamicPackageTable)
-            package_panel.clear_selection()
-            output.add_output("[yellow]Package selection cleared[/yellow]")
-            progress.update(progress=0)
-
-
-    async def _install_packages(self, options: List[Dict], install_all_mode: bool = False):
-        """
-        Install logic:
-        - If 'install_all_mode' is True: run install.sh in the current menu/category directory.
-        - If 'install_all_mode' is False: run the corresponding script for each selected package.
-        """
+    async def _run_command(self, cmd: str, cwd: str):
+        """Run a shell command asynchronously and display output in the log panel"""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
         try:
-            output = self.query_one("#output_panel", InstallationOutputPanel)
-            output.add_output("[red]🚨 ENTERED _install_packages METHOD[/red]")
-
-            progress = self.query_one("#main_progress", ProgressBar)
-
-            total_packages = len(options)
-            progress.update(total=total_packages)
-
-            # Debug output
-            output.add_output(f"[yellow]🔧 DEBUG: Starting _install_packages[/yellow]")
-            output.add_output(f"[dim]DEBUG: install_all_mode={install_all_mode}, {total_packages} packages[/dim]")
-
-            if total_packages == 0:
-                output.add_output("[red]ERROR: No packages provided to install![/red]")
-                output.add_output("[bold green]🎉 All installations completed![/bold green]")
-                return
-
-            if options:
-                output.add_output(f"[dim]DEBUG: First option keys: {list(options[0].keys())}[/dim]")
-                output.add_output(f"[dim]DEBUG: install_dir = {options[0].get('install_dir', 'NOT_FOUND')}[/dim]")
-
-            if install_all_mode:
-                output.add_output("[yellow]🔧 DEBUG: Entering install_all_mode branch[/yellow]")
-                # Run install.sh in the current menu/category directory
-                # Assume all options share the same install_dir
-                if options:
-                    install_dir = options[0].get('install_dir', '')
-                    install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
-                    output.add_output(f"[dim]DEBUG: Looking for install.sh at: {install_sh}[/dim]")
-                    output.add_output(f"[dim]DEBUG: File exists: {os.path.isfile(install_sh) if install_sh else False}[/dim]")
-
-                if install_dir and os.path.isfile(install_sh):
-                    output.add_output(f"[cyan]Running install.sh for all packages in:[/cyan] {install_dir}")
-                    cmd = f"bash '{install_sh}'"
-                    output.add_output(f"[dim]Executing:[/dim] {cmd}")
-                    process = await asyncio.create_subprocess_shell(
-                        cmd,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.STDOUT,
-                        cwd=install_dir
-                    )
-                    # While running, we can't know the exact progress, so we just show activity
-                    while process.returncode is None:
-                        line = await process.stdout.readline()
-                        if not line:
-                            break
-                        line_text = line.decode().strip()
-                        if line_text:
-                            display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
-                            output.add_output(f"[dim]{display_line}[/dim]")
-                        await asyncio.sleep(0.01) # yield control
-
-                    await process.wait()
-
-                    if process.returncode != 0:
-                        output.add_output(f"[red]✗ install.sh failed with code {process.returncode}[/red]")
-                    else:
-                        output.add_output(f"[green]✓ install.sh completed successfully[/green]")
-                        # Mark all as complete
-                        progress.update(progress=total_packages)
-                else:
-                    output.add_output(f"[red]No install.sh found in {install_dir}[/red]")
-                    output.add_output(f"[dim]DEBUG: install_dir='{install_dir}', install_sh='{install_sh}'[/dim]")
-
-            if progress.progress < total_packages:
-                progress.update(progress=total_packages) # Ensure it completes
-            output.add_output("[bold green]🎉 All installations completed![/bold green]")
-            return
-
-            # Otherwise, run individual scripts for each selected package
-            for i, option in enumerate(options):
-                package_name = option.get('display', f'Package {i+1}')
-                script_path = option.get('script_path', '')
-                install_dir = option.get('install_dir', '')
-                # Skip disabled/unavailable packages
-                if option.get('disabled', False):
-                    output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
-                    progress.advance(1)
-                    continue
-
-                output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
-
-                # Determine the script to run: prefer script_path, fallback to install_dir/package_name.sh
-                script_to_run = script_path
-                if not script_to_run and install_dir and option.get('name'):
-                    candidate = os.path.join(install_dir, f"{option['name']}.sh")
-                    if os.path.isfile(candidate):
-                        script_to_run = candidate
-
-                if script_to_run and os.path.isfile(script_to_run):
-                    cmd = f"bash '{script_to_run}'"
-                    output.add_output(f"[dim]Executing:[/dim] {cmd}")
-                    try:
-                        process = await asyncio.create_subprocess_shell(
-                            cmd,
-                            stdout=asyncio.subprocess.PIPE,
-                            stderr=asyncio.subprocess.STDOUT,
-                            cwd=install_dir if install_dir else None
-                        )
-                        while True:
-                            line = await process.stdout.readline()
-                            if not line:
-                                break
-                            line_text = line.decode().strip()
-                            if line_text:
-                                display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
-                                output.add_output(f"[dim]{display_line}[/dim]")
-                        await process.wait()
-                        if process.returncode != 0:
-                            output.add_output(f"[red]✗ Failed to install {package_name}: script exited with code {process.returncode}[/red]")
-                        else:
-                            output.add_output(f"[green]✓ {package_name} installed successfully[/green]")
-                    except Exception as e:
-                        output.add_output(f"[red]✗ Exception during install of {package_name}: {str(e)}[/red]")
-                else:
-                    output.add_output(f"[red]No install script found for {package_name}[/red]")
-
-                # Update progress
-                progress.advance(1)
-
-            output.add_output("[bold green]🎉 All installations completed![/bold green]")
-
+            process = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=cwd
+            )
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                line_text = line.decode().strip()
+                if line_text:
+                    output.add_output(f"[dim]{line_text}[/dim]")
+            await process.wait()
+            if process.returncode != 0:
+                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
+            else:
+                output.add_output(f"[green]Command completed successfully[/green]")
+        except Exception as e:
+            output.add_output(f"[red]Error running command: {str(e)}[/red]")
+    async def _run_command(self, cmd: str, cwd: str):
+        """Run a shell command asynchronously and display output in the log panel"""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        try:
+            process = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=cwd
+            )
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                line_text = line.decode().strip()
+                if line_text:
+                    output.add_output(f"[dim]{line_text}[/dim]")
+            await process.wait()
+            if process.returncode != 0:
+                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
+            else:
+                output.add_output(f"[green]Command completed successfully[/green]")
+        except Exception as e:
+            output.add_output(f"[red]Error running command: {str(e)}[/red]")
+    async def _run_command(self, cmd: str, cwd: str):
+        """Run a shell command asynchronously and display output in the log panel"""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        try:
+            process = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=cwd
+            )
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                line_text = line.decode().strip()
+                if line_text:
+                    output.add_output(f"[dim]{line_text}[/dim]")
+            await process.wait()
+            if process.returncode != 0:
+                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
+            else:
+                output.add_output(f"[green]Command completed successfully[/green]")
+        except Exception as e:
+            output.add_output(f"[red]Error running command: {str(e)}[/red]")
+    async def _run_command(self, cmd: str, cwd: str):
+        """Run a shell command asynchronously and display output in the log panel"""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        try:
+            process = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=cwd
+            )
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                line_text = line.decode().strip()
+                if line_text:
+                    output.add_output(f"[dim]{line_text}[/dim]")
+            await process.wait()
+            if process.returncode != 0:
+                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
+            else:
+                output.add_output(f"[green]Command completed successfully[/green]")
+        except Exception as e:
+            output.add_output(f"[red]Error running command: {str(e)}[/red]")
         except Exception as e:
             try:
                 output = self.query_one("#output_panel", InstallationOutputPanel)

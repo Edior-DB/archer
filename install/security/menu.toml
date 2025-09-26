@@ -20,3 +20,11 @@ directories = []
 "encryption/" = "Encryption"
 "privacy/" = "Privacy"
 "system/" = "System"
+
+[dependencies]
+directories = ["../system", "../common-funcs.sh"]
+files = []
+
+[install]
+install_all_scripts = "Install all security components"
+install_custom_selection = "Install selected security components"

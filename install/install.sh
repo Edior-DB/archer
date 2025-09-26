@@ -104,9 +104,9 @@ list_modules() {
     echo "Available modules:"
     for module in "${MODULES[@]}"; do
         if [[ -f "$SCRIPT_DIR/$module/install.sh" ]]; then
-            echo "  ✅ $module"
+            echo "  \\u2705 $module"
         else
-            echo "  ❌ $module (not implemented)"
+            echo "  \\u274c $module (not implemented)"
         fi
     done
 }
@@ -142,7 +142,7 @@ main() {
             done
             ;;
         -a|--all)
-            echo "⚠️  WARNING: This will install ALL components from ALL modules!"
+            echo "\\u26a0\\ufe0f  WARNING: This will install ALL components from ALL modules!"
             echo "This may take several hours and use significant disk space."
             echo -n "Continue? (y/N): "
             read -r response
@@ -175,7 +175,7 @@ main() {
     esac
 
     echo
-    echo "✅ Archer Linux Enhancement Suite installation completed!"
+    echo "\\u2705 Archer Linux Enhancement Suite installation completed!"
     echo
     echo "Summary:"
     echo "- Check individual module logs for detailed information"
@@ -183,7 +183,7 @@ main() {
     echo "- Desktop themes and customizations may require session restart"
     echo "- Development tools may need shell restart to update PATH"
     echo
-    echo "Enjoy your enhanced Arch Linux system! 🎉"
+    echo "Enjoy your enhanced Arch Linux system! \\\ud83c\\\udf89"
 }
 
 main "$@"
