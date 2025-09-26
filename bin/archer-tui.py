@@ -302,7 +302,7 @@ class ArcherTUIApp(App):
 
     CSS = """
     Screen {
-        layout: none;
+        layout: vertical;
         padding: 1;
     }
     Horizontal {
