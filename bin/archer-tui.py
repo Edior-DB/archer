@@ -589,58 +589,58 @@ class ArcherTUIApp(App):
             output.add_output("[bold green]🎉 All installations completed![/bold green]")
             return
 
-        # Otherwise, run individual scripts for each selected package
-        for i, option in enumerate(options):
-            package_name = option.get('display', f'Package {i+1}')
-            script_path = option.get('script_path', '')
-            install_dir = option.get('install_dir', '')
-            # Skip disabled/unavailable packages
-            if option.get('disabled', False):
-                output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
+            # Otherwise, run individual scripts for each selected package
+            for i, option in enumerate(options):
+                package_name = option.get('display', f'Package {i+1}')
+                script_path = option.get('script_path', '')
+                install_dir = option.get('install_dir', '')
+                # Skip disabled/unavailable packages
+                if option.get('disabled', False):
+                    output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
+                    progress.advance(1)
+                    continue
+
+                output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
+
+                # Determine the script to run: prefer script_path, fallback to install_dir/package_name.sh
+                script_to_run = script_path
+                if not script_to_run and install_dir and option.get('name'):
+                    candidate = os.path.join(install_dir, f"{option['name']}.sh")
+                    if os.path.isfile(candidate):
+                        script_to_run = candidate
+
+                if script_to_run and os.path.isfile(script_to_run):
+                    cmd = f"bash '{script_to_run}'"
+                    output.add_output(f"[dim]Executing:[/dim] {cmd}")
+                    try:
+                        process = await asyncio.create_subprocess_shell(
+                            cmd,
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.STDOUT,
+                            cwd=install_dir if install_dir else None
+                        )
+                        while True:
+                            line = await process.stdout.readline()
+                            if not line:
+                                break
+                            line_text = line.decode().strip()
+                            if line_text:
+                                display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
+                                output.add_output(f"[dim]{display_line}[/dim]")
+                        await process.wait()
+                        if process.returncode != 0:
+                            output.add_output(f"[red]✗ Failed to install {package_name}: script exited with code {process.returncode}[/red]")
+                        else:
+                            output.add_output(f"[green]✓ {package_name} installed successfully[/green]")
+                    except Exception as e:
+                        output.add_output(f"[red]✗ Exception during install of {package_name}: {str(e)}[/red]")
+                else:
+                    output.add_output(f"[red]No install script found for {package_name}[/red]")
+
+                # Update progress
                 progress.advance(1)
-                continue
 
-            output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
-
-            # Determine the script to run: prefer script_path, fallback to install_dir/package_name.sh
-            script_to_run = script_path
-            if not script_to_run and install_dir and option.get('name'):
-                candidate = os.path.join(install_dir, f"{option['name']}.sh")
-                if os.path.isfile(candidate):
-                    script_to_run = candidate
-
-            if script_to_run and os.path.isfile(script_to_run):
-                cmd = f"bash '{script_to_run}'"
-                output.add_output(f"[dim]Executing:[/dim] {cmd}")
-                try:
-                    process = await asyncio.create_subprocess_shell(
-                        cmd,
-                        stdout=asyncio.subprocess.PIPE,
-                        stderr=asyncio.subprocess.STDOUT,
-                        cwd=install_dir if install_dir else None
-                    )
-                    while True:
-                        line = await process.stdout.readline()
-                        if not line:
-                            break
-                        line_text = line.decode().strip()
-                        if line_text:
-                            display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
-                            output.add_output(f"[dim]{display_line}[/dim]")
-                    await process.wait()
-                    if process.returncode != 0:
-                        output.add_output(f"[red]✗ Failed to install {package_name}: script exited with code {process.returncode}[/red]")
-                    else:
-                        output.add_output(f"[green]✓ {package_name} installed successfully[/green]")
-                except Exception as e:
-                    output.add_output(f"[red]✗ Exception during install of {package_name}: {str(e)}[/red]")
-            else:
-                output.add_output(f"[red]No install script found for {package_name}[/red]")
-
-            # Update progress
-            progress.advance(1)
-
-        output.add_output("[bold green]🎉 All installations completed![/bold green]")
+            output.add_output("[bold green]🎉 All installations completed![/bold green]")
 
         except Exception as e:
             try:
