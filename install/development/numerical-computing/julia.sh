@@ -13,10 +13,10 @@ echo -e "${BLUE}Julia - High-performance dynamic programming language for techni
 echo -e "${YELLOW}Trying installation via Mise, with fallback to official installer${NC}"
 echo ""
 
-if ! confirm_action "Install Julia programming language?"; then
-    echo -e "${YELLOW}Julia installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install Julia programming language?"; then
+#     echo -e "${YELLOW}Julia installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then
