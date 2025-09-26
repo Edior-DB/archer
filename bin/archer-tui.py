@@ -539,45 +539,29 @@ class ArcherTUIApp(App):
             output.add_output("[yellow]Package selection cleared[/yellow]")
             progress.update(progress=0)
 
-    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
-        """Handle radio button changes"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-
-        if event.pressed.id == "mode_install_all":
-            self.installation_mode = "install_all"
-            output.add_output("[yellow]Mode changed to:[/yellow] Install All Packages")
-        elif event.pressed.id == "mode_choose_individual":
-            self.installation_mode = "choose_individual"
-            output.add_output("[yellow]Mode changed to:[/yellow] Choose Individual Packages")
-
-        self._update_package_panel_visibility()
 
     async def _install_packages(self, options: List[Dict]):
-        """Install packages using the existing ArcherMenu execution system"""
+        """
+        Install logic:
+        - If 'Install All' mode: run install.sh in the current menu/category directory.
+        - If individual packages selected: run the corresponding script for each selected package.
+        """
         output = self.query_one("#output_panel", InstallationOutputPanel)
         progress = self.query_one("#main_progress", ProgressBar)
 
+        # Determine if 'Install All' mode is active by checking if all options are selected
+        install_all_mode = self.installation_mode == "install_all"
         total_packages = len(options)
         progress.update(total=total_packages * 100)
 
-        for i, option in enumerate(options):
-            package_name = option.get('name', f'Package {i+1}')
-            action = option.get('action', 'script')
-
-            # Skip disabled/unavailable packages
-            if option.get('disabled', False):
-                output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
-                continue
-
-            output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
-
-            try:
-                # If install.sh exists in the package directory, run it
-                script_path = option.get('script_path', '')
-                install_dir = option.get('install_dir', '')
+        if install_all_mode:
+            # Run install.sh in the current menu/category directory
+            # Assume all options share the same install_dir
+            if options:
+                install_dir = options[0].get('install_dir', '')
                 install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
                 if install_dir and os.path.isfile(install_sh):
-                    # Run install.sh for the package
+                    output.add_output(f"[cyan]Running install.sh for all packages in:[/cyan] {install_dir}")
                     cmd = f"bash '{install_sh}'"
                     output.add_output(f"[dim]Executing:[/dim] {cmd}")
                     process = await asyncio.create_subprocess_shell(
@@ -596,10 +580,82 @@ class ArcherTUIApp(App):
                             output.add_output(f"[dim]{display_line}[/dim]")
                     await process.wait()
                     if process.returncode != 0:
-                        raise Exception(f"Script exited with code {process.returncode}")
-                elif action == 'script' and script_path:
-                    # Execute the script using the existing system
-                    await self._execute_script_async(option, script_path, i, total_packages)
+                        output.add_output(f"[red]✗ install.sh failed with code {process.returncode}[/red]")
+                    else:
+                        output.add_output(f"[green]✓ install.sh completed successfully[/green]")
+                else:
+                    output.add_output(f"[red]No install.sh found in {install_dir}[/red]")
+            progress.update(progress=100)
+            output.add_output("[bold green]🎉 All installations completed![/bold green]")
+            return
+
+        # Otherwise, run individual scripts for each selected package
+        for i, option in enumerate(options):
+            package_name = option.get('name', f'Package {i+1}')
+            script_path = option.get('script_path', '')
+            install_dir = option.get('install_dir', '')
+            # Skip disabled/unavailable packages
+            if option.get('disabled', False):
+                output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
+                continue
+
+            output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
+
+            # Determine the script to run: prefer script_path, fallback to install_dir/package_name.sh
+            script_to_run = script_path
+            if not script_to_run and install_dir and package_name:
+                candidate = os.path.join(install_dir, f"{package_name}.sh")
+                if os.path.isfile(candidate):
+                    script_to_run = candidate
+
+            if script_to_run and os.path.isfile(script_to_run):
+                cmd = f"bash '{script_to_run}'"
+                output.add_output(f"[dim]Executing:[/dim] {cmd}")
+                try:
+                    process = await asyncio.create_subprocess_shell(
+                        cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                        cwd=install_dir if install_dir else None
+                    )
+                    while True:
+                        line = await process.stdout.readline()
+                        if not line:
+                            break
+                        line_text = line.decode().strip()
+                        if line_text:
+                            display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
+                            output.add_output(f"[dim]{display_line}[/dim]")
+                    await process.wait()
+                    if process.returncode != 0:
+                        output.add_output(f"[red]✗ Failed to install {package_name}: script exited with code {process.returncode}[/red]")
+                    else:
+                        output.add_output(f"[green]✓ {package_name} installed successfully[/green]")
+                except Exception as e:
+                    output.add_output(f"[red]✗ Exception during install of {package_name}: {str(e)}[/red]")
+            else:
+                output.add_output(f"[red]No install script found for {package_name}[/red]")
+
+            # Update progress
+            progress_value = ((i + 1) * 100)
+            progress.update(progress=progress_value)
+
+        output.add_output("[bold green]🎉 All installations completed![/bold green]")
+                        cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT
+                    )
+                    while True:
+                        line = await proc.stdout.readline()
+                        if not line:
+                            break
+                        line_text = line.decode().strip()
+                        if line_text:
+                            display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
+                            output.add_output(f"[dim]{display_line}[/dim]")
+                    await proc.wait()
+                    if proc.returncode != 0:
+                        raise Exception(f"Failed to install {pkg_name} with install_with_retries")
                 else:
                     # Simulate installation for non-script actions
                     await self._simulate_installation(package_name, i, total_packages)
