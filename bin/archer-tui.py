@@ -345,16 +345,25 @@ class ArcherTUIApp(App):
         height: 40%;
         min-height: 35%;
         max-height: 40%;
+        width: 100%;
+        min-width: 95%;
+        max-width: 100%;
     }
     #package_panel {
         height: 40%;
         min-height: 35%;
         max-height: 40%;
+        width: 100%;
+        min-width: 95%;
+        max-width: 100%;
     }
     #actions_panel {
         height: 20%;
         min-height: 15%;
         max-height: 20%;
+        width: 100%;
+        min-width: 95%;
+        max-width: 100%;
     }
 
     #output_panel {
