@@ -336,9 +336,9 @@ class ArcherTUIApp(App):
         border-bottom: solid $primary-lighten-2;
     }
     #subtopics_panel {
-        height: 8;
-        min-height: 8;
-        max-height: 15;
+        height: 12;
+        min-height: 10;
+        max-height: 20;
     }
     #package_panel {
         height: 35%;
@@ -346,9 +346,9 @@ class ArcherTUIApp(App):
         max-height: 45%;
     }
     #actions_panel {
-        height: 9%;
-        min-height: 4;
-        max-height: 12%;
+        height: auto;
+        min-height: 5;
+        max-height: 10%;
         border-top: solid $primary-lighten-2;
     }
     #menu_tree {
@@ -381,16 +381,21 @@ class ArcherTUIApp(App):
             submenus = self.archer_menu.get_sub_menus(message.menu_key)
             # Store submenus data for reverse lookup in row selection
             self._current_submenus = submenus
-            # Build stable row index mapping for subtopics
+            # Build stable row key / index mapping for subtopics
             self._subtopic_row_map = {}
+            self._subtopic_row_keys = []
+            self._last_highlighted_subtopic_row = None
 
             subtopics_table.clear(columns=True)
             subtopics_table.add_columns("Sub-Topic")
             # Add rows with display names only (keys don't work reliably in Textual)
-            for row_index, (display_name, menu_key) in enumerate(submenus.items()):
-                subtopics_table.add_row(display_name)
-                self._subtopic_row_map[row_index] = (menu_key, display_name)
-            output.add_output(f"[dim]DEBUG: Subtopic row map built with {len(self._subtopic_row_map)} entries[/dim]")
+            for display_name, menu_key in submenus.items():
+                row_key = subtopics_table.add_row(display_name)
+                self._subtopic_row_map[row_key] = (menu_key, display_name)
+                self._subtopic_row_keys.append(row_key)
+            output.add_output(
+                f"[dim]DEBUG: Subtopic row map built with {len(self._subtopic_row_map)} entries[/dim]"
+            )
 
             subtopics_table.visible = True
             package_panel.visible = False
@@ -406,17 +411,41 @@ class ArcherTUIApp(App):
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
 
+        # Ensure Sub-Topics panel remains populated when submenu is selected
+        if not is_top_level and self._current_submenus:
+            subtopics_table.clear(columns=True)
+            subtopics_table.add_columns("Sub-Topic")
+            for display_name, menu_key in self._current_submenus.items():
+                row_key = subtopics_table.add_row(display_name)
+                self._subtopic_row_map[row_key] = (menu_key, display_name)
+            subtopics_table.visible = True
+
     # Subtopic selection: unified logic using row mapping
-    def _activate_subtopic_row(self, row_index: int):
+    def _activate_subtopic_row(self, row_identifier):
         output = self.query_one("#output_panel", InstallationOutputPanel)
         if not hasattr(self, '_subtopic_row_map'):
             output.add_output("[red]DEBUG: No subtopic row map present[/red]")
             return
-        if row_index not in self._subtopic_row_map:
-            output.add_output(f"[red]DEBUG: Row {row_index} not in subtopic map[/red]")
+        row_key = None
+
+        if row_identifier in self._subtopic_row_map:
+            row_key = row_identifier
+        elif isinstance(row_identifier, int) and hasattr(self, '_subtopic_row_keys'):
+            if 0 <= row_identifier < len(self._subtopic_row_keys):
+                row_key = self._subtopic_row_keys[row_identifier]
+        else:
+            identifier_str = str(row_identifier)
+            for candidate in self._subtopic_row_map.keys():
+                if str(candidate) == identifier_str:
+                    row_key = candidate
+                    break
+
+        if row_key is None:
+            output.add_output(f"[red]DEBUG: Row {row_identifier} not in subtopic map[/red]")
             return
-        menu_key, display_name = self._subtopic_row_map[row_index]
-        output.add_output(f"[dim]DEBUG: Activating row {row_index} -> {menu_key}")
+
+        menu_key, display_name = self._subtopic_row_map[row_key]
+        output.add_output(f"[dim]DEBUG: Activating row {row_identifier} -> {menu_key}")
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
         try:
@@ -439,25 +468,38 @@ class ArcherTUIApp(App):
         if event.coordinate.column != 0:
             return
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        output.add_output(f"[dim]DEBUG: CellSelected row={event.coordinate.row}[/dim]")
-        self._activate_subtopic_row(event.coordinate.row)
+        row_identifier = getattr(event.coordinate, "row_key", None)
+        if row_identifier is None:
+            row_identifier = event.coordinate.row
+        output.add_output(f"[dim]DEBUG: CellSelected row={row_identifier}[/dim]")
+        self._activate_subtopic_row(row_identifier)
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected):
         if event.control.id != "subtopics_panel":
             return
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        row_index = getattr(event, 'cursor_row', 0)
-        output.add_output(f"[dim]DEBUG: RowSelected row={row_index}[/dim]")
-        self._activate_subtopic_row(row_index)
+        row_identifier = getattr(event, "row_key", None)
+        if row_identifier is None:
+            row_identifier = getattr(event, "cursor_row", None)
+        if row_identifier is None:
+            row_identifier = getattr(event, "row_index", None)
+        output.add_output(f"[dim]DEBUG: RowSelected row={row_identifier}[/dim]")
+        if row_identifier is not None:
+            self._activate_subtopic_row(row_identifier)
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
         if event.control.id != "subtopics_panel":
             return
-        self._last_highlighted_subtopic_row = event.row_index
+        row_identifier = getattr(event, "row_key", None)
+        if row_identifier is None:
+            row_identifier = getattr(event, "row_index", None)
+        self._last_highlighted_subtopic_row = row_identifier
 
     def on_key(self, event: events.Key):
         if event.key == "enter" and hasattr(self, '_last_highlighted_subtopic_row'):
-            self._activate_subtopic_row(self._last_highlighted_subtopic_row)
+            row_identifier = self._last_highlighted_subtopic_row
+            if row_identifier is not None:
+                self._activate_subtopic_row(row_identifier)
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
