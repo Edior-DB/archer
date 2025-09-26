@@ -126,10 +126,7 @@ install_with_retries() {
         else
             echo -e "${RED}ERROR: Installation failed after $max_retries attempts!${NC}"
             echo -e "${RED}Please check your network connection.${NC}"
-            if echo "Installation failed after $max_retries attempts!" && \
-               echo "Please check your network connection." && \
-               read -p "Would you like to try installing again? (y/N): " response && \
-               [[ "$response" =~ ^[yY]([eE][sS])?$ ]]; then
+            if command -v gum >/dev/null 2>&1 && gum confirm "Would you like to try installing again?"; then
                 retry_count=0
                 echo -e "${CYAN}Retrying installation...${NC}"
                 if [[ "$command_type" == "pacstrap" ]]; then
@@ -148,15 +145,19 @@ install_with_retries() {
 }
 
 
-# Confirm function with simple read
+# Confirm function with fallback
 confirm_action() {
     local message="$1"
-    echo -n "$message (y/N): "
-    read -r response
-    case "$response" in
-        [yY]|[yY][eE][sS]) return 0 ;;
-        *) return 1 ;;
-    esac
+    if command -v gum >/dev/null 2>&1; then
+        gum confirm "$message"
+    else
+        echo -n "$message (y/N): "
+        read -r response
+        case "$response" in
+            [yY]|[yY][eE][sS]) return 0 ;;
+            *) return 1 ;;
+        esac
+    fi
 }
 
 # Check if running from Live ISO
@@ -253,7 +254,7 @@ install_kde_minimal() {
     #     "print-manager"
     # )
     # install_with_retries "${kde_packages[@]}"
-    install_with_retries plasma-meta
+    install_with_retries plasma-meta konsole
     sudo systemctl enable sddm
     echo -e "${GREEN}Full KDE Plasma desktop installed!${NC}"
 }
@@ -319,6 +320,7 @@ install_development_base() {
         "nano"
         "wget"
         "curl"
+        "flatpak"
 
         # Build tools
         "cmake"
@@ -327,11 +329,7 @@ install_development_base() {
         "clang"
         "python"
         "python-pip"
-        "python-rich"
-        "python-textual"
         "mise"
-        "gd"
-        "re2c"
 
         # System tools
         "htop"
@@ -544,8 +542,19 @@ run_setup() {
     echo -e "${CYAN} 2. Run the main menu: archer${NC}"
     echo -e "${CYAN} 3. For new terminal sessions, ~/.local/bin is now in your PATH${NC}"
     echo ""
-    echo -e "${YELLOW}To start using Archer, simply run: ${GREEN}archer${NC}"
     echo -e "${YELLOW}The 'archer' command provides additional setup options and system management.${NC}"
+
+    # Ask if user wants to run archer now
+    if confirm_action "Do you want to run Archer now?"; then
+        echo -e "${BLUE}Starting Archer...${NC}"
+        # Pre-authenticate sudo to avoid issues in archer
+        echo -e "${CYAN}Authenticating sudo access...${NC}"
+        if sudo -v; then
+            echo -e "${GREEN}✓ Sudo access confirmed${NC}"
+        fi
+        # Use direct execution instead of exec to maintain terminal state
+        "$ARCHER_DIR/bin/archer.sh"
+    fi
 }
 
 # Main execution
