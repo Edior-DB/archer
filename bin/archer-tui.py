@@ -429,45 +429,6 @@ class ArcherTUIApp(App):
             output.add_output(f"[red]Error loading toolsets for '{menu_key}': {e}[/red]")
 
     def _update_package_panel_visibility(self):
-
-    def _handle_subtopic_selection(self, menu_key: str):
-        """Shared logic for subtopic selection events using a direct menu_key"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        subtopics_table = self.query_one("#subtopics_panel", DataTable)
-
-        try:
-            _, _, options = self.archer_menu.get_menu_options_filtered(menu_key)
-            self.current_menu_key = menu_key
-            self.current_options = options
-            package_panel.packages = options
-            package_panel.visible = True
-            subtopics_table.visible = False
-            display_name = menu_key.split('/')[-1].replace('-', ' ').title()
-            output.add_output(f"[blue]Selected sub-topic:[/blue] {display_name}")
-            output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
-            for opt in options:
-                output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-        except Exception as e:
-            package_panel.packages = []
-            package_panel.visible = False
-            output.add_output(f"[red]No toolsets found for sub-topic: {menu_key}. Error: {e}[/red]")
-
-    def on_data_table_row_selected(self, event: DataTable.RowSelected):
-        """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
-        if event.control.id == "subtopics_panel":
-            menu_key = str(event.row_key.value)
-            if menu_key:
-                self._handle_subtopic_selection(menu_key)
-
-
-    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
-        """Handle row highlight in Sub-Topics panel and show corresponding toolsets"""
-        if event.control.id == "subtopics_panel":
-            subtopic = event.data_table.get_row(event.key)[0]
-            self._handle_subtopic_selection(subtopic)
-
-    def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         output = self.query_one("#output_panel", InstallationOutputPanel)
