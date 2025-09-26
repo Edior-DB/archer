@@ -1138,6 +1138,29 @@ class ArcherMenu:
 
         return menu_name, menu_description, filtered_options
 
+    def is_top_level_menu(self, menu_key: str) -> bool:
+        """Check if a menu key represents a top-level menu (no slashes in key)."""
+        return '/' not in menu_key
+
+    def get_sub_menus(self, menu_key: str) -> Dict[str, str]:
+        """Get sub-menus for a given menu key, returning a dict of display_name: menu_key."""
+        if menu_key not in self.discovered_menus:
+            return {}
+
+        menu = self.discovered_menus[menu_key]
+        submenus_data = menu.get('submenus', [])
+        menu_data = menu.get('data', {})
+        display_overrides = menu_data.get('display', {})
+
+        sub_menus = {}
+        for submenu_info in submenus_data:
+            submenu_name = submenu_info['name']
+            submenu_key = submenu_info['path']
+            # Display overrides for directories usually end with a slash
+            display_name = display_overrides.get(submenu_name + '/', submenu_info['display_name'])
+            sub_menus[display_name] = submenu_key
+        return sub_menus
+
     def _get_parent_menu_key(self, menu_key: str) -> str:
         """Get the parent menu key for navigation"""
         if '/' not in menu_key:
