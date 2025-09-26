@@ -14,4 +14,5 @@ files = []
 directories = []
 
 [display]
-"media-players/" = "Media Players"
+"media-players/" = "Media Players (Unavailable)"
+"media-players/".disabled = true

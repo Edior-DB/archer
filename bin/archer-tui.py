@@ -92,6 +92,9 @@ class DynamicPackageTable(Widget):
         # Add rows
         for i, package in enumerate(self._packages):
             display_name = package.get('display', 'Unknown Package')
+            # If package is disabled, gray it out
+            if package.get('disabled', False):
+                display_name = f"[dim]{display_name}[/dim]"
             checkbox = "☑" if i in self._selected_package_indices else "☐"
             table.add_row(checkbox, display_name)
 
@@ -348,7 +351,6 @@ class ArcherTUIApp(App):
         padding: 2;
         border: solid blue !important;
         text-style: bold;
-        font-size: 1.2em;
         content-align: center middle;
     }
 
@@ -562,13 +564,40 @@ class ArcherTUIApp(App):
             package_name = option.get('name', f'Package {i+1}')
             action = option.get('action', 'script')
 
+            # Skip disabled/unavailable packages
+            if option.get('disabled', False):
+                output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
+                continue
+
             output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
 
             try:
-                # Use the existing ArcherMenu execution system
+                # If install.sh exists in the package directory, run it
                 script_path = option.get('script_path', '')
-
-                if action == 'script' and script_path:
+                install_dir = option.get('install_dir', '')
+                install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
+                if install_dir and os.path.isfile(install_sh):
+                    # Run install.sh for the package
+                    cmd = f"bash '{install_sh}'"
+                    output.add_output(f"[dim]Executing:[/dim] {cmd}")
+                    process = await asyncio.create_subprocess_shell(
+                        cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                        cwd=install_dir
+                    )
+                    while True:
+                        line = await process.stdout.readline()
+                        if not line:
+                            break
+                        line_text = line.decode().strip()
+                        if line_text:
+                            display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
+                            output.add_output(f"[dim]{display_line}[/dim]")
+                    await process.wait()
+                    if process.returncode != 0:
+                        raise Exception(f"Script exited with code {process.returncode}")
+                elif action == 'script' and script_path:
                     # Execute the script using the existing system
                     await self._execute_script_async(option, script_path, i, total_packages)
                 else:
