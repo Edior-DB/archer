@@ -25,15 +25,142 @@ NC='\033[0m' # No Color
 # USER INTERFACE FUNCTIONS (Simple, no dependencies)
 # ============================================================================
 
-# Confirm function using simple read
+# Confirm function: prefer `gum confirm` in interactive TUI-enabled environments,
+# otherwise fall back to a simple read-based prompt. This keeps the same
+# interface (`confirm_action "Message"`) used across scripts.
 confirm_action() {
     local message="$1"
+    # Helper to determine if the Textual-based TUI CLI can run here.
+    archer_can_run_tui_cli() {
+        # Only try if ARCHER_TUI is set and python3 exists and the CLI file exists
+        if [ -z "${ARCHER_TUI:-}" ]; then
+            return 1
+        fi
+        local cli="${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../}/bin/archer/archer_tui_cli.py"
+        if [ ! -f "$cli" ]; then
+            return 1
+        fi
+        if ! command -v python3 >/dev/null 2>&1; then
+            return 1
+        fi
+        # Check if textual module is importable
+        python3 - <<'PY' >/dev/null 2>&1 || return 1
+import importlib, sys
+spec = importlib.util.find_spec('textual')
+sys.exit(0 if spec is not None else 1)
+PY
+        return 0
+    }
+
+    # If the textual-based TUI helper is available, prefer it.
+    if archer_can_run_tui_cli && [ "${AUTO_CONFIRM:-0}" != "1" ]; then
+        tui_cli="${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../}/bin/archer/archer_tui_cli.py"
+        if python3 "$tui_cli" confirm --message "$message" >/dev/null 2>&1; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+
+    # If gum is available and stdout is a tty, prefer gum's confirmation UI
+    if command -v gum >/dev/null 2>&1 && [ -t 1 ] && [ "${AUTO_CONFIRM:-0}" != "1" ]; then
+        # gum confirm returns 0 on yes, 1 on no
+        if gum confirm --selected "No" "$message" 2>/dev/null; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+
+    # Fallback to plain-text prompt
     echo -n "$message (y/N): "
     read -r response
     case "$response" in
         [yY]|[yY][eE][sS]) return 0 ;;
         *) return 1 ;;
     esac
+}
+
+# Prompt for a secret (password) using gum when available; fall back to read -s.
+archer_prompt_secret() {
+    local prompt="${1:-Password: }"
+    local secret=""
+
+    # Prefer Textual TUI modal if available
+    if archer_can_run_tui_cli && [ "${AUTO_CONFIRM:-0}" != "1" ]; then
+        tui_cli="${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../../}/bin/archer/archer_tui_cli.py"
+        secret=$(python3 "$tui_cli" secret --prompt "$prompt" 2>/dev/null || true)
+        printf '%s' "$secret"
+        return 0
+    fi
+
+    if command -v gum >/dev/null 2>&1 && [ -t 1 ] && [ "${AUTO_CONFIRM:-0}" != "1" ]; then
+        secret=$(gum input --password --placeholder "$prompt" 2>/dev/null || true)
+    else
+        # Fallback: use a silent read (interactive terminal required)
+        echo -n "$prompt"
+        # shellcheck disable=SC2034
+        read -r -s secret
+        echo ""
+    fi
+
+    printf '%s' "$secret"
+}
+
+# Request sudo credentials interactively and validate them. This attempts to
+# cache sudo credentials (via sudo -S -v) so subsequent sudo invocations won't
+# prompt again for a short time. Returns 0 on success, 1 on failure.
+archer_request_sudo() {
+    # If already root, nothing to do
+    if [[ $EUID -eq 0 ]]; then
+        return 0
+    fi
+
+    # If sudo works without a password or credentials are cached, succeed
+    if sudo -n true 2>/dev/null; then
+        return 0
+    fi
+
+    # Non-interactive contexts cannot collect a password
+    if [ "${AUTO_CONFIRM:-0}" = "1" ] || ! [ -t 0 ] || ! [ -t 1 ]; then
+        echo -e "${YELLOW}Cannot prompt for sudo password in non-interactive mode.${NC}"
+        return 1
+    fi
+
+    # Prompt for password (gum if available)
+    local password
+    password=$(archer_prompt_secret "Enter sudo password: ")
+
+    # Validate password by passing it to sudo -S -v
+    if printf '%s
+' "$password" | sudo -S -v 2>/dev/null; then
+        # Optionally refresh the timestamp in the background for long-running scripts
+        ( while true; do sleep 60; sudo -n true 2>/dev/null || break; done ) &
+        return 0
+    else
+        echo -e "${RED}Invalid sudo password or unable to validate sudo credentials.${NC}"
+        return 1
+    fi
+}
+
+# Wrapper to run a command with sudo after ensuring credentials are available.
+# Usage: archer_sudo <command...>
+archer_sudo() {
+    if [[ $EUID -eq 0 ]]; then
+        # Already root; run the command directly
+        "$@"
+        return $?
+    fi
+
+    # Ensure we can obtain/validate sudo credentials
+    if ! archer_request_sudo; then
+        echo -e "${RED}Unable to obtain sudo credentials; skipping command.${NC}"
+        return 1
+    fi
+
+    # Run the command through sudo; preserve environment variables
+    sudo "${@}"
+    return $?
 }
 
 # Wait function using simple read

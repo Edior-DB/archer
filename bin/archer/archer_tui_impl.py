@@ -697,10 +697,45 @@ class ArcherTUIApp(App):
 
         try:
             # Create subprocess
+            # Before launching, if this command likely needs sudo/package installs
+            # attempt to collect sudo credentials via the shell helper. This
+            # runs the helper in a subshell that sources the common functions.
+            needs_sudo = any(x in command for x in ("sudo", "pacman", "pacstrap", "yay", "paru", "makepkg"))
+            if needs_sudo:
+                try:
+                    # Build a safe check command that sources common-funcs and
+                    # calls archer_request_sudo
+                    cli_path = os.path.join(self.archer_dir, 'install', 'system', 'common-funcs.sh')
+                    # Run synchronously to get result before starting the installer.
+                    # Use an argument list to avoid shell-quoting issues.
+                    import subprocess as _sub
+                    rc = _sub.run([
+                        'bash', '-c', f"source '{cli_path}' >/dev/null 2>&1; archer_request_sudo"
+                    ]).returncode
+                    if rc != 0:
+                        out = self.query_one("#output_panel", InstallationOutputPanel)
+                        out.add_output(f"[yellow]Skipping install because sudo credentials could not be obtained (exit {rc}).[/yellow]")
+                        progress_panel.hide_panel()
+                        return
+                except Exception:
+                    pass
+
+            # Run child scripts with stdin redirected to DEVNULL so they cannot
+            # block waiting for input from the TUI's stdin. Also ensure we
+            # propagate environment variables that indicate a TUI context and
+            # non-interactive defaults so installers will avoid prompting.
+            env = os.environ.copy()
+            env.setdefault('ARCHER_TUI', '1')
+            # Force AUTO_CONFIRM to 1 for child processes so they don't attempt
+            # interactive confirmations in the TUI session.
+            env.setdefault('AUTO_CONFIRM', '1')
+
             proc = await asyncio.create_subprocess_shell(
                 command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
+                stdin=asyncio.subprocess.DEVNULL,
+                env=env,
             )
 
             # Stream stdout lines to the output panel
@@ -762,7 +797,12 @@ class ArcherTUIApp(App):
             if rc == 0:
                 output.add_output(f"[green]Completed: {description}[/green]")
             else:
-                output.add_output(f"[red]Failed ({rc}): {description}[/red]")
+                # Print a concise failure summary to the installation output
+                # panel and continue running the TUI without exiting.
+                if script_path:
+                    output.add_output(f"[red]Script failed: {script_path} (exit {rc})[/red]")
+                else:
+                    output.add_output(f"[red]Command failed (exit {rc}): {description}[/red]")
 
         except Exception as e:
             output.add_output(f"[red]Exception running {description}: {e}[/red]")
