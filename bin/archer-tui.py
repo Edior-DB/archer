@@ -292,153 +292,55 @@ class ArcherTUIApp(App):
             yield tree
             yield InstallationOutputPanel(id="output_panel")
 
-        # Right top panel: Sub-topics of the selected main topic (single-select)
-        with Vertical(id="selection_panel"):
-            yield Static("Sub-Topics:", classes="panel-title")
-            yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
-
-        # Right middle panel: Toolsets of the selected sub-topic (multi-select)
-        with Vertical(id="package_panel"):
-            yield Static("Select Tools and Packages:", classes="panel-title")
-            yield DynamicPackageTable(id="toolsets_panel")
-
-        # Right bottom panel: Action buttons
-        yield ActionButtonsPanel(id="actions_panel")
-
-        # Bottom panel: Progress bar
-        yield ProgressPanel(id="progress_panel")
+        # Rightmost vertical panel: Sub-Topics, Package Selection, Buttons, Progress Bar
+        with Vertical(id="right_panel"):
+            with Vertical(id="selection_panel"):
+                yield Static("Sub-Topics:", classes="panel-title")
+                yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
+            with Vertical(id="package_panel"):
+                yield Static("Select Tools and Packages:", classes="panel-title")
+                yield DynamicPackageTable(id="toolsets_panel")
+            yield ActionButtonsPanel(id="actions_panel")
+            yield ProgressPanel(id="progress_panel")
 
     CSS = """
+    Screen {
+        layout: grid;
+        grid-size: 3 6;
+        grid-gutter: 1;
+        padding: 1;
+    }
     #left_panel {
         column-span: 1;
         row-span: 6;
         border: solid $primary;
         height: 100%;
         layout: vertical;
+        width: 1fr;
+        min-width: 30%;
+        max-width: 33%;
     }
-
+    #right_panel {
+        column-span: 2;
+        row-span: 6;
+        border: solid $secondary;
+        height: 100%;
+        layout: vertical;
+        width: 2fr;
+        min-width: 67%;
+        max-width: 70%;
+    }
     #menu_tree {
         height: 60%;
         min-height: 12;
     }
-
     #output_panel {
         height: 40%;
         min-height: 8;
     }
-
-    #selection_panel {
-        column-span: 2;
-        row-span: 1;
-        border: solid $secondary;
-        height: 6;
-        min-height: 6;
-    }
-
-    #package_panel {
-        column-span: 2;
-        row-span: 2;
-        border: solid $secondary;
-        height: 1fr;
-    }
-
-    #progress_panel {
-        column-span: 2;
-        row-span: 1;
-        border: solid $success;
-        height: 8;
-    }
-
-    #actions_panel {
-        column-span: 2;
-        row-span: 1;
-        border: solid $primary;
-        height: auto;
-    }
-
-    .button-container {
-        height: 100%;
-        align: center middle;
-        padding: 0 1;
-    }
-
-    .button-container Button {
-        width: 1fr;
-        height: 3;
-        margin: 0 1;
-    }
-
-    #actions_panel Horizontal {
-        height: auto;
-        align: center middle;
-        content-align: center middle;
-    }
-
-    .panel-title {
-        text-style: bold;
-        color: $accent;
-        margin: 0;
-        padding: 0;
-    }
-
-    .package-header {
-        text-style: bold;
-        color: $secondary;
-        margin-bottom: 1;
-    }
-
-    RadioSet {
-        padding: 0 1;
-        height: auto;
-    }
-
-    RadioButton {
-        margin: 0;
-        height: 1;
-    }
-
-    #package_table {
-        height: 1fr;
-    }
-
     #subtopics_panel {
         height: 6;
         min-height: 6;
-    }
-
-    /* Make checkboxes more prominent */
-    DataTable > .datatable--cursor {
-        background: $primary 20%;
-    }
-
-    DataTable .datatable--header {
-        text-style: bold;
-        background: $primary 30%;
-    }
-
-    /* General styling for table cells */
-    DataTable Cell {
-        text-align: center;
-    }
-
-    /* RadioSet disabled state styling */
-    RadioSet:disabled {
-        opacity: 60%;
-    }
-
-    RadioSet:disabled RadioButton {
-        color: $text-disabled;
-        opacity: 50%;
-    }
-
-    #install_log {
-        height: 1fr;
-        border: solid $primary-lighten-2;
-        margin: 1 0;
-    }
-
-    ProgressBar {
-        margin: 1 0;
     }
     """
 
