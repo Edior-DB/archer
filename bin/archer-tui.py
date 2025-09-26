@@ -324,12 +324,23 @@ class ArcherTUIApp(App):
     }
 
 
-    #selection_panel {
-        height: 40%;
-        min-height: 8;
-        max-height: 25%;
-        border-bottom: solid $primary-lighten-2;
+    #left_panel {
+        width: 33%;
+        min-width: 30%;
+        max-width: 33%;
+        height: auto;
+        border: solid $primary;
+        layout: vertical;
     }
+    #right_panel {
+        width: 67%;
+        min-width: 67%;
+        max-width: 70%;
+        height: auto;
+        border: solid $secondary;
+        layout: horizontal;
+    }
+
     #subtopics_panel {
         height: 40%;
         min-height: 35%;
@@ -345,35 +356,20 @@ class ArcherTUIApp(App):
         min-height: 15%;
         max-height: 20%;
     }
-    #menu_tree {
-        height: 100%;
-        min-height: 12;
-    }
+
     #output_panel {
-        height: 75%;
-        min-height: 20;
-        max-height: 80%;
+        width: 75%;
+        min-width: 70%;
+        max-width: 75%;
+        height: auto;
+        border: solid $primary-lighten-2;
     }
     #progress_panel {
-        height: 25%;
-        min-height: 10;
-        max-height: 25%;
-    }
-    #left_panel {
-        width: 33%;
-        min-width: 30%;
-        max-width: 33%;
+        width: 25%;
+        min-width: 20%;
+        max-width: 25%;
         height: auto;
-        border: solid $primary;
-        layout: vertical;
-    }
-    #right_panel {
-        width: 67%;
-        min-width: 67%;
-        max-width: 70%;
-        height: auto;
-        border: solid $secondary;
-        layout: vertical;
+        border: solid $secondary-lighten-2;
     }
     """
 
