@@ -375,11 +375,14 @@ class ArcherTUIApp(App):
 
         if is_top_level:
             submenus = self.archer_menu.get_sub_menus(message.menu_key)
+            # Store submenus data for reverse lookup in row selection
+            self._current_submenus = submenus
+
             subtopics_table.clear(columns=True)
             subtopics_table.add_columns("Sub-Topic")
-            # Add rows with the full menu_key as the key
+            # Add rows with display names only (keys don't work reliably in Textual)
             for display_name, menu_key in submenus.items():
-                subtopics_table.add_row(display_name, key=menu_key)
+                subtopics_table.add_row(display_name)
 
             subtopics_table.visible = True
             package_panel.visible = False
@@ -403,12 +406,28 @@ class ArcherTUIApp(App):
         if event.control.id != "subtopics_panel":
             return
 
-        menu_key = str(event.row_key.value)
-        output.add_output(f"[dim]DEBUG: Subtopic row selected. Key: '{menu_key}'[/dim]")
+        # Get the selected subtopic display name from the row data
+        try:
+            subtopic_display = event.row[0]
+            output.add_output(f"[dim]DEBUG: Subtopic row selected. Display: '{subtopic_display}'[/dim]")
+        except (IndexError, AttributeError) as e:
+            output.add_output(f"[red]Error: Could not retrieve subtopic from row data: {e}[/red]")
+            return
+
+        # Find the corresponding menu_key by matching the display name
+        # We need to reverse-lookup from our stored submenus data
+        menu_key = None
+        if hasattr(self, '_current_submenus'):
+            for display_name, stored_menu_key in self._current_submenus.items():
+                if display_name == subtopic_display:
+                    menu_key = stored_menu_key
+                    break
 
         if not menu_key:
-            output.add_output("[red]Error: Could not retrieve sub-topic key.[/red]")
+            output.add_output(f"[red]Error: Could not find menu key for subtopic '{subtopic_display}'[/red]")
             return
+
+        output.add_output(f"[dim]DEBUG: Found menu key: '{menu_key}'[/dim]")
 
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
