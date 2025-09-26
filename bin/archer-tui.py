@@ -315,8 +315,7 @@ class ArcherTUIApp(App):
         column-span: 2;
         row-span: 1;
         border: solid $primary;
-        height: 5;
-        min-height: 5;
+        height: auto;
     }
 
     .button-container {
@@ -327,9 +326,8 @@ class ArcherTUIApp(App):
 
     .button-container Button {
         width: 1fr;
-        height: 100%;
+        height: 3;
         margin: 0 1;
-        border: tall $primary;
     }
 
     #actions_panel Horizontal {
@@ -506,6 +504,7 @@ class ArcherTUIApp(App):
             package_panel = self.query_one("#package_panel", DynamicPackageTable)
             package_panel.clear_selection()
             output.add_output("[yellow]Package selection cleared[/yellow]")
+            progress = self.query_one("#main_progress", ProgressBar)
             progress.update(progress=0)
 
 
