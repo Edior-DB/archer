@@ -303,22 +303,22 @@ class ArcherTUIApp(App):
 
     CSS = """
     Screen {
-        layout: vertical;
+        layout: horizontal;
         padding: 1;
     }
-    #left_panel {
-        width: 33%;
-        min-width: 30%;
-        max-width: 33%;
-        height: auto;
+    #top_panel {
+        height: 67%;
+        min-height: 60%;
+        max-height: 67%;
+        width: auto;
         border: solid $primary;
         layout: vertical;
     }
-    #right_panel {
-        width: 67%;
-        min-width: 67%;
-        max-width: 70%;
-        height: auto;
+    #bottom_panel {
+        height: 33%;
+        min-height: 30%;
+        max-height: 33%;
+        width: auto;
         border: solid $secondary;
         layout: vertical;
     }
