@@ -657,6 +657,115 @@ class ArcherTUIApp(App):
     }
     """
 
+    async def _run_install_command(self, description: str, command: str, script_path: str = ""):
+        """Run a shell command asynchronously and stream output to the installation panel."""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        progress_panel = self.query_one("#progress_panel", ProgressPanel)
+
+        output.add_output(f"[blue]Starting: {description}[/blue]")
+        progress_panel.show_panel()
+
+        try:
+            # Create subprocess
+            proc = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+
+            # Stream stdout lines to the output panel
+            assert proc.stdout is not None
+            while True:
+                line = await proc.stdout.readline()
+                if not line:
+                    break
+                try:
+                    text = line.decode('utf-8', errors='replace').rstrip()
+                except Exception:
+                    text = str(line)
+                output.add_output(text)
+
+            rc = await proc.wait()
+            if rc == 0:
+                output.add_output(f"[green]Completed: {description}[/green]")
+            else:
+                output.add_output(f"[red]Failed ({rc}): {description}[/red]")
+
+        except Exception as e:
+            output.add_output(f"[red]Exception running {description}: {e}[/red]")
+        finally:
+            progress_panel.hide_panel()
+
+    async def _install_selected(self):
+        """Install packages selected in the DynamicPackageTable sequentially."""
+        package_panel = self.query_one("#package_panel", DynamicPackageTable)
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+
+        selected = package_panel.get_selected_packages()
+        if not selected:
+            output.add_output("[yellow]No packages selected to install.[/yellow]")
+            return
+
+        # Each selected item is expected to be an option dict from ArcherMenu
+        for opt in selected:
+            display = opt.get('display', 'Unnamed')
+            target = opt.get('target')
+            if not target:
+                output.add_output(f"[red]No target for {display}, skipping.[/red]")
+                continue
+
+            # Build command to run the script in the archer directory
+            cmd = f"cd '{self.archer_dir}' && bash '{target}'"
+            await self._run_install_command(display, cmd, target)
+
+    async def _install_all_for_current_menu(self):
+        """Run the install.sh for the current menu (install_all semantics)."""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        menu_key = getattr(self, 'current_menu_key', None)
+        if not menu_key:
+            output.add_output("[yellow]No menu selected for Install All.[/yellow]")
+            return
+
+        menus = getattr(self.archer_menu, 'discovered_menus', {})
+        menu = menus.get(menu_key)
+        if not menu:
+            output.add_output(f"[red]Menu not found: {menu_key}[/red]")
+            return
+
+        menu_dir = os.path.dirname(menu.get('path', ''))
+        install_sh = os.path.join(menu_dir, 'install.sh')
+        if not os.path.exists(install_sh):
+            output.add_output(f"[red]install.sh not found for {menu_key}: {install_sh}[/red]")
+            return
+
+        cmd = f"cd '{self.archer_dir}' && bash '{install_sh}' --all"
+        await self._run_install_command(f"Install All: {menu_key}", cmd, install_sh)
+
+    def on_button_pressed(self, event: Button.Pressed):
+        """Handle action buttons: install, queue, clear, install all."""
+        btn_id = event.control.id
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+
+        if btn_id == 'clear_btn':
+            package_panel = self.query_one("#package_panel", DynamicPackageTable)
+            package_panel.clear_selection()
+            output.add_output("[dim]Selections cleared[/dim]")
+            return
+
+        if btn_id == 'queue_btn':
+            # Queueing not implemented yet — just show a message
+            output.add_output("[dim]Queueing feature not implemented yet — will install immediately instead.[/dim]")
+            # fall through to install selected
+
+        if btn_id == 'install_btn' or btn_id == 'queue_btn':
+            # Start installation of selected packages
+            asyncio.create_task(self._install_selected())
+            return
+
+        if btn_id == 'install_all_btn':
+            asyncio.create_task(self._install_all_for_current_menu())
+            return
+
 def check_terminal_dimensions():
     """Check if terminal meets minimum dimension requirements"""
     try:
