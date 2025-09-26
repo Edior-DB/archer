@@ -287,11 +287,10 @@ class ArcherTUIApp(App):
         # Top-level split: top_panel (67% height) and bottom_panel (33% height)
         with Vertical(id="root_vertical"):
             with Horizontal(id="top_panel"):
-                # Left: main menu (33% width)
+                # Left: main menu (33% width) - simplified to a single-select list
                 with Vertical(id="left_panel"):
-                    tree = ArcherMenuTree(self.archer_menu)
-                    tree.id = "menu_tree"
-                    yield tree
+                    yield Static("Main Menu:", classes="panel-title")
+                    yield DataTable(id="menu_list", show_header=False, zebra_stripes=True, show_cursor=True)
                 # Right: selection area (67% width) - vertically divided into sub-panels
                 with Vertical(id="right_panel"):
                     with Vertical(id="subtopics_container"):
@@ -307,159 +306,135 @@ class ArcherTUIApp(App):
                 yield InstallationOutputPanel(id="output_panel")
                 yield ProgressPanel(id="progress_panel")
 
-    CSS = """
-    Screen {
-        layout: vertical; /* Stack top and bottom panels vertically */
-        padding: 1;
-    }
+    async def on_mount(self) -> None:
+        """Populate the main menu list on mount using discovered menus (top-level items)."""
+        # Build ordered list of top-level menu keys (preserve discovery order)
+        menu_list = self.query_one("#menu_list", DataTable)
+        menu_list.clear(columns=True)
+        menu_list.add_columns("Main Menu")
 
-    /* Top and bottom parent panels */
-    #top_panel {
-        height: 67%;
-        min-height: 60%;
-        max-height: 67%;
-        width: 100%;
-        border: none;
-        layout: horizontal; /* left and right columns */
-    }
+        self._menu_row_map = {}
+        seen = set()
+        order = []
+        for menu_key in self.archer_menu.discovered_menus.keys():
+            if menu_key == "main":
+                continue
+            top = menu_key.split('/')[0]
+            if top not in seen:
+                seen.add(top)
+                order.append(top)
 
-    #bottom_panel {
-        height: 33%;
-        min-height: 30%;
-        max-height: 33%;
-        width: 100%;
-        border: none;
-        layout: horizontal; /* output and progress side-by-side */
-    }
+        for top_key in order:
+            display_name = top_key.replace('-', ' ').replace('_', ' ').title()
+            row_key = menu_list.add_row(display_name)
+            self._menu_row_map[row_key] = top_key
 
-    /* Top-left main menu column */
-    #left_panel {
-        width: 33%;
-        min-width: 33%;
-        max-width: 33%;
-        height: 100%;
-        border: solid $primary;
-        layout: vertical;
-    }
-
-    /* Top-right column that holds three stacked areas */
-    #right_panel {
-        width: 67%;
-        min-width: 67%;
-        max-width: 67%;
-        height: 100%;
-        border: solid $secondary;
-        layout: vertical; /* stack subtopics, package, actions vertically */
-    }
-
-    /* The three containers inside the right panel - use percentage heights of right_panel */
-    #subtopics_container {
-        height: 40%;
-        min-height: 40%;
-        max-height: 40%;
-        width: 100%;
-        layout: vertical;
-        border-bottom: solid $primary-lighten-2;
-    }
-
-    #package_container {
-        height: 40%;
-        min-height: 40%;
-        max-height: 40%;
-        width: 100%;
-        layout: vertical;
-        border-bottom: solid $primary-lighten-2;
-    }
-
-    #actions_container {
-        height: 20%;
-        min-height: 20%;
-        max-height: 20%;
-        width: 100%;
-        layout: vertical;
-    }
-
-    /* Ensure inner widgets occupy full width of their containers */
-    #subtopics_panel, #package_panel, #actions_panel, #menu_tree {
-        width: 100%;
-        min-width: 100%;
-        max-width: 100%;
-    }
-
-    /* Bottom panel children proportions */
-    #output_panel {
-        width: 75%;
-        min-width: 75%;
-        max-width: 75%;
-        height: 100%;
-        border: solid $primary-lighten-2;
-        layout: vertical;
-    }
-
-    #progress_panel {
-        width: 25%;
-        min-width: 25%;
-        max-width: 25%;
-        height: 100%;
-        border: solid $secondary-lighten-2;
-        layout: vertical;
-    }
-    """
-
-    def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
-        """Handle menu selection from tree"""
-        self.current_menu_key = message.menu_key
-        self.current_options = message.options
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        package_panel = self.query_one("#package_panel", DynamicPackageTable)
+        # Ensure subtopics table exists and is empty initially
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
+        subtopics_table.clear(columns=True)
+        subtopics_table.add_columns("Sub-Topic")
 
-        # Use ArcherMenu methods to check menu level and get sub-menus
-        is_top_level = self.archer_menu.is_top_level_menu(message.menu_key)
+    def on_data_table_cell_selected(self, event: DataTable.CellSelected):
+        """Handle cell selection for both menu_list and subtopics_panel."""
+        control_id = event.control.id
+        # MENU LIST: select to show sub-topics
+        if control_id == "menu_list":
+            row_identifier = getattr(event.coordinate, "row_key", None) or event.coordinate.row
+            # Delegate to the row-selected logic
+            self._handle_menu_selection_by_row(row_identifier)
+            return
 
-        if is_top_level:
-            submenus = self.archer_menu.get_sub_menus(message.menu_key)
-            # Store submenus data for reverse lookup in row selection
-            self._current_submenus = submenus
-            # Build stable row key / index mapping for subtopics
-            self._subtopic_row_map = {}
-            self._subtopic_row_keys = []
-            self._last_highlighted_subtopic_row = None
+        # SUBTOPICS: activate subtopic row when selected cell in column 0
+        if control_id == "subtopics_panel":
+            if event.coordinate.column != 0:
+                return
+            row_identifier = getattr(event.coordinate, "row_key", None) or event.coordinate.row
+            output = self.query_one("#output_panel", InstallationOutputPanel)
+            output.add_output(f"[dim]DEBUG: CellSelected row={row_identifier}[/dim]")
+            self._activate_subtopic_row(row_identifier)
 
-            subtopics_table.clear(columns=True)
-            subtopics_table.add_columns("Sub-Topic")
-            # Add rows with display names only (keys don't work reliably in Textual)
-            for display_name, menu_key in submenus.items():
-                row_key = subtopics_table.add_row(display_name)
-                self._subtopic_row_map[row_key] = (menu_key, display_name)
-                self._subtopic_row_keys.append(row_key)
-            output.add_output(
-                f"[dim]DEBUG: Subtopic row map built with {len(self._subtopic_row_map)} entries[/dim]"
-            )
+    def on_data_table_row_selected(self, event: DataTable.RowSelected):
+        """Handle row selection for both menu_list and subtopics_panel."""
+        control_id = event.control.id
+        # MENU LIST selection -> populate subtopics
+        if control_id == "menu_list":
+            row_identifier = getattr(event, "row_key", None)
+            if row_identifier is None:
+                row_identifier = getattr(event, "cursor_row", None)
+            if row_identifier is None:
+                row_identifier = getattr(event, "row_index", None)
+            self._handle_menu_selection_by_row(row_identifier)
+            return
 
-            subtopics_table.visible = True
-            package_panel.visible = False
-            output.add_output(f"[blue]Selected main topic:[/blue] {message.menu_key}")
+        # SUBTOPICS selection -> activate
+        if control_id == "subtopics_panel":
+            row_identifier = getattr(event, "row_key", None)
+            if row_identifier is None:
+                row_identifier = getattr(event, "cursor_row", None)
+            if row_identifier is None:
+                row_identifier = getattr(event, "row_index", None)
+            output = self.query_one("#output_panel", InstallationOutputPanel)
+            output.add_output(f"[dim]DEBUG: RowSelected row={row_identifier}[/dim]")
+            if row_identifier is not None:
+                self._activate_subtopic_row(row_identifier)
+
+    def _handle_menu_selection_by_row(self, row_identifier):
+        """Given a menu_list row identifier, populate the subtopics panel with its sub-menus."""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        menu_list = self.query_one("#menu_list", DataTable)
+        subtopics_table = self.query_one("#subtopics_panel", DataTable)
+        package_panel = self.query_one("#package_panel", DynamicPackageTable)
+
+        if not hasattr(self, '_menu_row_map'):
+            output.add_output("[red]DEBUG: No menu row map present[/red]")
+            return
+
+        # Resolve row_key
+        row_key = None
+        if row_identifier in self._menu_row_map:
+            row_key = row_identifier
+        elif isinstance(row_identifier, int):
+            keys = list(self._menu_row_map.keys())
+            if 0 <= row_identifier < len(keys):
+                row_key = keys[row_identifier]
+        else:
+            identifier_str = str(row_identifier)
+            for candidate in self._menu_row_map.keys():
+                if str(candidate) == identifier_str:
+                    row_key = candidate
+                    break
+
+        if row_key is None:
+            output.add_output(f"[red]DEBUG: Menu row {row_identifier} not found[/red]")
+            return
+
+        menu_key = self._menu_row_map[row_key]
+        try:
+            submenus = self.archer_menu.get_sub_menus(menu_key)
+        except Exception as e:
+            output.add_output(f"[red]Error getting sub-menus for '{menu_key}': {e}[/red]")
+            submenus = {}
+
+        # Store for later reverse lookup
+        self._current_submenus = submenus
+        self._subtopic_row_map = {}
+        self._subtopic_row_keys = []
+        self._last_highlighted_subtopic_row = None
+
+        subtopics_table.clear(columns=True)
+        subtopics_table.add_columns("Sub-Topic")
+        for display_name, submenu_key in submenus.items():
+            row_key = subtopics_table.add_row(display_name)
+            self._subtopic_row_map[row_key] = (submenu_key, display_name)
+            self._subtopic_row_keys.append(row_key)
+
+        subtopics_table.visible = True
+        package_panel.visible = False
+        output.add_output(f"[blue]Selected main topic:[/blue] {menu_key}")
+        if submenus:
             output.add_output(f"[green]Sub-topics presented: {', '.join(submenus.keys())}[/green]")
         else:
-            # Show toolsets in package_panel (multi-select)
-            package_panel.packages = message.options
-            package_panel.visible = True
-            subtopics_table.visible = False
-            output.add_output(f"[blue]Selected sub-topic:[/blue] {message.menu_key}")
-            output.add_output(f"[green]Toolsets presented: {len(message.options)} options[/green]")
-            for opt in message.options:
-                output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-
-        # Ensure Sub-Topics panel remains visible after sub-topic selection
-        subtopics_table.visible = True
-        if not is_top_level and self._current_submenus:
-            subtopics_table.clear(columns=True)
-            subtopics_table.add_columns("Sub-Topic")
-            for display_name, menu_key in self._current_submenus.items():
-                row_key = subtopics_table.add_row(display_name)
-                self._subtopic_row_map[row_key] = (menu_key, display_name)
-            subtopics_table.visible = True
+            output.add_output(f"[dim]No sub-topics available for {menu_key}[/dim]")
 
     # Subtopic selection: unified logic using row mapping
     def _activate_subtopic_row(self, row_identifier):
