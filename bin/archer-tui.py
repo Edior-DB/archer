@@ -323,7 +323,7 @@ class ArcherTUIApp(App):
         layout: vertical;
     }
 
-    }
+
     #selection_panel {
         height: 35%;
         min-height: 8;
