@@ -471,39 +471,13 @@ class ArcherTUIApp(App):
         # Update the dynamic package table
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         package_panel.packages = message.options
-
-        # Show/hide package panel based on current mode
-        self._update_package_panel_visibility()
-
-        # Always show selection panel but handle enabled/disabled state
-        selection_panel = self.query_one("#selection_panel", Container)
-        radio_set = self.query_one("#installation_mode", RadioSet)
-
-        selection_panel.display = True
-
+        package_panel.visible = True
+        output.add_output(f"[green]Package selection table shown with {len(message.options)} packages[/green]")
         if message.options:
-            # Enable radio buttons and show normal state
-            radio_set.disabled = False
-            # Update the info text to show available options
-            info_static = selection_panel.query_one(Static)
-            info_static.update("Installation Mode:")
-
             output.add_output(f"[green]Found {len(message.options)} installation options[/green]")
-            # List the first few options for debugging
-            if len(message.options) <= 3:
-                for opt in message.options:
-                    output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-            else:
-                for opt in message.options[:3]:
-                    output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-                output.add_output(f"[dim]... and {len(message.options) - 3} more[/dim]")
+            for opt in message.options:
+                output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
         else:
-            # Disable radio buttons and show info message
-            radio_set.disabled = True
-            # Update the info text to show why it's disabled
-            info_static = selection_panel.query_one(Static)
-            info_static.update("Installation Mode: [dim]Nothing to install yet[/dim]")
-
             output.add_output("[yellow]This menu contains submenus - expand to see options[/yellow]")
 
     def _update_package_panel_visibility(self):
