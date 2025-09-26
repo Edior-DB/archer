@@ -359,6 +359,22 @@ class ArcherTUIApp(App):
         min-height: 10;
         max-height: 25%;
     }
+    #left_panel {
+        width: 33%;
+        min-width: 30%;
+        max-width: 33%;
+        height: auto;
+        border: solid $primary;
+        layout: vertical;
+    }
+    #right_panel {
+        width: 67%;
+        min-width: 67%;
+        max-width: 70%;
+        height: auto;
+        border: solid $secondary;
+        layout: vertical;
+    }
     """
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
