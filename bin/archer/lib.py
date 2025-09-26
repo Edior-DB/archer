@@ -94,24 +94,26 @@ class ArcherMenu:
                 continue
             for root, dirs, files in os.walk(install_root):
                 root_path = Path(root)
-            # compute relative path from install_root
-            try:
+
+                # compute relative path from install_root
+                try:
                     rel = root_path.relative_to(install_root)
-            except Exception:
-                continue
-            if rel == Path('.'):
-                # top-level install root; skip creating a menu for '.'
-                continue
-            key = '/'.join(rel.parts)
-            install_sh = None
-            if (root_path / 'install.sh').exists():
-                install_sh = str((root_path / 'install.sh').resolve())
-            # record discovered menu
+                except Exception:
+                    continue
+                if rel == Path('.'):
+                    # top-level install root; skip creating a menu for '.'
+                    continue
+                key = '/'.join(rel.parts)
+                install_sh = None
+                if (root_path / 'install.sh').exists():
+                    install_sh = str((root_path / 'install.sh').resolve())
+
+                # record discovered menu
                 # If multiple install roots contain the same relative key, later ones will override
                 self.discovered_menus[key] = {
-                'path': str(root_path.resolve()),
-                'install': install_sh,
-            }
+                    'path': str(root_path.resolve()),
+                    'install': install_sh,
+                }
 
     def _load_install_roots_from_config(self) -> List[Path]:
         """Load install root paths from `bin/install_dirs.toml` if present.
@@ -160,6 +162,8 @@ class ArcherMenu:
         if isinstance(cfg.get('dirs'), dict):
             paths = cfg['dirs'].get('paths', []) or []
 
+        config_dir = config_file.parent
+
         for p in paths:
             if not isinstance(p, str):
                 continue
@@ -168,7 +172,11 @@ class ArcherMenu:
             # If path is relative, resolve against project_root
             candidate = Path(expanded)
             if not candidate.is_absolute():
-                candidate = (self.project_root / candidate).resolve()
+                # Prefer resolving relative paths against the config file directory (bin/)
+                candidate = (config_dir / candidate).resolve()
+                # If that somehow points outside the project, fallback to project_root
+                if not str(candidate).startswith(str(self.project_root)):
+                    candidate = (self.project_root / Path(expanded)).resolve()
             roots.append(candidate)
 
         # If no paths resolved, fallback to home_dir or env or default
