@@ -314,6 +314,7 @@ class ArcherTUIApp(App):
         menu_list.add_columns("Main Menu")
 
         self._menu_row_map = {}
+        self._menu_row_keys = []
         seen = set()
         order = []
         for menu_key in self.archer_menu.discovered_menus.keys():
@@ -328,6 +329,13 @@ class ArcherTUIApp(App):
             display_name = top_key.replace('-', ' ').replace('_', ' ').title()
             row_key = menu_list.add_row(display_name)
             self._menu_row_map[row_key] = top_key
+            self._menu_row_keys.append(row_key)
+
+        # Ensure menu list is focused so keyboard/selection works immediately
+        try:
+            menu_list.focus()
+        except Exception:
+            pass
 
         # Ensure subtopics table exists and is empty initially
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
@@ -393,16 +401,29 @@ class ArcherTUIApp(App):
         row_key = None
         if row_identifier in self._menu_row_map:
             row_key = row_identifier
-        elif isinstance(row_identifier, int):
-            keys = list(self._menu_row_map.keys())
-            if 0 <= row_identifier < len(keys):
-                row_key = keys[row_identifier]
+        elif isinstance(row_identifier, int) and hasattr(self, '_menu_row_keys'):
+            # Use the ordered keys list we stored on mount
+            if 0 <= row_identifier < len(self._menu_row_keys):
+                row_key = self._menu_row_keys[row_identifier]
         else:
             identifier_str = str(row_identifier)
+            # Try to match by stringified row_key
             for candidate in self._menu_row_map.keys():
                 if str(candidate) == identifier_str:
                     row_key = candidate
                     break
+            # As a last resort, match against display names stored in the DataTable rows
+            if row_key is None:
+                # iterate rows to find a display match
+                for candidate_key, top_key in self._menu_row_map.items():
+                    # attempt to retrieve content at row candidate_key
+                    try:
+                        cell = menu_list.get_row(candidate_key)
+                        if cell and len(cell) > 0 and str(cell[0]) == identifier_str:
+                            row_key = candidate_key
+                            break
+                    except Exception:
+                        continue
 
         if row_key is None:
             output.add_output(f"[red]DEBUG: Menu row {row_identifier} not found[/red]")
@@ -504,6 +525,11 @@ class ArcherTUIApp(App):
             self._activate_subtopic_row(row_identifier)
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
+        # Support both menu_list and subtopics_panel
+        if event.control.id == "menu_list":
+            # store last highlighted menu row so Enter can activate it
+            self._last_highlighted_menu_row = getattr(event, 'row_key', None) or getattr(event, 'row_index', None)
+            return
         if event.control.id != "subtopics_panel":
             return
         row_identifier = getattr(event, "row_key", None)
@@ -512,197 +538,144 @@ class ArcherTUIApp(App):
         self._last_highlighted_subtopic_row = row_identifier
 
     def on_key(self, event: events.Key):
-        if event.key == "enter" and hasattr(self, '_last_highlighted_subtopic_row'):
-            row_identifier = self._last_highlighted_subtopic_row
-            if row_identifier is not None:
-                self._activate_subtopic_row(row_identifier)
-
-    def _update_package_panel_visibility(self):
-        """Show/hide package panel based on selection mode"""
-        package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-
-        if self.installation_mode == "choose_individual" and self.current_options:
-            package_panel.visible = True
-            output.add_output(f"[green]Package selection table shown with {len(self.current_options)} packages[/green]")
-        else:
-            package_panel.visible = False
-            output.add_output(f"[dim]Package selection table hidden (mode: {self.installation_mode})[/dim]")
-
-    async def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button presses"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        progress_panel = self.query_one("#progress_panel", ProgressPanel)
-        progress = self.query_one("#main_progress", ProgressBar)
-
-        # Debug: Always show when any button is pressed
-        output.add_output(f"[dim]DEBUG: Button pressed: {event.button.id}[/dim]")
-
-        if event.button.id == "install_btn":
-            package_panel = self.query_one("#package_panel", DynamicPackageTable)
-            selected_pkgs = package_panel.get_selected_packages()
-            output.add_output(f"[dim]DEBUG: Selected packages: {len(selected_pkgs)}[/dim]")
-            if not selected_pkgs:
-                output.add_output("[red]No packages selected! Check packages in the table first.[/red]")
+        # Enter on highlighted menu -> populate subtopics
+        if event.key == "enter":
+            # If a menu row is highlighted, activate it
+            if hasattr(self, '_last_highlighted_menu_row') and self._last_highlighted_menu_row is not None:
+                self._handle_menu_selection_by_row(self._last_highlighted_menu_row)
+                return
+            # Otherwise, fallback to subtopic activation (existing behavior)
+            if hasattr(self, '_last_highlighted_subtopic_row') and self._last_highlighted_subtopic_row is not None:
+                self._activate_subtopic_row(self._last_highlighted_subtopic_row)
                 return
 
-            progress_panel.show_panel()
-            selected_scripts = [pkg.get('script_path') for pkg in selected_pkgs if pkg.get('script_path')]
-            output.add_output(f"[green]Installing selected packages:[/green] {', '.join(selected_scripts)}")
+    CSS = """
+    Screen {
+        layout: vertical; /* Stack top and bottom panels vertically */
+        padding: 1;
+    }
 
-            # Invoke install_custom_selection with the selected scripts
-            install_dir = selected_pkgs[0].get('install_dir', '') if selected_pkgs else ''
-            if install_dir:
-                install_sh = os.path.join(install_dir, 'install.sh')
-                cmd = f"bash '{install_sh}' --scripts {' '.join(selected_scripts)}"
-                output.add_output(f"[dim]Executing:[/dim] {cmd}")
-                await self._run_command(cmd, install_dir)
+    /* Top and bottom parent panels */
+    #top_panel {
+        height: 67%;
+        min-height: 60%;
+        max-height: 67%;
+        width: 100%;
+        border: none;
+        layout: horizontal; /* left and right columns */
+    }
 
-        elif event.button.id == "install_all_btn":
-            output.add_output(f"[dim]DEBUG: Current options count: {len(self.current_options) if self.current_options else 0}[/dim]")
-            if not self.current_options:
-                output.add_output("[red]No installation options available! Select a menu first.[/red]")
-                return
-
-            progress_panel.show_panel()
-            output.add_output(f"[green]Installing all packages from:[/green] {self.current_menu_key}")
-
-            # Invoke install_all_scripts
-            install_dir = self.current_options[0].get('install_dir', '') if self.current_options else ''
-            if install_dir:
-                install_sh = os.path.join(install_dir, 'install.sh')
-                cmd = f"bash '{install_sh}' --all"
-                output.add_output(f"[dim]Executing:[/dim] {cmd}")
-                await self._run_command(cmd, install_dir)
-
-    async def _run_command(self, cmd: str, cwd: str):
-        """Run a shell command asynchronously and display output in the log panel"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        try:
-            process = await asyncio.create_subprocess_shell(
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=cwd
-            )
-            while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-                line_text = line.decode().strip()
-                if line_text:
-                    output.add_output(f"[dim]{line_text}[/dim]")
-            await process.wait()
-            if process.returncode != 0:
-                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
-            else:
-                output.add_output(f"[green]Command completed successfully[/green]")
-        except Exception as e:
-            output.add_output(f"[red]Error running command: {str(e)}[/red]")
-        except Exception as e:
-            try:
-                output = self.query_one("#output_panel", InstallationOutputPanel)
-                output.add_output(f"[red]🚨 EXCEPTION in _install_packages: {str(e)}[/red]")
-                output.add_output(f"[red]Exception type: {type(e).__name__}[/red]")
-                import traceback
-                output.add_output(f"[red]Traceback: {traceback.format_exc()}[/red]")
-            except:
-                print(f"CRITICAL ERROR: Exception in _install_packages: {e}")
-            output.add_output("[bold green]🎉 All installations completed![/bold green]")
-
-    async def _execute_script_async(self, option: Dict, script_path: str, index: int, total: int):
-        """Execute installation script asynchronously with progress updates"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-
-        # Determine the command to run
-        command = option.get('command', '')
-        if not command and script_path:
-            command = f"bash {script_path}"
-
-        if not command:
-            raise Exception("No command or script path specified")
-
-        output.add_output(f"[dim]Executing:[/dim] {command}")
-
-        # Run the command asynchronously
-        process = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            cwd=self.archer_dir
-        )
-
-        # Read output line by line
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-
-            line_text = line.decode().strip()
-            if line_text:
-                # Show installation progress in output
-                display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
-                output.add_output(f"[dim]{display_line}[/dim]")
-
-        await process.wait()
-
-        if process.returncode != 0:
-            raise Exception(f"Script exited with code {process.returncode}")
-
-    async def _simulate_installation(self, package_name: str, index: int, total: int):
-        """Simulate installation for testing purposes"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-
-        phases = ["Downloading", "Installing", "Configuring"]
-
-        for phase in phases:
-            output.add_output(f"[dim]{phase} {package_name}...[/dim]")
-            await asyncio.sleep(0.5)  # Simulate work
+    #bottom_panel {
+        height: 33%;
+        min-height: 30%;
+        max-height: 33%;
+        width: 100%;
+        border: none;
+        layout: horizontal; /* output and progress side-by-side */
+    }
 
 
-def check_terminal_dimensions():
-    """Check if terminal meets minimum dimension requirements"""
-    try:
-        terminal_size = shutil.get_terminal_size()
-        columns, rows = terminal_size.columns, terminal_size.lines
+    /* Top-left main menu column */
+    #left_panel {
+        width: 33%;
+        min-width: 33%;
+        max-width: 33%;
+        height: 100%;
+        border: solid $primary;
+        layout: vertical;
+    }
 
-        if columns < MIN_COLUMNS or rows < MIN_ROWS:
-            print(f"❌ Terminal too small!")
-            print(f"   Current size: {columns}x{rows}")
-            print(f"   Required size: {MIN_COLUMNS}x{MIN_ROWS}")
-            print(f"   Please resize your terminal and try again.")
-            return False
+    /* Top-right column that holds three stacked areas */
+    #right_panel {
+        width: 67%;
+        min-width: 67%;
+        max-width: 67%;
+        height: 100%;
+        border: solid $secondary;
+        layout: vertical; /* stack subtopics, package, actions vertically */
+    }
 
-        print(f"✅ Terminal size OK: {columns}x{rows}")
-        return True
-    except Exception as e:
-        print(f"⚠️  Could not determine terminal size: {e}")
-        print("   Proceeding anyway...")
-        return True
+    /* The three containers inside the right panel - use percentage heights of right_panel */
+    #subtopics_container {
+        height: 40%;
+        min-height: 40%;
+        max-height: 40%;
+        width: 100%;
+        layout: vertical;
+        border-bottom: solid $primary-lighten-2;
+    }
 
+    #package_container {
+        height: 40%;
+        min-height: 40%;
+        max-height: 40%;
+        width: 100%;
+        layout: vertical;
+        border-bottom: solid $primary-lighten-2;
+    }
 
-def main():
-    """Run the Archer TUI application"""
-    import argparse
+    #actions_container {
+        height: 20%;
+        min-height: 20%;
+        max-height: 20%;
+        width: 100%;
+        layout: vertical;
+    }
 
-    parser = argparse.ArgumentParser(description='Archer Linux Enhancement Suite - TUI')
-    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
-    parser.add_argument('--skip-size-check', action='store_true', help='Skip terminal size check')
-    args = parser.parse_args()
+    /* Ensure inner widgets occupy full width of their containers */
+    #subtopics_panel, #package_panel, #actions_panel, #menu_list, #menu_tree {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+    }
 
-    # Check terminal dimensions unless skipped
-    if not args.skip_size_check:
-        if not check_terminal_dimensions():
-            sys.exit(1)
+    /* Bottom panel children proportions */
+    #output_panel {
+        width: 75%;
+        min-width: 75%;
+        max-width: 75%;
+        height: 100%;
+        border: solid $primary-lighten-2;
+        layout: vertical;
+    }
 
-    # Set up environment
-    archer_dir = str(Path(__file__).parent.parent)
-    os.environ['ARCHER_DIR'] = archer_dir
-    os.chdir(archer_dir)
+    #progress_panel {
+        width: 25%;
+        min-width: 25%;
+        max-width: 25%;
+        height: 100%;
+        border: solid $secondary-lighten-2;
+        layout: vertical;
+    }
 
-    app = ArcherTUIApp()
-    app.run()
+    /* Visual styling */
+    .panel-title {
+        dock: top;
+        padding: 0 1;
+        height: 1;
+        content-align: left middle;
+        background: $surface;
+        color: $text;
+        text-style: bold;
+    }
 
+    DataTable {
+        background: $background;
+        border: none;
+    }
 
-if __name__ == "__main__":
-    main()
+    DataTable > .header {
+        color: $primary-lighten-2;
+        text-style: bold;
+    }
+
+    RichLog {
+        background: $background-darken-1;
+        border: solid $primary-lighten-2;
+        padding: 1;
+    }
+
+    Button {
+        margin: 0 1;
+    }
+    """
