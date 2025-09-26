@@ -16,7 +16,7 @@ source "$ARCHER_DIR/install/system/common-funcs.sh"
 # INSTALLATION FUNCTIONS
 # ==============================================================================
 
-install_all_components() {
+install_all_scripts() {
     log_info "Installing all $CATEGORY_NAME..."
 
     # Array of all installation scripts and subdirectories in order
@@ -52,7 +52,8 @@ install_all_components() {
 
     log_success "All $CATEGORY_NAME installed!"
 }
-install_essential_components() {
+
+install_essential_scripts() {
     log_info "Installing essential $CATEGORY_NAME..."
 
     # Array of essential development components
@@ -163,13 +164,13 @@ main() {
     # Execute installation based on mode
     case "$install_mode" in
         "essential")
-            install_essential_components
+            install_essential_scripts
             ;;
         "custom")
             install_custom_selection "${custom_scripts[@]}"
             ;;
         "all"|*)
-            install_all_components
+            install_all_scripts
             ;;
     esac
 
