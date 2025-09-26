@@ -679,3 +679,67 @@ class ArcherTUIApp(App):
         margin: 0 1;
     }
     """
+
+def check_terminal_dimensions():
+    """Check if terminal meets minimum dimension requirements"""
+    try:
+        terminal_size = shutil.get_terminal_size()
+        columns, rows = terminal_size.columns, terminal_size.lines
+
+        if columns < MIN_COLUMNS or rows < MIN_ROWS:
+            print(f"❌ Terminal too small: {columns}x{rows} (required {MIN_COLUMNS}x{MIN_ROWS})")
+            return False
+
+        print(f"✅ Terminal size OK: {columns}x{rows}")
+        return True
+    except Exception as e:
+        print(f"⚠️  Could not determine terminal size: {e}")
+        return True
+
+
+def main():
+    """Run the Archer TUI application with verbose startup logging"""
+    import argparse
+    import traceback
+
+    parser = argparse.ArgumentParser(description='Archer Linux Enhancement Suite - TUI')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('--skip-size-check', action='store_true', help='Skip terminal size check')
+    args = parser.parse_args()
+
+    print("[archer-tui] Starting up...")
+    print(f"[archer-tui] Python: {sys.executable} {sys.version.splitlines()[0]}")
+    print(f"[archer-tui] CWD: {os.getcwd()}")
+    print(f"[archer-tui] ARGS: {sys.argv}")
+
+    # Check terminal dimensions unless skipped
+    if not args.skip_size_check:
+        ok = check_terminal_dimensions()
+        if not ok:
+            print("[archer-tui] Exiting due to terminal size")
+            sys.exit(1)
+
+    # Set up environment
+    archer_dir = str(Path(__file__).parent.parent)
+    os.environ['ARCHER_DIR'] = archer_dir
+    try:
+        os.chdir(archer_dir)
+    except Exception as e:
+        print(f"[archer-tui] Could not change directory to {archer_dir}: {e}")
+
+    try:
+        app = ArcherTUIApp()
+        print("[archer-tui] Running App...")
+        app.run()
+        print("[archer-tui] App exited normally")
+    except SystemExit as se:
+        print(f"[archer-tui] SystemExit: {se}")
+        raise
+    except Exception as e:
+        print("[archer-tui] Unhandled exception while running app:")
+        traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
