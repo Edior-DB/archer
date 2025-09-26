@@ -474,9 +474,13 @@ class ArcherTUIApp(App):
         progress_panel = self.query_one("#progress_panel", ProgressPanel)
         progress = self.query_one("#main_progress", ProgressBar)
 
+        # Debug: Always show when any button is pressed
+        output.add_output(f"[dim]DEBUG: Button pressed: {event.button.id}[/dim]")
+
         if event.button.id == "install_btn":
             package_panel = self.query_one("#package_panel", DynamicPackageTable)
             selected_pkgs = package_panel.get_selected_packages()
+            output.add_output(f"[dim]DEBUG: Selected packages: {len(selected_pkgs)}[/dim]")
             if not selected_pkgs:
                 output.add_output("[red]No packages selected! Check packages in the table first.[/red]")
                 return
@@ -486,6 +490,7 @@ class ArcherTUIApp(App):
             await self._install_packages(selected_pkgs, install_all_mode=False)
 
         elif event.button.id == "install_all_btn":
+            output.add_output(f"[dim]DEBUG: Current options count: {len(self.current_options) if self.current_options else 0}[/dim]")
             if not self.current_options:
                 output.add_output("[red]No installation options available! Select a menu first.[/red]")
                 return
