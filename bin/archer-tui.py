@@ -585,9 +585,11 @@ class ArcherTUIApp(App):
                     output.add_output(f"[dim]DEBUG: install_dir='{install_dir}', install_sh='{install_sh}'[/dim]")
 
             if progress.progress < total_packages:
-                 progress.update(progress=total_packages) # Ensure it completes
+                progress.update(progress=total_packages) # Ensure it completes
             output.add_output("[bold green]🎉 All installations completed![/bold green]")
-            return        # Otherwise, run individual scripts for each selected package
+            return
+
+        # Otherwise, run individual scripts for each selected package
         for i, option in enumerate(options):
             package_name = option.get('display', f'Package {i+1}')
             script_path = option.get('script_path', '')
