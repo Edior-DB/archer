@@ -27,7 +27,7 @@ from typing import Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Import our existing ArcherMenu and ArcherUI classes
-from archer-lib import ArcherMenu, ArcherUI
+from .lib import ArcherMenu, ArcherUI
 
 # Minimum terminal dimensions
 MIN_COLUMNS = 100
