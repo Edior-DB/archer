@@ -273,9 +273,9 @@ class ArcherTUIApp(App):
 
     def __init__(self):
         super().__init__()
-    # Default to project root (two levels up from bin/archer)
-    default_archer_dir = str(Path(__file__).resolve().parents[2])
-    self.archer_dir = os.environ.get('ARCHER_DIR', default_archer_dir)
+        # Default to project root (two levels up from bin/archer)
+        default_archer_dir = str(Path(__file__).resolve().parents[2])
+        self.archer_dir = os.environ.get('ARCHER_DIR', default_archer_dir)
 
         # Initialize the existing ArcherMenu system
         self.archer_ui = ArcherUI(verbose=False)
