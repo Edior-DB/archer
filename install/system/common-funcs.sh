@@ -76,8 +76,12 @@ select_option() {
 # non-interactive situations.
 
 # If the environment already set AUTO_CONFIRM explicitly, keep it.
+# Treat the environment as non-interactive (AUTO_CONFIRM=1) when:
+# - user explicitly sets ARCHER_FORCE_AUTO_CONFIRM=1
+# - ARCHER_TUI or ARCHER_NONINTERACTIVE or CI are set
+# - stdin (fd 0) or stdout (fd 1) are not TTYs (covers TUI output panels)
 if [ -z "${AUTO_CONFIRM:-}" ]; then
-    if [ -n "${ARCHER_TUI:-}" ] || [ -n "${ARCHER_NONINTERACTIVE:-}" ] || [ -n "${CI:-}" ] || ! tty -s; then
+    if [ "${ARCHER_FORCE_AUTO_CONFIRM:-}" = "1" ] || [ -n "${ARCHER_TUI:-}" ] || [ -n "${ARCHER_NONINTERACTIVE:-}" ] || [ -n "${CI:-}" ] || ! [ -t 0 ] || ! [ -t 1 ]; then
         AUTO_CONFIRM=1
     else
         AUTO_CONFIRM=0
