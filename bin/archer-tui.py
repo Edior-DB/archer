@@ -346,9 +346,9 @@ class ArcherTUIApp(App):
         max-height: 50%;
     }
     #actions_panel {
-        height: 8%;
-        min-height: 3;
-        max-height: 12%;
+        height: 12%;
+        min-height: 5;
+        max-height: 15%;
         border-top: solid $primary-lighten-2;
     }
     #menu_tree {
@@ -402,26 +402,39 @@ class ArcherTUIApp(App):
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
 
-    def on_data_table_row_selected(self, event: DataTable.RowSelected):
-        """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
+    def on_data_table_cell_selected(self, event: DataTable.CellSelected):
+        """Handle cell selection in Sub-Topics panel and show corresponding toolsets"""
         output = self.query_one("#output_panel", InstallationOutputPanel)
+
+        # Debug: Log all DataTable cell selections
+        output.add_output(f"[dim]DEBUG: DataTable cell selected on control: {event.control.id}, row: {event.coordinate.row}, col: {event.coordinate.column}[/dim]")
 
         # Ensure this event is from the subtopics_panel
         if event.control.id != "subtopics_panel":
             return
 
-        # Get the selected subtopic display name from the row data
+        # Only handle column 0 (the subtopic name column)
+        if event.coordinate.column != 0:
+            return
+
+        output.add_output(f"[dim]DEBUG: Processing subtopics panel cell selection[/dim]")
+
+        # Get the selected subtopic display name from the table
+        subtopics_table = self.query_one("#subtopics_panel", DataTable)
         try:
-            subtopic_display = event.row[0]
-            output.add_output(f"[dim]DEBUG: Subtopic row selected. Display: '{subtopic_display}'[/dim]")
+            # Get the row data
+            row_data = subtopics_table.get_row_at(event.coordinate.row)
+            subtopic_display = row_data[0]
+            output.add_output(f"[dim]DEBUG: Subtopic cell selected. Display: '{subtopic_display}'[/dim]")
         except (IndexError, AttributeError) as e:
-            output.add_output(f"[red]Error: Could not retrieve subtopic from row data: {e}[/red]")
+            output.add_output(f"[red]Error: Could not retrieve subtopic from table: {e}[/red]")
             return
 
         # Find the corresponding menu_key by matching the display name
         # We need to reverse-lookup from our stored submenus data
         menu_key = None
         if hasattr(self, '_current_submenus'):
+            output.add_output(f"[dim]DEBUG: Current submenus: {list(self._current_submenus.keys())}[/dim]")
             for display_name, stored_menu_key in self._current_submenus.items():
                 if display_name == subtopic_display:
                     menu_key = stored_menu_key
@@ -434,7 +447,6 @@ class ArcherTUIApp(App):
         output.add_output(f"[dim]DEBUG: Found menu key: '{menu_key}'[/dim]")
 
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        subtopics_table = self.query_one("#subtopics_panel", DataTable)
 
         try:
             _, _, options = self.archer_menu.get_menu_options_filtered(menu_key)
