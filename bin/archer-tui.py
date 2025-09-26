@@ -490,8 +490,9 @@ class ArcherTUIApp(App):
             self.current_menu_key = menu_key
             self.current_options = options
             package_panel.packages = options
+            # Show package panel but keep subtopics visible so user can navigate back
             package_panel.visible = True
-            subtopics_table.visible = False
+            subtopics_table.visible = True
             output.add_output(f"[blue]Selected sub-topic:[/blue] {display_name}")
             output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
         except Exception as e:
