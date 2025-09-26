@@ -414,9 +414,11 @@ class ArcherTUIApp(App):
 
         if matched_key:
             _, _, options = self.archer_menu.get_menu_options_filtered(matched_key)
+            self.current_menu_key = matched_key
+            self.current_options = options
             package_panel.packages = options
             package_panel.visible = True
-            subtopics_table.visible = True  # Keep subtopics visible for context
+            subtopics_table.visible = False  # Hide subtopics panel after selection
             output.add_output(f"[blue]Selected sub-topic:[/blue] {subtopic}")
             output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
             for opt in options:
