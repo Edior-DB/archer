@@ -370,23 +370,21 @@ class ArcherTUIApp(App):
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
 
-        # Determine if this is a top-level menu (main topic)
-        is_top_level = '/' not in message.menu_key
+        # Use ArcherMenu methods to check menu level and get sub-menus
+        is_top_level = self.archer_menu.is_top_level_menu(message.menu_key)
+
         if is_top_level:
-            # Show sub-topics in subtopics_table (single-select)
-            submenus = [
-                k.split('/')[-1].replace('-', ' ').title()
-                for k in self.archer_menu.discovered_menus.keys()
-                if k.startswith(message.menu_key + '/') and k.count('/') == 1
-            ]
+            submenus = self.archer_menu.get_sub_menus(message.menu_key)
             subtopics_table.clear(columns=True)
             subtopics_table.add_columns("Sub-Topic")
-            for submenu in submenus:
-                subtopics_table.add_row(submenu)
+            # Add rows with the full menu_key as the key
+            for display_name, menu_key in submenus.items():
+                subtopics_table.add_row(display_name, key=menu_key)
+
             subtopics_table.visible = True
             package_panel.visible = False
             output.add_output(f"[blue]Selected main topic:[/blue] {message.menu_key}")
-            output.add_output(f"[green]Sub-topics presented: {', '.join(submenus)}[/green]")
+            output.add_output(f"[green]Sub-topics presented: {', '.join(submenus.keys())}[/green]")
         else:
             # Show toolsets in package_panel (multi-select)
             package_panel.packages = message.options
@@ -396,44 +394,78 @@ class ArcherTUIApp(App):
             output.add_output(f"[green]Toolsets presented: {len(message.options)} options[/green]")
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-    def _handle_subtopic_selection(self, subtopic):
-        """Shared logic for subtopic selection events"""
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected):
+        """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
         output = self.query_one("#output_panel", InstallationOutputPanel)
+
+        # Ensure this event is from the subtopics_panel
+        if event.control.id != "subtopics_panel":
+            return
+
+        menu_key = str(event.row_key.value)
+        output.add_output(f"[dim]DEBUG: Subtopic row selected. Key: '{menu_key}'[/dim]")
+
+        if not menu_key:
+            output.add_output("[red]Error: Could not retrieve sub-topic key.[/red]")
+            return
+
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
 
-        # Find the menu_key for the selected subtopic (robust mapping)
-        matched_key = None
-        for k in self.archer_menu.discovered_menus.keys():
-            if k.split('/')[-1].replace('-', ' ').title() == subtopic:
-                matched_key = k
-                break
-
-        if matched_key:
-            _, _, options = self.archer_menu.get_menu_options_filtered(matched_key)
-            self.current_menu_key = matched_key
+        try:
+            _, _, options = self.archer_menu.get_menu_options_filtered(menu_key)
+            self.current_menu_key = menu_key
             self.current_options = options
             package_panel.packages = options
             package_panel.visible = True
             subtopics_table.visible = False
-            output.add_output(f"[blue]Selected sub-topic:[/blue] {subtopic}")
+            display_name = menu_key.split('/')[-1].replace('-', ' ').title()
+            output.add_output(f"[blue]Selected sub-topic:[/blue] {display_name}")
+            output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
+        except Exception as e:
+            package_panel.packages = []
+            package_panel.visible = False
+            output.add_output(f"[red]Error loading toolsets for '{menu_key}': {e}[/red]")
+
+    def _update_package_panel_visibility(self):
+
+    def _handle_subtopic_selection(self, menu_key: str):
+        """Shared logic for subtopic selection events using a direct menu_key"""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        package_panel = self.query_one("#package_panel", DynamicPackageTable)
+        subtopics_table = self.query_one("#subtopics_panel", DataTable)
+
+        try:
+            _, _, options = self.archer_menu.get_menu_options_filtered(menu_key)
+            self.current_menu_key = menu_key
+            self.current_options = options
+            package_panel.packages = options
+            package_panel.visible = True
+            subtopics_table.visible = False
+            display_name = menu_key.split('/')[-1].replace('-', ' ').title()
+            output.add_output(f"[blue]Selected sub-topic:[/blue] {display_name}")
             output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
             for opt in options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-        else:
+        except Exception as e:
             package_panel.packages = []
             package_panel.visible = False
-            output.add_output(f"[red]No toolsets found for sub-topic: {subtopic}[/red]")
+            output.add_output(f"[red]No toolsets found for sub-topic: {menu_key}. Error: {e}[/red]")
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected):
         """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
-        subtopic = event.row[0]
-        self._handle_subtopic_selection(subtopic)
+        if event.control.id == "subtopics_panel":
+            menu_key = str(event.row_key.value)
+            if menu_key:
+                self._handle_subtopic_selection(menu_key)
+
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
         """Handle row highlight in Sub-Topics panel and show corresponding toolsets"""
-        subtopic = event.row[0]
-        self._handle_subtopic_selection(subtopic)
+        if event.control.id == "subtopics_panel":
+            subtopic = event.data_table.get_row(event.key)[0]
+            self._handle_subtopic_selection(subtopic)
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
