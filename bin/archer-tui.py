@@ -284,29 +284,27 @@ class ArcherTUIApp(App):
     def compose(self) -> ComposeResult:
         """Create the application layout"""
         yield Header()
-        with Horizontal():
-            with Vertical(id="left_panel"):
-                tree = ArcherMenuTree(self.archer_menu)
-                tree.id = "menu_tree"
-                yield tree
+        with Vertical():
+            with Horizontal():
+                with Vertical(id="left_panel"):
+                    tree = ArcherMenuTree(self.archer_menu)
+                    tree.id = "menu_tree"
+                    yield tree
+                with Vertical(id="right_panel"):
+                    with Vertical(id="selection_panel"):
+                        yield Static("Sub-Topics:", classes="panel-title")
+                        yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True, show_cursor=True)
+                    yield Static("Select Tools and Packages:", classes="panel-title")
+                    yield DynamicPackageTable(id="package_panel")
+                    yield ActionButtonsPanel(id="actions_panel")
+            with Horizontal(id="bottom_panel"):
                 yield InstallationOutputPanel(id="output_panel")
-            with Vertical(id="right_panel"):
-                with Vertical(id="selection_panel"):
-                    yield Static("Sub-Topics:", classes="panel-title")
-                    yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
-                yield Static("Select Tools and Packages:", classes="panel-title")
-                yield DynamicPackageTable(id="package_panel")
-                yield ActionButtonsPanel(id="actions_panel")
                 yield ProgressPanel(id="progress_panel")
 
     CSS = """
     Screen {
         layout: vertical;
         padding: 1;
-    }
-    Horizontal {
-        width: 100%;
-        height: 100%;
     }
     #left_panel {
         width: 33%;
@@ -323,6 +321,13 @@ class ArcherTUIApp(App):
         height: 100%;
         border: solid $secondary;
         layout: vertical;
+    }
+    #bottom_panel {
+        height: 12;
+        min-height: 8;
+        max-height: 15;
+        layout: horizontal;
+        border-top: solid $primary;
     }
     #selection_panel {
         height: 10%;
@@ -346,19 +351,18 @@ class ArcherTUIApp(App):
         max-height: 12%;
         border-top: solid $primary-lighten-2;
     }
-    #progress_panel {
-        height: 8%;
-        min-height: 3;
-        max-height: 12%;
-        border-top: solid $success-lighten-2;
-    }
     #menu_tree {
-        height: 60%;
+        height: 100%;
         min-height: 12;
     }
     #output_panel {
-        height: 40%;
-        min-height: 8;
+        width: 75%;
+        min-width: 50%;
+    }
+    #progress_panel {
+        width: 25%;
+        min-width: 20%;
+        border-left: solid $success;
     }
     """
 
@@ -484,7 +488,7 @@ class ArcherTUIApp(App):
             install_dir = selected_pkgs[0].get('install_dir', '') if selected_pkgs else ''
             if install_dir:
                 install_sh = os.path.join(install_dir, 'install.sh')
-                cmd = f"bash '{install_sh}' --custom {' '.join(selected_scripts)}"
+                cmd = f"bash '{install_sh}' --scripts {' '.join(selected_scripts)}"
                 output.add_output(f"[dim]Executing:[/dim] {cmd}")
                 await self._run_command(cmd, install_dir)
 
