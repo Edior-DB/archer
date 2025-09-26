@@ -284,101 +284,125 @@ class ArcherTUIApp(App):
     def compose(self) -> ComposeResult:
         """Create the application layout"""
         yield Header()
-        with Vertical():
-            with Horizontal():
+        # Top-level split: top_panel (67% height) and bottom_panel (33% height)
+        with Vertical(id="root_vertical"):
+            with Horizontal(id="top_panel"):
+                # Left: main menu (33% width)
                 with Vertical(id="left_panel"):
                     tree = ArcherMenuTree(self.archer_menu)
                     tree.id = "menu_tree"
                     yield tree
+                # Right: selection area (67% width) - vertically divided into sub-panels
                 with Vertical(id="right_panel"):
-                    with Vertical(id="selection_panel"):
+                    with Vertical(id="subtopics_container"):
                         yield Static("Sub-Topics:", classes="panel-title")
                         yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True, show_cursor=True)
-                    yield Static("Select Tools and Packages:", classes="panel-title")
-                    yield DynamicPackageTable(id="package_panel")
-                    yield ActionButtonsPanel(id="actions_panel")
+                    with Vertical(id="package_container"):
+                        yield Static("Select Tools and Packages:", classes="panel-title")
+                        yield DynamicPackageTable(id="package_panel")
+                    with Vertical(id="actions_container"):
+                        yield ActionButtonsPanel(id="actions_panel")
+            # Bottom panel (33% height) split horizontally into output (75%) and progress (25%)
             with Horizontal(id="bottom_panel"):
                 yield InstallationOutputPanel(id="output_panel")
                 yield ProgressPanel(id="progress_panel")
 
     CSS = """
     Screen {
-        layout: horizontal;
+        layout: vertical; /* Stack top and bottom panels vertically */
         padding: 1;
     }
+
+    /* Top and bottom parent panels */
     #top_panel {
         height: 67%;
         min-height: 60%;
         max-height: 67%;
-        width: auto;
-        border: solid $primary;
-        layout: vertical;
+        width: 100%;
+        border: none;
+        layout: horizontal; /* left and right columns */
     }
+
     #bottom_panel {
         height: 33%;
         min-height: 30%;
         max-height: 33%;
-        width: auto;
-        border: solid $secondary;
-        layout: vertical;
+        width: 100%;
+        border: none;
+        layout: horizontal; /* output and progress side-by-side */
     }
 
-
+    /* Top-left main menu column */
     #left_panel {
         width: 33%;
-        min-width: 30%;
+        min-width: 33%;
         max-width: 33%;
-        height: auto;
+        height: 100%;
         border: solid $primary;
         layout: vertical;
     }
+
+    /* Top-right column that holds three stacked areas */
     #right_panel {
         width: 67%;
         min-width: 67%;
-        max-width: 70%;
-        height: auto;
+        max-width: 67%;
+        height: 100%;
         border: solid $secondary;
-        layout: horizontal;
+        layout: vertical; /* stack subtopics, package, actions vertically */
     }
 
-    #subtopics_panel {
+    /* The three containers inside the right panel - use percentage heights of right_panel */
+    #subtopics_container {
         height: 40%;
-        min-height: 35%;
+        min-height: 40%;
         max-height: 40%;
         width: 100%;
-        min-width: 100%;
-        max-width: 100%;
+        layout: vertical;
+        border-bottom: solid $primary-lighten-2;
     }
-    #package_panel {
+
+    #package_container {
         height: 40%;
-        min-height: 35%;
+        min-height: 40%;
         max-height: 40%;
         width: 100%;
-        min-width: 100%;
-        max-width: 100%;
+        layout: vertical;
+        border-bottom: solid $primary-lighten-2;
     }
-    #actions_panel {
+
+    #actions_container {
         height: 20%;
-        min-height: 15%;
+        min-height: 20%;
         max-height: 20%;
         width: 100%;
+        layout: vertical;
+    }
+
+    /* Ensure inner widgets occupy full width of their containers */
+    #subtopics_panel, #package_panel, #actions_panel, #menu_tree {
+        width: 100%;
         min-width: 100%;
         max-width: 100%;
     }
 
+    /* Bottom panel children proportions */
     #output_panel {
         width: 75%;
         min-width: 75%;
         max-width: 75%;
-        height: auto;
+        height: 100%;
         border: solid $primary-lighten-2;
+        layout: vertical;
     }
+
     #progress_panel {
         width: 25%;
         min-width: 25%;
         max-width: 25%;
-        height: auto;
+        height: 100%;
         border: solid $secondary-lighten-2;
+        layout: vertical;
     }
     """
 
