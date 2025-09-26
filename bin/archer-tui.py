@@ -41,8 +41,8 @@ class PackageSelectionPanel(Container):
         yield Static("Installation Mode:", classes="panel-title")
         # Try with simple buttons first to test visibility
         with Container():
-            yield Button("Install All Packages", id="mode_install_all")
-            yield Button("Choose Individual Packages", id="mode_choose_individual")
+                yield Button(label="Install All Packages", id="mode_install_all")
+                yield Button(label="Choose Individual Packages", id="mode_choose_individual")
 
     def show_panel(self):
         """Show this panel"""
@@ -273,9 +273,10 @@ class ActionButtonsPanel(Container):
     def compose(self) -> ComposeResult:
         yield Static("Actions:", classes="panel-title")
         with Horizontal(classes="button-container"):
-            yield Button("INSTALL NOW", id="install_btn")
-            yield Button("QUEUE IT", id="queue_btn")
-            yield Button("CLEAR ALL", id="clear_btn")
+            yield Button(label="INSTALL NOW", id="install_btn")
+            yield Button(label="QUEUE IT", id="queue_btn")
+            yield Button(label="CLEAR ALL", id="clear_btn")
+            yield Button(label="INSTALL ALL", id="install_all_btn")
 
 
 class ArcherTUIApp(App):
@@ -444,45 +445,18 @@ class ArcherTUIApp(App):
         tree.id = "menu_tree"
         yield tree
 
-        # Top right: Selection mode panel with RadioButtons
-        with Container(id="selection_panel"):
-            yield Static("Installation Mode:", classes="panel-title")
-            with RadioSet(id="installation_mode"):
-                yield RadioButton("📦 Install All", value=True, id="mode_install_all")
-                yield RadioButton("🎯 Choose Individual", id="mode_choose_individual")
 
-        # Middle right: Dynamic package table
-        yield DynamicPackageTable(id="package_panel")
-
-        # Progress panel (hidden initially)
-        yield ProgressPanel(id="progress_panel")
-
-        # Installation output
-        yield InstallationOutputPanel(id="output_panel")
-
-        # Bottom: Action buttons
-        yield ActionButtonsPanel(id="actions_panel")
-
-        yield Footer()
-
-    def on_mount(self):
-        """Initialize the application"""
-        self.title = "Archer Linux Enhancement Suite"
-        self.sub_title = "Select packages and monitor installations"
-
-        # Initialize with empty package list
+        # Update the dynamic package table
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        package_panel.packages = []
-        package_panel.visible = False
-
-        # Hide progress panel initially
-        progress_panel = self.query_one("#progress_panel", ProgressPanel)
-        progress_panel.hide_panel()
-
-        # Add welcome message
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        output.add_output("[blue]Welcome to Archer TUI![/blue]")
-        output.add_output("[green]Select a category from the tree to view available packages[/green]")
+        package_panel.packages = message.options
+        package_panel.visible = True
+        output.add_output(f"[green]Package selection table shown with {len(message.options)} packages[/green]")
+        if message.options:
+            output.add_output(f"[green]Found {len(message.options)} installation options[/green]")
+            for opt in message.options:
+                output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
+        else:
+            output.add_output("[yellow]This menu contains submenus - expand to see options[/yellow]")
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
         """Handle menu selection from tree"""
@@ -550,31 +524,33 @@ class ArcherTUIApp(App):
         progress = self.query_one("#main_progress", ProgressBar)
 
         if event.button.id == "install_btn":
+            # Install only selected packages
             if not self.current_options:
                 output.add_output("[red]No installation options available! Select a menu first.[/red]")
                 return
-
-            # Show progress panel when installation starts
             progress_panel = self.query_one("#progress_panel", ProgressPanel)
             progress_panel.show_panel()
-
-            if self.installation_mode == "install_all":
-                # Install all packages in the current menu
-                output.add_output(f"[green]Installing all packages from:[/green] {self.current_menu_key}")
-                await self._install_packages(self.current_options)
+            package_panel = self.query_one("#package_panel", DynamicPackageTable)
+            selected_pkgs = package_panel.get_selected_packages()
+            selected = [pkg.get('name', '') for pkg in selected_pkgs]
+            if selected:
+                selected_options = [opt for opt in self.current_options if opt.get('name', '') in selected]
+                output.add_output(f"[green]Installing selected packages:[/green] {', '.join(selected)}")
+                await self._install_packages(selected_options)
             else:
-                # Install only selected packages
-                package_panel = self.query_one("#package_panel", DynamicPackageTable)
-                selected = package_panel.selected_packages
-                if selected:
-                    selected_options = [opt for opt in self.current_options if opt.get('name', '') in selected]
-                    output.add_output(f"[green]Installing selected packages:[/green] {', '.join(selected)}")
-                    await self._install_packages(selected_options)
-                else:
-                    output.add_output("[red]No packages selected! Check packages in the table first.[/red]")
-                    # Hide progress panel if no installation occurs
-                    progress_panel.hide_panel()
-                    return
+                output.add_output("[red]No packages selected! Check packages in the table first.[/red]")
+                progress_panel.hide_panel()
+                return
+
+        elif event.button.id == "install_all_btn":
+            # Install all packages in the current menu
+            if not self.current_options:
+                output.add_output("[red]No installation options available! Select a menu first.[/red]")
+                return
+            progress_panel = self.query_one("#progress_panel", ProgressPanel)
+            progress_panel.show_panel()
+            output.add_output(f"[green]Installing all packages from:[/green] {self.current_menu_key}")
+            await self._install_packages(self.current_options)
 
         elif event.button.id == "queue_btn":
             if self.current_options:
