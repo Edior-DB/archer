@@ -526,12 +526,20 @@ class ArcherTUIApp(App):
         progress.update(total=total_packages)
 
         # Debug output
+        output.add_output(f"[yellow]🔧 DEBUG: Starting _install_packages[/yellow]")
         output.add_output(f"[dim]DEBUG: install_all_mode={install_all_mode}, {total_packages} packages[/dim]")
+
+        if total_packages == 0:
+            output.add_output("[red]ERROR: No packages provided to install![/red]")
+            output.add_output("[bold green]🎉 All installations completed![/bold green]")
+            return
+
         if options:
             output.add_output(f"[dim]DEBUG: First option keys: {list(options[0].keys())}[/dim]")
             output.add_output(f"[dim]DEBUG: install_dir = {options[0].get('install_dir', 'NOT_FOUND')}[/dim]")
 
         if install_all_mode:
+            output.add_output("[yellow]🔧 DEBUG: Entering install_all_mode branch[/yellow]")
             # Run install.sh in the current menu/category directory
             # Assume all options share the same install_dir
             if options:
