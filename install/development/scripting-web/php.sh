@@ -13,10 +13,10 @@ echo -e "${BLUE}PHP - Popular web development language${NC}"
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-# if ! confirm_action "Install PHP via Mise?"; then
-#     echo -e "${YELLOW}PHP installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install PHP via Mise?"; then
+  echo -e "${YELLOW}PHP installation cancelled.${NC}"
+  exit 0
+fi
 
 # Setup Mise and install PHP
 setup_mise || {

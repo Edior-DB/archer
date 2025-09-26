@@ -18,10 +18,10 @@ echo -e "  • Build tools: Make, CMake, Ninja"
 echo -e "  • Development libraries"
 echo ""
 
-# if ! confirm_action "Install C/C++ compilers and build tools?"; then
-#     echo -e "${YELLOW}C/C++ installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install C/C++ compilers and build tools?"; then
+  echo -e "${YELLOW}C/C++ toolchain installation cancelled.${NC}"
+  exit 0
+fi
 
 echo -e "${BLUE}Installing C/C++ development environment...${NC}"
 

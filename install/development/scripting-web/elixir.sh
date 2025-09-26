@@ -13,10 +13,10 @@ echo -e "${BLUE}Elixir - Dynamic, functional language built on Erlang VM${NC}"
 echo -e "${YELLOW}Installing Erlang and Elixir via Mise for better version management${NC}"
 echo ""
 
-# if ! confirm_action "Install Elixir and Erlang via Mise?"; then
-#     echo -e "${YELLOW}Elixir installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install Elixir and Erlang via Mise?"; then
+  echo -e "${YELLOW}Elixir installation cancelled.${NC}"
+  exit 0
+fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then

@@ -13,10 +13,10 @@ echo -e "${BLUE}DMD - D language reference compiler${NC}"
 echo -e "${YELLOW}Installing DMD with D tools and package manager${NC}"
 echo ""
 
-# if ! confirm_action "Install DMD (D Reference Compiler)?"; then
-#     echo -e "${YELLOW}DMD installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install DMD (D Reference Compiler)?"; then
+  echo -e "${YELLOW}DMD installation cancelled.${NC}"
+  exit 0
+fi
 
 echo -e "${BLUE}Installing DMD and D development tools...${NC}"
 
@@ -92,10 +92,5 @@ For production builds, consider LDC for better optimization.
 Documentation: https://dlang.org/
 Package registry: https://code.dlang.org/
 ${NC}"
-
-else
-    echo -e "${RED}✗ Failed to install DMD${NC}"
-    exit 1
-fi
 
 wait_for_input

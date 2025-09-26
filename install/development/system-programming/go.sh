@@ -13,10 +13,10 @@ echo -e "${BLUE}Go - Build simple, reliable, and efficient software${NC}"
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-# if ! confirm_action "Install Go via Mise?"; then
-#     echo -e "${YELLOW}Go installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install Go via Mise?"; then
+  echo -e "${YELLOW}Go installation cancelled.${NC}"
+  exit 0
+fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then

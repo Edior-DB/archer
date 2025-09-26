@@ -13,10 +13,10 @@ echo -e "${BLUE}V Language - Simple, fast, safe, compiled${NC}"
 echo -e "${YELLOW}Installing from source (manual build)${NC}"
 echo ""
 
-# if ! confirm_action "Install V language?"; then
-#     echo -e "${YELLOW}V language installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install V language?"; then
+  echo -e "${YELLOW}V language installation cancelled.${NC}"
+  exit 0
+fi
 
 # Install dependencies
 echo -e "${BLUE}Installing build dependencies...${NC}"

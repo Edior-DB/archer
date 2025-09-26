@@ -13,10 +13,10 @@ echo -e "${BLUE}Raku - Modern, gradually typed programming language${NC}"
 echo -e "${YELLOW}Installing via Mise (if available) or system package manager${NC}"
 echo ""
 
-# if ! confirm_action "Install Raku?"; then
-#     echo -e "${YELLOW}Raku installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install Raku?"; then
+  echo -e "${YELLOW}Raku installation cancelled.${NC}"
+  exit 0
+fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then

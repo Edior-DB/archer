@@ -13,10 +13,10 @@ echo -e "${BLUE}LDC - LLVM-based D compiler for high performance${NC}"
 echo -e "${YELLOW}Installing LDC with development tools${NC}"
 echo ""
 
-# if ! confirm_action "Install LDC (LLVM D Compiler)?"; then
-#     echo -e "${YELLOW}LDC installation cancelled.${NC}"
-#     exit 0
-# fi
+if ! archer_confirm_or_default "Install LDC (LLVM D Compiler)?"; then
+  echo -e "${YELLOW}LDC installation cancelled.${NC}"
+  exit 0
+fi
 
 echo -e "${BLUE}Installing LDC and D development tools...${NC}"
 
@@ -107,10 +107,5 @@ Documentation: https://wiki.dlang.org/LDC
 D Language: https://dlang.org/
 Package registry: https://code.dlang.org/
 ${NC}"
-
-else
-    echo -e "${RED}✗ Failed to install LDC${NC}"
-    exit 1
-fi
 
 wait_for_input
