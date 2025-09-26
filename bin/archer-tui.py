@@ -472,6 +472,7 @@ class ArcherTUIApp(App):
         """Handle button presses"""
         output = self.query_one("#output_panel", InstallationOutputPanel)
         progress_panel = self.query_one("#progress_panel", ProgressPanel)
+        progress = self.query_one("#main_progress", ProgressBar)
 
         if event.button.id == "install_btn":
             package_panel = self.query_one("#package_panel", DynamicPackageTable)
@@ -504,7 +505,6 @@ class ArcherTUIApp(App):
             package_panel = self.query_one("#package_panel", DynamicPackageTable)
             package_panel.clear_selection()
             output.add_output("[yellow]Package selection cleared[/yellow]")
-            progress = self.query_one("#main_progress", ProgressBar)
             progress.update(progress=0)
 
 
@@ -520,12 +520,21 @@ class ArcherTUIApp(App):
         total_packages = len(options)
         progress.update(total=total_packages)
 
+        # Debug output
+        output.add_output(f"[dim]DEBUG: install_all_mode={install_all_mode}, {total_packages} packages[/dim]")
+        if options:
+            output.add_output(f"[dim]DEBUG: First option keys: {list(options[0].keys())}[/dim]")
+            output.add_output(f"[dim]DEBUG: install_dir = {options[0].get('install_dir', 'NOT_FOUND')}[/dim]")
+
         if install_all_mode:
             # Run install.sh in the current menu/category directory
             # Assume all options share the same install_dir
             if options:
                 install_dir = options[0].get('install_dir', '')
                 install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
+                output.add_output(f"[dim]DEBUG: Looking for install.sh at: {install_sh}[/dim]")
+                output.add_output(f"[dim]DEBUG: File exists: {os.path.isfile(install_sh) if install_sh else False}[/dim]")
+
                 if install_dir and os.path.isfile(install_sh):
                     output.add_output(f"[cyan]Running install.sh for all packages in:[/cyan] {install_dir}")
                     cmd = f"bash '{install_sh}'"
@@ -557,13 +566,12 @@ class ArcherTUIApp(App):
                         progress.update(progress=total_packages)
                 else:
                     output.add_output(f"[red]No install.sh found in {install_dir}[/red]")
+                    output.add_output(f"[dim]DEBUG: install_dir='{install_dir}', install_sh='{install_sh}'[/dim]")
 
             if progress.progress < total_packages:
                  progress.update(progress=total_packages) # Ensure it completes
             output.add_output("[bold green]🎉 All installations completed![/bold green]")
-            return
-
-        # Otherwise, run individual scripts for each selected package
+            return        # Otherwise, run individual scripts for each selected package
         for i, option in enumerate(options):
             package_name = option.get('display', f'Package {i+1}')
             script_path = option.get('script_path', '')
