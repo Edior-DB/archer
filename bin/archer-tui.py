@@ -324,6 +324,34 @@ class ArcherTUIApp(App):
         border: solid $secondary;
         layout: vertical;
     }
+    #selection_panel {
+        height: 10%;
+        min-height: 6;
+        max-height: 20%;
+        border-bottom: solid $primary-lighten-2;
+    }
+    #subtopics_panel {
+        height: 6;
+        min-height: 6;
+        max-height: 12;
+    }
+    #package_panel {
+        height: 40%;
+        min-height: 12;
+        max-height: 50%;
+    }
+    #actions_panel {
+        height: 8%;
+        min-height: 3;
+        max-height: 12%;
+        border-top: solid $primary-lighten-2;
+    }
+    #progress_panel {
+        height: 8%;
+        min-height: 3;
+        max-height: 12%;
+        border-top: solid $success-lighten-2;
+    }
     #menu_tree {
         height: 60%;
         min-height: 12;
@@ -331,10 +359,6 @@ class ArcherTUIApp(App):
     #output_panel {
         height: 40%;
         min-height: 8;
-    }
-    #subtopics_panel {
-        height: 6;
-        min-height: 6;
     }
     """
 
