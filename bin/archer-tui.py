@@ -336,9 +336,9 @@ class ArcherTUIApp(App):
         border-bottom: solid $primary-lighten-2;
     }
     #subtopics_panel {
-        height: 12;
-        min-height: 10;
-        max-height: 20;
+        height: 15%;
+        min-height: 12;
+        max-height: 25%;
     }
     #package_panel {
         height: 35%;
@@ -347,8 +347,8 @@ class ArcherTUIApp(App):
     }
     #actions_panel {
         height: auto;
-        min-height: 5;
-        max-height: 10%;
+        min-height: 3;
+        max-height: 6%;
         border-top: solid $primary-lighten-2;
     }
     #menu_tree {
@@ -356,8 +356,9 @@ class ArcherTUIApp(App):
         min-height: 12;
     }
     #output_panel {
-        width: 75%;
-        min-width: 50%;
+        height: 40%;
+        min-height: 15;
+        max-height: 50%;
     }
     #progress_panel {
         width: 25%;
@@ -411,7 +412,7 @@ class ArcherTUIApp(App):
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
 
-        # Ensure Sub-Topics panel remains visible and populated after sub-topic selection
+        # Ensure Sub-Topics panel remains visible after sub-topic selection
         subtopics_table.visible = True
         if not is_top_level and self._current_submenus:
             subtopics_table.clear(columns=True)
