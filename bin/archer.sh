@@ -111,12 +111,12 @@ check_requirements() {
         return 1
     fi
 
-    # Check TUI script
-    TUI_SCRIPT="$ARCHER_DIR/bin/archer-tui.py"
-    if [[ -f "$TUI_SCRIPT" ]]; then
-        echo -e "${GREEN}✓ Archer TUI script found${NC}"
+    # Check TUI module
+    TUI_PKG="$ARCHER_DIR/bin/archer/tui.py"
+    if [[ -f "$TUI_PKG" ]]; then
+        echo -e "${GREEN}✓ Archer TUI module found${NC}"
     else
-        echo -e "${RED}✗ Archer TUI script not found:${NC} $TUI_SCRIPT"
+        echo -e "${RED}✗ Archer TUI module not found:${NC} $TUI_PKG"
         return 1
     fi
 
@@ -153,7 +153,7 @@ main() {
             check_python
             check_textual
             cd "$ARCHER_DIR"
-            exec python3 bin/archer-tui.py --debug
+            exec python3 -m archer.tui --debug
             ;;
         --classic)
             # Use classic GUM-based interface
@@ -165,7 +165,7 @@ main() {
             check_python
             check_textual
             cd "$ARCHER_DIR"
-            exec python3 bin/archer-tui.py
+            exec python3 -m archer.tui
             ;;
         *)
             echo -e "${RED}Error: Unknown option '$1'${NC}"
