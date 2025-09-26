@@ -99,6 +99,33 @@ archer_confirm_or_default() {
     confirm_action "$prompt"
 }
 
+# Provide a safe fallback for check_system_requirements for scripts that call it.
+# If a more strict/featureful implementation exists elsewhere (e.g. bin/archer-toml.sh),
+# this will not override it.
+if ! declare -F check_system_requirements >/dev/null 2>&1; then
+check_system_requirements() {
+    echo -e "${BLUE}Checking system requirements...${NC}"
+
+    # If not on Arch Linux, warn but don't abort — many installers can still work.
+    if [[ ! -f /etc/arch-release ]] && ! command -v pacman >/dev/null 2>&1; then
+        echo -e "${YELLOW}Warning: This script is designed for Arch Linux. Some steps may fail on other distros.${NC}"
+    fi
+
+    # Ensure gum is available for UI; try to install it non-fatally if possible.
+    if ! command -v gum >/dev/null 2>&1; then
+        echo -e "${YELLOW}gum utility not found. Some UIs may be limited.${NC}"
+        if command -v pacman >/dev/null 2>&1; then
+            echo -e "${YELLOW}Attempting to install gum via pacman...${NC}"
+            install_with_retries gum || echo -e "${YELLOW}Couldn't install gum automatically; please install it manually.${NC}"
+        fi
+    fi
+
+    # Basic checks passed (non-fatal)
+    echo -e "${GREEN}System requirements check completed (warnings may apply).${NC}"
+    return 0
+}
+fi
+
 # ============================================================================
 # TOML MENU SYSTEM FUNCTIONS
 # ============================================================================
