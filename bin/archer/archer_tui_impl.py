@@ -235,7 +235,12 @@ class ProgressPanel(Container):
 
     def compose(self) -> ComposeResult:
         yield Static("Installation Progress:", classes="panel-title")
+        # Main (global) progress bar
         yield ProgressBar(total=100, show_eta=True, id="main_progress")
+        # Per-package progress bar and status
+        yield Static("Current task:", id="pkg_status_label")
+        yield ProgressBar(total=100, show_eta=False, id="pkg_progress")
+        yield Static("", id="pkg_status")
 
     def watch_visible(self, visible):
         """Show/hide the container based on visibility"""
@@ -248,6 +253,25 @@ class ProgressPanel(Container):
     def hide_panel(self):
         """Hide this panel"""
         self.visible = False
+
+    def set_pkg_status(self, text: str):
+        try:
+            lbl = self.query_one("#pkg_status", Static)
+            lbl.update(text)
+        except Exception:
+            pass
+
+    def set_pkg_progress(self, pct: int):
+        try:
+            bar = self.query_one("#pkg_progress", ProgressBar)
+            # clamp
+            if pct < 0:
+                pct = 0
+            if pct > 100:
+                pct = 100
+            bar.update(pct)
+        except Exception:
+            pass
 
 
 class ActionButtonsPanel(Container):
@@ -664,6 +688,12 @@ class ArcherTUIApp(App):
 
         output.add_output(f"[blue]Starting: {description}[/blue]")
         progress_panel.show_panel()
+        # Reset per-package progress/status
+        try:
+            progress_panel.set_pkg_progress(0)
+            progress_panel.set_pkg_status("")
+        except Exception:
+            pass
 
         try:
             # Create subprocess
@@ -683,6 +713,49 @@ class ArcherTUIApp(App):
                     text = line.decode('utf-8', errors='replace').rstrip()
                 except Exception:
                     text = str(line)
+
+                # Token parsing: ARCHER_PROGRESS: <pct>, ARCHER_STEP: i/n, ARCHER_STATUS: <text>
+                stripped = text.strip()
+                handled = False
+                if stripped.startswith('ARCHER_PROGRESS:'):
+                    try:
+                        pct = int(stripped.split(':',1)[1].strip())
+                        progress_panel.set_pkg_progress(pct)
+                        handled = True
+                    except Exception:
+                        pass
+                elif stripped.startswith('ARCHER_STEP:'):
+                    # Format i/n -> convert to percent
+                    try:
+                        parts = stripped.split(':',1)[1].strip().split('/')
+                        i = int(parts[0]); n = int(parts[1])
+                        pct = int((i / max(1, n)) * 100)
+                        progress_panel.set_pkg_progress(pct)
+                        handled = True
+                    except Exception:
+                        pass
+                elif stripped.startswith('ARCHER_STATUS:'):
+                    try:
+                        status = stripped.split(':',1)[1].strip()
+                        progress_panel.set_pkg_status(status)
+                        handled = True
+                    except Exception:
+                        pass
+
+                # Heuristic percent parsing if no token
+                if not handled:
+                    import re
+                    m = re.search(r"(\d{1,3})\s?%", stripped)
+                    if m:
+                        try:
+                            pct = int(m.group(1))
+                            if 0 <= pct <= 100:
+                                progress_panel.set_pkg_progress(pct)
+                                handled = True
+                        except Exception:
+                            pass
+
+                # Always write the output to the log panel
                 output.add_output(text)
 
             rc = await proc.wait()
