@@ -402,17 +402,29 @@ class ArcherTUIApp(App):
         subtopic = event.row[0]
         output = self.query_one("#output_panel", InstallationOutputPanel)
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        # Find the menu_key for the selected subtopic
+        subtopics_table = self.query_one("#subtopics_panel", DataTable)
+
+        # Find the menu_key for the selected subtopic (robust mapping)
+        matched_key = None
         for k in self.archer_menu.discovered_menus.keys():
+            # Match subtopic name to menu key
             if k.split('/')[-1].replace('-', ' ').title() == subtopic:
-                _, _, options = self.archer_menu.get_menu_options_filtered(k)
-                package_panel.packages = options
-                package_panel.visible = True
-                output.add_output(f"[blue]Selected sub-topic:[/blue] {subtopic}")
-                output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
-                for opt in options:
-                    output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
+                matched_key = k
                 break
+
+        if matched_key:
+            _, _, options = self.archer_menu.get_menu_options_filtered(matched_key)
+            package_panel.packages = options
+            package_panel.visible = True
+            subtopics_table.visible = True  # Keep subtopics visible for context
+            output.add_output(f"[blue]Selected sub-topic:[/blue] {subtopic}")
+            output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
+            for opt in options:
+                output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
+        else:
+            package_panel.packages = []
+            package_panel.visible = False
+            output.add_output(f"[red]No toolsets found for sub-topic: {subtopic}[/red]")
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
