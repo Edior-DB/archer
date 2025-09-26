@@ -346,9 +346,9 @@ class ArcherTUIApp(App):
         max-height: 45%;
     }
     #actions_panel {
-        height: 6%;
-        min-height: 3;
-        max-height: 8%;
+        height: 9%;
+        min-height: 4;
+        max-height: 12%;
         border-top: solid $primary-lighten-2;
     }
     #menu_tree {
@@ -381,12 +381,16 @@ class ArcherTUIApp(App):
             submenus = self.archer_menu.get_sub_menus(message.menu_key)
             # Store submenus data for reverse lookup in row selection
             self._current_submenus = submenus
+            # Build stable row index mapping for subtopics
+            self._subtopic_row_map = {}
 
             subtopics_table.clear(columns=True)
             subtopics_table.add_columns("Sub-Topic")
             # Add rows with display names only (keys don't work reliably in Textual)
-            for display_name, menu_key in submenus.items():
+            for row_index, (display_name, menu_key) in enumerate(submenus.items()):
                 subtopics_table.add_row(display_name)
+                self._subtopic_row_map[row_index] = (menu_key, display_name)
+            output.add_output(f"[dim]DEBUG: Subtopic row map built with {len(self._subtopic_row_map)} entries[/dim]")
 
             subtopics_table.visible = True
             package_panel.visible = False
@@ -402,52 +406,19 @@ class ArcherTUIApp(App):
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
 
-    def on_data_table_cell_selected(self, event: DataTable.CellSelected):
-        """Handle cell selection in Sub-Topics panel and show corresponding toolsets"""
+    # Subtopic selection: unified logic using row mapping
+    def _activate_subtopic_row(self, row_index: int):
         output = self.query_one("#output_panel", InstallationOutputPanel)
-
-        # Debug: Log all DataTable cell selections
-        output.add_output(f"[dim]DEBUG: DataTable cell selected on control: {event.control.id}, row: {event.coordinate.row}, col: {event.coordinate.column}[/dim]")
-
-        # Ensure this event is from the subtopics_panel
-        if event.control.id != "subtopics_panel":
+        if not hasattr(self, '_subtopic_row_map'):
+            output.add_output("[red]DEBUG: No subtopic row map present[/red]")
             return
-
-        # Only handle column 0 (the subtopic name column)
-        if event.coordinate.column != 0:
+        if row_index not in self._subtopic_row_map:
+            output.add_output(f"[red]DEBUG: Row {row_index} not in subtopic map[/red]")
             return
-
-        output.add_output(f"[dim]DEBUG: Processing subtopics panel cell selection[/dim]")
-
-        # Get the selected subtopic display name from the table
-        subtopics_table = self.query_one("#subtopics_panel", DataTable)
-        try:
-            # Get the row data
-            row_data = subtopics_table.get_row_at(event.coordinate.row)
-            subtopic_display = row_data[0]
-            output.add_output(f"[dim]DEBUG: Subtopic cell selected. Display: '{subtopic_display}'[/dim]")
-        except (IndexError, AttributeError) as e:
-            output.add_output(f"[red]Error: Could not retrieve subtopic from table: {e}[/red]")
-            return
-
-        # Find the corresponding menu_key by matching the display name
-        # We need to reverse-lookup from our stored submenus data
-        menu_key = None
-        if hasattr(self, '_current_submenus'):
-            output.add_output(f"[dim]DEBUG: Current submenus: {list(self._current_submenus.keys())}[/dim]")
-            for display_name, stored_menu_key in self._current_submenus.items():
-                if display_name == subtopic_display:
-                    menu_key = stored_menu_key
-                    break
-
-        if not menu_key:
-            output.add_output(f"[red]Error: Could not find menu key for subtopic '{subtopic_display}'[/red]")
-            return
-
-        output.add_output(f"[dim]DEBUG: Found menu key: '{menu_key}'[/dim]")
-
+        menu_key, display_name = self._subtopic_row_map[row_index]
+        output.add_output(f"[dim]DEBUG: Activating row {row_index} -> {menu_key}")
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
-
+        subtopics_table = self.query_one("#subtopics_panel", DataTable)
         try:
             _, _, options = self.archer_menu.get_menu_options_filtered(menu_key)
             self.current_menu_key = menu_key
@@ -455,13 +426,38 @@ class ArcherTUIApp(App):
             package_panel.packages = options
             package_panel.visible = True
             subtopics_table.visible = False
-            display_name = menu_key.split('/')[-1].replace('-', ' ').title()
             output.add_output(f"[blue]Selected sub-topic:[/blue] {display_name}")
             output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
         except Exception as e:
             package_panel.packages = []
             package_panel.visible = False
             output.add_output(f"[red]Error loading toolsets for '{menu_key}': {e}[/red]")
+
+    def on_data_table_cell_selected(self, event: DataTable.CellSelected):
+        if event.control.id != "subtopics_panel":
+            return
+        if event.coordinate.column != 0:
+            return
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        output.add_output(f"[dim]DEBUG: CellSelected row={event.coordinate.row}[/dim]")
+        self._activate_subtopic_row(event.coordinate.row)
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected):
+        if event.control.id != "subtopics_panel":
+            return
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        row_index = getattr(event, 'cursor_row', 0)
+        output.add_output(f"[dim]DEBUG: RowSelected row={row_index}[/dim]")
+        self._activate_subtopic_row(row_index)
+
+    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
+        if event.control.id != "subtopics_panel":
+            return
+        self._last_highlighted_subtopic_row = event.row_index
+
+    def on_key(self, event: events.Key):
+        if event.key == "enter" and hasattr(self, '_last_highlighted_subtopic_row'):
+            self._activate_subtopic_row(self._last_highlighted_subtopic_row)
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
