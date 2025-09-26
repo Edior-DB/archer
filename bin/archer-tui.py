@@ -436,9 +436,8 @@ class ArcherTUIApp(App):
         yield ActionButtonsPanel(id="actions_panel")
 
         # Bottom panel: Installation output and progress bar
-        with Vertical(id="output_panel"):
-            yield InstallationOutputPanel(id="install_output")
-            yield ProgressPanel(id="progress_panel")
+        yield InstallationOutputPanel(id="output_panel")
+        yield ProgressPanel(id="progress_panel")
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
         """Handle menu selection from tree"""
