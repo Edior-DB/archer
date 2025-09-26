@@ -499,30 +499,6 @@ class ArcherTUIApp(App):
             package_panel.visible = False
             output.add_output(f"[red]Error loading toolsets for '{menu_key}': {e}[/red]")
 
-    def on_data_table_cell_selected(self, event: DataTable.CellSelected):
-        if event.control.id != "subtopics_panel":
-            return
-        if event.coordinate.column != 0:
-            return
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        row_identifier = getattr(event.coordinate, "row_key", None)
-        if row_identifier is None:
-            row_identifier = event.coordinate.row
-        output.add_output(f"[dim]DEBUG: CellSelected row={row_identifier}[/dim]")
-        self._activate_subtopic_row(row_identifier)
-
-    def on_data_table_row_selected(self, event: DataTable.RowSelected):
-        if event.control.id != "subtopics_panel":
-            return
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        row_identifier = getattr(event, "row_key", None)
-        if row_identifier is None:
-            row_identifier = getattr(event, "cursor_row", None)
-        if row_identifier is None:
-            row_identifier = getattr(event, "row_index", None)
-        output.add_output(f"[dim]DEBUG: RowSelected row={row_identifier}[/dim]")
-        if row_identifier is not None:
-            self._activate_subtopic_row(row_identifier)
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
         # Support both menu_list and subtopics_panel
