@@ -294,9 +294,8 @@ class ArcherTUIApp(App):
                 with Vertical(id="selection_panel"):
                     yield Static("Sub-Topics:", classes="panel-title")
                     yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
-                with Vertical(id="package_panel"):
-                    yield Static("Select Tools and Packages:", classes="panel-title")
-                    yield DynamicPackageTable(id="toolsets_panel")
+                yield Static("Select Tools and Packages:", classes="panel-title")
+                yield DynamicPackageTable(id="package_panel")
                 yield ActionButtonsPanel(id="actions_panel")
                 yield ProgressPanel(id="progress_panel")
 
@@ -378,10 +377,9 @@ class ArcherTUIApp(App):
         """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
         subtopic = event.row[0]
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        package_panel = self.query_one("#toolsets_panel", DynamicPackageTable)
+        package_panel = self.query_one("#package_panel", DynamicPackageTable)
         # Find the menu_key for the selected subtopic
         for k in self.archer_menu.discovered_menus.keys():
-            # Match subtopic with menu_key
             if k.split('/')[-1].replace('-', ' ').title() == subtopic:
                 _, _, options = self.archer_menu.get_menu_options_filtered(k)
                 package_panel.packages = options
