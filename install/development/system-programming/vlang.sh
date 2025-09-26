@@ -40,7 +40,7 @@ cd "$TEMP_DIR"
 if sudo git clone --depth=1 https://github.com/vlang/v /opt/vlang; then
 
     sudo chown -R "$USER":"$USER" /opt/vlang
-    sudo chgroup -R "$USER" /opt/vlang
+    sudo chgrp -R "$USER" /opt/vlang
 
     cd /opt/vlang
 
