@@ -396,10 +396,8 @@ class ArcherTUIApp(App):
             output.add_output(f"[green]Toolsets presented: {len(message.options)} options[/green]")
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-
-    def on_data_table_row_selected(self, event: DataTable.RowSelected):
-        """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
-        subtopic = event.row[0]
+    def _handle_subtopic_selection(self, subtopic):
+        """Shared logic for subtopic selection events"""
         output = self.query_one("#output_panel", InstallationOutputPanel)
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
         subtopics_table = self.query_one("#subtopics_panel", DataTable)
@@ -407,7 +405,6 @@ class ArcherTUIApp(App):
         # Find the menu_key for the selected subtopic (robust mapping)
         matched_key = None
         for k in self.archer_menu.discovered_menus.keys():
-            # Match subtopic name to menu key
             if k.split('/')[-1].replace('-', ' ').title() == subtopic:
                 matched_key = k
                 break
@@ -418,7 +415,7 @@ class ArcherTUIApp(App):
             self.current_options = options
             package_panel.packages = options
             package_panel.visible = True
-            subtopics_table.visible = False  # Hide subtopics panel after selection
+            subtopics_table.visible = False
             output.add_output(f"[blue]Selected sub-topic:[/blue] {subtopic}")
             output.add_output(f"[green]Toolsets presented: {len(options)} options[/green]")
             for opt in options:
@@ -427,6 +424,16 @@ class ArcherTUIApp(App):
             package_panel.packages = []
             package_panel.visible = False
             output.add_output(f"[red]No toolsets found for sub-topic: {subtopic}[/red]")
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected):
+        """Handle single selection in Sub-Topics panel and show corresponding toolsets"""
+        subtopic = event.row[0]
+        self._handle_subtopic_selection(subtopic)
+
+    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
+        """Handle row highlight in Sub-Topics panel and show corresponding toolsets"""
+        subtopic = event.row[0]
+        self._handle_subtopic_selection(subtopic)
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
