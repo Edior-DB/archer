@@ -267,19 +267,64 @@ class ActionButtonsPanel(Container):
 class ArcherTUIApp(App):
     """Main Archer TUI Application"""
 
-    CSS = """
-    Screen {
-        layout: grid;
-        grid-size: 3 6;
-        grid-gutter: 1;
-        padding: 1;
-    }
+    TITLE = "🏹 Archer Linux Enhancement Suite - TUI"
 
-    #menu_tree {
+    current_menu_key = reactive("")
+    current_options = reactive([])
+    installation_mode = reactive("install_all")
+
+    def __init__(self):
+        super().__init__()
+        self.archer_dir = os.environ.get('ARCHER_DIR', str(Path(__file__).parent.parent))
+
+        # Initialize the existing ArcherMenu system
+        self.archer_ui = ArcherUI(verbose=False)
+        self.archer_menu = ArcherMenu(self.archer_ui)
+
+    def compose(self) -> ComposeResult:
+        """Create the application layout"""
+        yield Header()
+
+        # Leftmost vertical split: Top for Main menu, bottom for installation output
+        with Vertical(id="left_panel"):
+            tree = ArcherMenuTree(self.archer_menu)
+            tree.id = "menu_tree"
+            yield tree
+            yield InstallationOutputPanel(id="output_panel")
+
+        # Right top panel: Sub-topics of the selected main topic (single-select)
+        with Vertical(id="selection_panel"):
+            yield Static("Sub-Topics:", classes="panel-title")
+            yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True)
+
+        # Right middle panel: Toolsets of the selected sub-topic (multi-select)
+        with Vertical(id="package_panel"):
+            yield Static("Select Tools and Packages:", classes="panel-title")
+            yield DynamicPackageTable(id="toolsets_panel")
+
+        # Right bottom panel: Action buttons
+        yield ActionButtonsPanel(id="actions_panel")
+
+        # Bottom panel: Progress bar
+        yield ProgressPanel(id="progress_panel")
+
+    CSS = """
+    #left_panel {
         column-span: 1;
         row-span: 6;
         border: solid $primary;
         height: 100%;
+        layout: vertical;
+    }
+
+    #menu_tree {
+        height: 60%;
+        min-height: 12;
+    }
+
+    #output_panel {
+        height: 40%;
+        min-height: 8;
     }
 
     #selection_panel {
@@ -301,13 +346,6 @@ class ArcherTUIApp(App):
         column-span: 2;
         row-span: 1;
         border: solid $success;
-        height: 8;
-    }
-
-    #output_panel {
-        column-span: 2;
-        row-span: 1;
-        border: solid $warning;
         height: 8;
     }
 
@@ -363,6 +401,11 @@ class ArcherTUIApp(App):
         height: 1fr;
     }
 
+    #subtopics_panel {
+        height: 6;
+        min-height: 6;
+    }
+
     /* Make checkboxes more prominent */
     DataTable > .datatable--cursor {
         background: $primary 20%;
@@ -398,46 +441,6 @@ class ArcherTUIApp(App):
         margin: 1 0;
     }
     """
-
-    TITLE = "🏹 Archer Linux Enhancement Suite - TUI"
-
-    current_menu_key = reactive("")
-    current_options = reactive([])
-    installation_mode = reactive("install_all")
-
-    def __init__(self):
-        super().__init__()
-        self.archer_dir = os.environ.get('ARCHER_DIR', str(Path(__file__).parent.parent))
-
-        # Initialize the existing ArcherMenu system
-        self.archer_ui = ArcherUI(verbose=False)
-        self.archer_menu = ArcherMenu(self.archer_ui)
-
-    def compose(self) -> ComposeResult:
-        """Create the application layout"""
-        yield Header()
-
-        # Left panel: Menu tree using existing ArcherMenu
-        tree = ArcherMenuTree(self.archer_menu)
-        tree.id = "menu_tree"
-        yield tree
-
-        # Right top panel: Sub-topics of the selected main topic (single-select)
-        with Vertical(id="selection_panel"):
-            yield Static("Sub-Topics:", classes="panel-title")
-            yield DataTable(id="subtopics_panel", show_header=False, zebra_stripes=True, height=6)
-
-        # Right middle panel: Toolsets of the selected sub-topic (multi-select)
-        with Vertical(id="package_panel"):
-            yield Static("Select Tools and Packages:", classes="panel-title")
-            yield DynamicPackageTable(id="toolsets_panel")
-
-        # Right bottom panel: Action buttons
-        yield ActionButtonsPanel(id="actions_panel")
-
-        # Bottom panel: Installation output and progress bar
-        yield InstallationOutputPanel(id="output_panel")
-        yield ProgressPanel(id="progress_panel")
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
         """Handle menu selection from tree"""
@@ -549,78 +552,6 @@ class ArcherTUIApp(App):
                 output.add_output(f"[dim]Executing:[/dim] {cmd}")
                 await self._run_command(cmd, install_dir)
 
-    async def _run_command(self, cmd: str, cwd: str):
-        """Run a shell command asynchronously and display output in the log panel"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        try:
-            process = await asyncio.create_subprocess_shell(
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=cwd
-            )
-            while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-                line_text = line.decode().strip()
-                if line_text:
-                    output.add_output(f"[dim]{line_text}[/dim]")
-            await process.wait()
-            if process.returncode != 0:
-                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
-            else:
-                output.add_output(f"[green]Command completed successfully[/green]")
-        except Exception as e:
-            output.add_output(f"[red]Error running command: {str(e)}[/red]")
-    async def _run_command(self, cmd: str, cwd: str):
-        """Run a shell command asynchronously and display output in the log panel"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        try:
-            process = await asyncio.create_subprocess_shell(
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=cwd
-            )
-            while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-                line_text = line.decode().strip()
-                if line_text:
-                    output.add_output(f"[dim]{line_text}[/dim]")
-            await process.wait()
-            if process.returncode != 0:
-                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
-            else:
-                output.add_output(f"[green]Command completed successfully[/green]")
-        except Exception as e:
-            output.add_output(f"[red]Error running command: {str(e)}[/red]")
-    async def _run_command(self, cmd: str, cwd: str):
-        """Run a shell command asynchronously and display output in the log panel"""
-        output = self.query_one("#output_panel", InstallationOutputPanel)
-        try:
-            process = await asyncio.create_subprocess_shell(
-                cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=cwd
-            )
-            while True:
-                line = await process.stdout.readline()
-                if not line:
-                    break
-                line_text = line.decode().strip()
-                if line_text:
-                    output.add_output(f"[dim]{line_text}[/dim]")
-            await process.wait()
-            if process.returncode != 0:
-                output.add_output(f"[red]Command failed with code {process.returncode}[/red]")
-            else:
-                output.add_output(f"[green]Command completed successfully[/green]")
-        except Exception as e:
-            output.add_output(f"[red]Error running command: {str(e)}[/red]")
     async def _run_command(self, cmd: str, cwd: str):
         """Run a shell command asynchronously and display output in the log panel"""
         output = self.query_one("#output_panel", InstallationOutputPanel)
