@@ -331,19 +331,19 @@ class ArcherTUIApp(App):
         border-bottom: solid $primary-lighten-2;
     }
     #subtopics_panel {
-        height: 27%;
-        min-height: 15%;
-        max-height: 30%;
+        height: 40%;
+        min-height: 35%;
+        max-height: 40%;
     }
     #package_panel {
-        height: 27%;
-        min-height: 15%;
-        max-height: 30%;
+        height: 40%;
+        min-height: 35%;
+        max-height: 40%;
     }
     #actions_panel {
-        height: 13%;
-        min-height: 10%;
-        max-height: 15%;
+        height: 20%;
+        min-height: 15%;
+        max-height: 20%;
     }
     #menu_tree {
         height: 100%;
