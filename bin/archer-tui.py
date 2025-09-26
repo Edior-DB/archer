@@ -441,23 +441,33 @@ class ArcherTUIApp(App):
         """Handle menu selection from tree"""
         self.current_menu_key = message.menu_key
         self.current_options = message.options
-
-        # Update output with debug info
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        output.add_output(f"[blue]Selected menu:[/blue] {message.menu_key}")
-        output.add_output(f"[dim]Debug: Got {len(message.options)} options[/dim]")
-
-        # Update the dynamic package table
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        package_panel.packages = message.options
-        package_panel.visible = True
-        output.add_output(f"[green]Package selection table shown with {len(message.options)} packages[/green]")
-        if message.options:
-            output.add_output(f"[green]Found {len(message.options)} installation options[/green]")
+        subtopics_panel = self.query_one("#subtopics_panel", DynamicPackageTable)
+
+        # Determine if this is a top-level menu (main topic)
+        is_top_level = '/' not in message.menu_key
+        if is_top_level:
+            # Show sub-topics in subtopics_panel (single-select)
+            submenus = [
+                {"display": k.split('/')[-1].replace('-', ' ').title(), "menu_key": k}
+                for k in self.archer_menu.discovered_menus.keys()
+                if k.startswith(message.menu_key + '/') and k.count('/') == 1
+            ]
+            subtopics_panel.packages = submenus
+            subtopics_panel.visible = True
+            package_panel.visible = False
+            output.add_output(f"[blue]Selected main topic:[/blue] {message.menu_key}")
+            output.add_output(f"[green]Sub-topics presented: {', '.join([s['display'] for s in submenus])}[/green]")
+        else:
+            # Show toolsets in package_panel (multi-select)
+            package_panel.packages = message.options
+            package_panel.visible = True
+            subtopics_panel.visible = False
+            output.add_output(f"[blue]Selected sub-topic:[/blue] {message.menu_key}")
+            output.add_output(f"[green]Toolsets presented: {len(message.options)} options[/green]")
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-        else:
-            output.add_output("[yellow]This menu contains submenus - expand to see options[/yellow]")
 
     def _update_package_panel_visibility(self):
         """Show/hide package panel based on selection mode"""
