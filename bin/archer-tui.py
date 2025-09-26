@@ -411,7 +411,8 @@ class ArcherTUIApp(App):
             for opt in message.options:
                 output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
 
-        # Ensure Sub-Topics panel remains populated when submenu is selected
+        # Ensure Sub-Topics panel remains visible and populated after sub-topic selection
+        subtopics_table.visible = True
         if not is_top_level and self._current_submenus:
             subtopics_table.clear(columns=True)
             subtopics_table.add_columns("Sub-Topic")
