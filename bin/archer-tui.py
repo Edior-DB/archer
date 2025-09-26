@@ -546,10 +546,10 @@ class ArcherTUIApp(App):
                 # Run install.sh in the current menu/category directory
                 # Assume all options share the same install_dir
                 if options:
-                install_dir = options[0].get('install_dir', '')
-                install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
-                output.add_output(f"[dim]DEBUG: Looking for install.sh at: {install_sh}[/dim]")
-                output.add_output(f"[dim]DEBUG: File exists: {os.path.isfile(install_sh) if install_sh else False}[/dim]")
+                    install_dir = options[0].get('install_dir', '')
+                    install_sh = os.path.join(install_dir, 'install.sh') if install_dir else ''
+                    output.add_output(f"[dim]DEBUG: Looking for install.sh at: {install_sh}[/dim]")
+                    output.add_output(f"[dim]DEBUG: File exists: {os.path.isfile(install_sh) if install_sh else False}[/dim]")
 
                 if install_dir and os.path.isfile(install_sh):
                     output.add_output(f"[cyan]Running install.sh for all packages in:[/cyan] {install_dir}")
