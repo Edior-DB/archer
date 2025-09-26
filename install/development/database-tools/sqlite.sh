@@ -13,9 +13,9 @@ echo -e "${BLUE}SQLite - Self-contained SQL Database Engine${NC}"
 echo -e "${YELLOW}Installing SQLite database engine and tools${NC}"
 echo ""
 
-if ! confirm_action "Install SQLite database tools?"; then
-    echo -e "${YELLOW}SQLite installation cancelled.${NC}"
-    exit 0
+if ! archer_confirm_or_default "Install SQLite database tools?"; then
+  echo -e "${YELLOW}SQLite installation cancelled.${NC}"
+  exit 0
 fi
 
 echo -e "${BLUE}Installing SQLite...${NC}"
@@ -97,7 +97,7 @@ ${NC}"
 
     # Offer to create a sample database
     echo ""
-    if confirm_action "Create a sample database for testing?"; then
+  if archer_confirm_or_default "Create a sample database for testing?"; then
         echo -e "${BLUE}Creating sample database 'test.db'...${NC}"
 
         # Create sample database with table and data

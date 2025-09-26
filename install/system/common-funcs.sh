@@ -67,6 +67,38 @@ select_option() {
     done
 }
 
+# ==========================================================================
+# Non-interactive / TUI detection and helper for scripted confirmations
+# ==========================================================================
+# AUTO_CONFIRM is set when scripts are running in a TUI, CI, or without a tty.
+# Scripts can call archer_confirm_or_default("Prompt?", "yes"|"no") which will
+# either delegate to confirm_action (interactive) or return the default in
+# non-interactive situations.
+
+# If the environment already set AUTO_CONFIRM explicitly, keep it.
+if [ -z "${AUTO_CONFIRM:-}" ]; then
+    if [ -n "${ARCHER_TUI:-}" ] || [ -n "${ARCHER_NONINTERACTIVE:-}" ] || [ -n "${CI:-}" ] || ! tty -s; then
+        AUTO_CONFIRM=1
+    else
+        AUTO_CONFIRM=0
+    fi
+fi
+
+archer_confirm_or_default() {
+    # $1 = prompt string, $2 = default (yes|no) when AUTO_CONFIRM=1
+    local prompt="$1"
+    local default="${2:-yes}"
+    if [ "${AUTO_CONFIRM}" = "1" ]; then
+        if [ "${default}" = "yes" ]; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+    # fall back to existing confirm_action
+    confirm_action "$prompt"
+}
+
 # ============================================================================
 # TOML MENU SYSTEM FUNCTIONS
 # ============================================================================

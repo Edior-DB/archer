@@ -13,9 +13,9 @@ echo -e "${BLUE}Redis - Advanced Key-Value Store and Cache${NC}"
 echo -e "${YELLOW}Installing Redis server and client tools${NC}"
 echo ""
 
-if ! confirm_action "Install Redis database server?"; then
-    echo -e "${YELLOW}Redis installation cancelled.${NC}"
-    exit 0
+if ! archer_confirm_or_default "Install Redis database server?"; then
+  echo -e "${YELLOW}Redis installation cancelled.${NC}"
+  exit 0
 fi
 
 echo -e "${BLUE}Installing Redis...${NC}"
@@ -104,7 +104,7 @@ ${NC}"
             echo -e "${GREEN}✓ Redis is responding to connections${NC}"
 
             # Offer to set some sample data
-            if confirm_action "Set some sample data for testing?"; then
+            if archer_confirm_or_default "Set some sample data for testing?"; then
                 echo -e "${BLUE}Setting sample data...${NC}"
                 redis-cli set "test:message" "Hello Redis!"
                 redis-cli set "test:counter" "1"

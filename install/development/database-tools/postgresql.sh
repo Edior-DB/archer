@@ -13,7 +13,7 @@ echo -e "${BLUE}PostgreSQL - The World's Most Advanced Open Source Database${NC}
 echo -e "${YELLOW}Installing PostgreSQL server and client tools${NC}"
 echo ""
 
-if ! confirm_action "Install PostgreSQL database server?"; then
+if ! archer_confirm_or_default "Install PostgreSQL database server?"; then
     echo -e "${YELLOW}PostgreSQL installation cancelled.${NC}"
     exit 0
 fi
@@ -94,7 +94,7 @@ ${NC}"
 
         # Offer to set up postgres password
         echo ""
-        if confirm_action "Set up password for postgres user?"; then
+      if archer_confirm_or_default "Set up password for postgres user?"; then
             echo -e "${BLUE}Setting up postgres user password...${NC}"
             sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
             echo -e "${GREEN}✓ Default password 'postgres' set for postgres user${NC}"
@@ -103,7 +103,7 @@ ${NC}"
 
         # Offer to create a sample database
         echo ""
-        if confirm_action "Create a sample database for testing?"; then
+  if archer_confirm_or_default "Create a sample database for testing?"; then
             echo -e "${BLUE}Creating sample database 'testdb'...${NC}"
             sudo -u postgres createdb testdb
             echo -e "${GREEN}✓ Sample database 'testdb' created${NC}"

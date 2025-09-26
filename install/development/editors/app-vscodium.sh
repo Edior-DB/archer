@@ -132,7 +132,7 @@ main() {
     echo -e "${CYAN}It will check for conflicts with VS Code and use appropriate installation method.${NC}"
     echo ""
 
-    if ! confirm_action "Continue with VSCodium installation?"; then
+    if ! archer_confirm_or_default "Continue with VSCodium installation?"; then
         echo -e "${YELLOW}Installation cancelled.${NC}"
         exit 0
     fi
@@ -140,7 +140,7 @@ main() {
     # Check if VSCodium is already installed
     if command -v codium >/dev/null 2>&1 || pacman -Q vscodium-bin >/dev/null 2>&1; then
         echo -e "${GREEN}VSCodium is already installed.${NC}"
-        if confirm_action "Configure VSCodium with default settings?"; then
+    if archer_confirm_or_default "Configure VSCodium with default settings?"; then
             configure_vscodium
         fi
         exit 0

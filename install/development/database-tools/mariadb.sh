@@ -13,9 +13,9 @@ echo -e "${BLUE}MariaDB - Reliable, High Performance MySQL-compatible Database${
 echo -e "${YELLOW}Installing MariaDB server and client tools${NC}"
 echo ""
 
-if ! confirm_action "Install MariaDB database server?"; then
-    echo -e "${YELLOW}MariaDB installation cancelled.${NC}"
-    exit 0
+if ! archer_confirm_or_default "Install MariaDB database server?"; then
+  echo -e "${YELLOW}MariaDB installation cancelled.${NC}"
+  exit 0
 fi
 
 echo -e "${BLUE}Installing MariaDB...${NC}"
@@ -86,7 +86,7 @@ ${NC}"
 
         # Offer to run security setup
         echo ""
-        if confirm_action "Run MariaDB security configuration now?"; then
+  if archer_confirm_or_default "Run MariaDB security configuration now?"; then
             echo -e "${BLUE}Running MariaDB security configuration...${NC}"
             echo -e "${YELLOW}You'll be prompted to set root password and security options${NC}"
             sudo mysql_secure_installation
@@ -97,7 +97,7 @@ ${NC}"
 
         # Offer to create a sample database
         echo ""
-        if confirm_action "Create a sample database for testing?"; then
+  if archer_confirm_or_default "Create a sample database for testing?"; then
             echo -e "${BLUE}Creating sample database 'testdb'...${NC}"
             mysql -u root -e "CREATE DATABASE IF NOT EXISTS testdb;"
             echo -e "${GREEN}✓ Sample database 'testdb' created${NC}"

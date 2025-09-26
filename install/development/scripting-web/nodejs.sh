@@ -13,10 +13,10 @@ echo -e "${BLUE}Node.js - JavaScript runtime built on Chrome's V8 JavaScript eng
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-if ! confirm_action "Install Node.js via Mise?"; then
-    echo -e "${YELLOW}Node.js installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install Node.js via Mise?"; then
+#     echo -e "${YELLOW}Node.js installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Setup Mise and install Node.js
 setup_mise || {

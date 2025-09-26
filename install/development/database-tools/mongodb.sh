@@ -13,9 +13,9 @@ echo -e "${BLUE}MongoDB - Document-oriented NoSQL Database${NC}"
 echo -e "${YELLOW}Installing MongoDB database server and tools${NC}"
 echo ""
 
-if ! confirm_action "Install MongoDB database server?"; then
-    echo -e "${YELLOW}MongoDB installation cancelled.${NC}"
-    exit 0
+if ! archer_confirm_or_default "Install MongoDB database server?"; then
+  echo -e "${YELLOW}MongoDB installation cancelled.${NC}"
+  exit 0
 fi
 
 echo -e "${BLUE}Installing MongoDB...${NC}"
@@ -138,7 +138,7 @@ ${NC}"
             echo -e "${GREEN}✓ MongoDB is accepting connections${NC}"
 
             # Offer to create sample data
-            if confirm_action "Create sample database and collection for testing?"; then
+            if archer_confirm_or_default "Create sample database and collection for testing?"; then
                 echo -e "${BLUE}Creating sample data...${NC}"
                 mongosh --eval "
                     use testdb;

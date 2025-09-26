@@ -13,12 +13,14 @@ echo -e "${BLUE}TypeScript - Typed superset of JavaScript${NC}"
 echo -e "${YELLOW}Installing TypeScript via npm (requires Node.js)${NC}"
 echo ""
 
+# (Confirmation helper moved to install/system/common-funcs.sh)
+
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
     echo -e "${YELLOW}Node.js not found. TypeScript requires Node.js to be installed.${NC}"
     echo -e "${BLUE}Please install Node.js first using the nodejs installer.${NC}"
 
-    if confirm_action "Install Node.js first?"; then
+    # if confirm_action "Install Node.js first?"; then
         # Run nodejs installer if available
         nodejs_installer="${ARCHER_DIR:-$(dirname "${BASH_SOURCE[0]}")/../..}/install/development/scripting-web/nodejs.sh"
         if [[ -f "$nodejs_installer" ]]; then
@@ -34,10 +36,10 @@ if ! command -v node &> /dev/null; then
                 exit 1
             fi
         fi
-    else
-        echo -e "${YELLOW}TypeScript installation cancelled.${NC}"
-        exit 0
-    fi
+    # else
+        # echo -e "${YELLOW}TypeScript installation cancelled.${NC}"
+        # exit 0
+    # fi
 fi
 
 # Verify Node.js and npm are available
@@ -46,10 +48,10 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-if ! confirm_action "Install TypeScript globally via npm?"; then
-    echo -e "${YELLOW}TypeScript installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install TypeScript globally via npm?"; then
+#     echo -e "${YELLOW}TypeScript installation cancelled.${NC}"
+#     exit 0
+# fi
 
 echo -e "${BLUE}Installing TypeScript globally...${NC}"
 
@@ -211,7 +213,7 @@ ${NC}"
 
     # Suggest creating a sample project
     echo ""
-    if confirm_action "Create a sample TypeScript project?"; then
+  if archer_confirm_or_default "Create a sample TypeScript project?" "no"; then
         project_dir="$HOME/typescript-sample"
         echo -e "${BLUE}Creating sample project in $project_dir...${NC}"
 

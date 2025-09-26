@@ -250,8 +250,8 @@ EOF
         echo -e "${YELLOW}WezTerm configuration already exists, skipping...${NC}"
     fi
 
-    # Set as default terminal (optional)
-    if confirm_action "Set WezTerm as default terminal emulator?"; then
+  # Set as default terminal (optional)
+  if archer_confirm_or_default "Set WezTerm as default terminal emulator?" "no"; then
         # Update desktop environment terminal preference
         if command -v gsettings &> /dev/null; then
             gsettings set org.gnome.desktop.default-applications.terminal exec 'wezterm'

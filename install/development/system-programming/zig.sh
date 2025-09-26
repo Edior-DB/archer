@@ -13,10 +13,10 @@ echo -e "${BLUE}Zig - General-purpose programming language${NC}"
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-if ! confirm_action "Install Zig via Mise?"; then
-    echo -e "${YELLOW}Zig installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install Zig via Mise?"; then
+#     echo -e "${YELLOW}Zig installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then

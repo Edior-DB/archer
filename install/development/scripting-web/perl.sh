@@ -13,10 +13,10 @@ echo -e "${BLUE}Perl - Practical text processing and system administration langu
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-if ! confirm_action "Install Perl via Mise?"; then
-    echo -e "${YELLOW}Perl installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install Perl via Mise?"; then
+#     echo -e "${YELLOW}Perl installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then
@@ -120,7 +120,7 @@ ${NC}"
     # Suggest cpanminus installation
     if ! command -v cpanm &>/dev/null; then
         echo ""
-        if confirm_action "Install cpanminus (faster CPAN client)?"; then
+  if archer_confirm_or_default "Install cpanminus (faster CPAN client)?"; then
             echo -e "${BLUE}Installing cpanminus...${NC}"
             curl -L https://cpanmin.us | perl - --sudo App::cpanminus
             echo -e "${GREEN}✓ cpanminus installed successfully!${NC}"

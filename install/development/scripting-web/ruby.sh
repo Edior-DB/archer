@@ -13,10 +13,10 @@ echo -e "${BLUE}Ruby - A programmer's best friend${NC}"
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-if ! confirm_action "Install Ruby via Mise?"; then
-    echo -e "${YELLOW}Ruby installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install Ruby via Mise?"; then
+#     echo -e "${YELLOW}Ruby installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Setup Mise and install Ruby
 setup_mise || {

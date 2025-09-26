@@ -141,7 +141,7 @@ install_system_programming() {
     echo -e "${BLUE}Installing System Programming languages...${NC}"
 
     # C/C++ with both GCC and Clang (LLVM)
-    if confirm_action "Install C/C++ compilers (GCC + Clang/LLVM)?"; then
+    if archer_confirm_or_default "Install C/C++ compilers (GCC + Clang/LLVM)?"; then
         packages=(
             "gcc" "glibc" "make" "cmake" "ninja"
             "clang" "llvm" "lld"
@@ -151,31 +151,31 @@ install_system_programming() {
     fi
 
     # D language: both DMD and LDC (LLVM)
-    if confirm_action "Install D language compilers (DMD + LDC)?"; then
+    if archer_confirm_or_default "Install D language compilers (DMD + LDC)?"; then
         install_with_retries yay dmd ldc
     fi
 
     # Install via Mise
     echo -e "${YELLOW}Installing languages via Mise...${NC}"
 
-    if confirm_action "Install Rust via Mise?"; then
+    if archer_confirm_or_default "Install Rust via Mise?"; then
         mise install rust@latest
     fi
 
-    if confirm_action "Install Go via Mise?"; then
+    if archer_confirm_or_default "Install Go via Mise?"; then
         mise install go@latest
     fi
 
-    if confirm_action "Install Nim via Mise?"; then
+    if archer_confirm_or_default "Install Nim via Mise?"; then
         mise plugin add nim && mise install nim@latest
     fi
 
-    if confirm_action "Install Zig via Mise?"; then
+    if archer_confirm_or_default "Install Zig via Mise?"; then
         mise install zig@latest
     fi
 
     # V language (manual install)
-    if confirm_action "Install V language?"; then
+    if archer_confirm_or_default "Install V language?"; then
         cd /tmp
         git clone https://github.com/vlang/v
         cd v && make
@@ -191,7 +191,7 @@ install_numerical_computing() {
     echo -e "${BLUE}Installing Numerical Computing tools...${NC}"
 
     # Fortran: GFortran (fast install)
-    if confirm_action "Install GFortran compiler?"; then
+    if archer_confirm_or_default "Install GFortran compiler?"; then
         packages=(
             "gcc-fortran"
             "openblas" "lapack"
@@ -201,22 +201,22 @@ install_numerical_computing() {
     fi
 
     # R statistical computing
-    if confirm_action "Install R statistical computing?"; then
+    if archer_confirm_or_default "Install R statistical computing?"; then
         install_with_retries r
     fi
 
     # Octave (MATLAB alternative)
-    if confirm_action "Install Octave (MATLAB alternative)?"; then
+    if archer_confirm_or_default "Install Octave (MATLAB alternative)?"; then
         install_with_retries octave
     fi
 
     # Haskell
-    if confirm_action "Install Haskell (GHC + Cabal + Stack)?"; then
+    if archer_confirm_or_default "Install Haskell (GHC + Cabal + Stack)?"; then
         install_with_retries ghc cabal-install stack
     fi
 
     # Julia via Mise or official installer
-    if confirm_action "Install Julia programming language?"; then
+    if archer_confirm_or_default "Install Julia programming language?"; then
         mise plugin add julia && mise install julia@latest || {
             echo -e "${YELLOW}Installing Julia via official installer...${NC}"
             curl -fsSL https://install.julialang.org | sh
@@ -224,7 +224,7 @@ install_numerical_computing() {
     fi
 
     # Spack package manager for scientific computing
-    if confirm_action "Install Spack package manager for HPC/scientific computing?"; then
+    if archer_confirm_or_default "Install Spack package manager for HPC/scientific computing?"; then
         cd /opt
         sudo git clone -c feature.manyFiles=true https://github.com/spack/spack.git
         sudo chown -R $USER:$USER /opt/spack
@@ -234,7 +234,7 @@ install_numerical_computing() {
         echo -e "${CYAN}source \$SPACK_ROOT/share/spack/setup-env.sh${NC}"
 
         # Optionally add to bashrc
-        if confirm_action "Add Spack to your ~/.bashrc automatically?"; then
+        if archer_confirm_or_default "Add Spack to your ~/.bashrc automatically?"; then
             echo "" >> ~/.bashrc
             echo "# Spack package manager" >> ~/.bashrc
             echo "export SPACK_ROOT=/opt/spack" >> ~/.bashrc
@@ -244,18 +244,18 @@ install_numerical_computing() {
     fi
 
     # Anaconda for Python scientific computing
-    if confirm_action "Install Anaconda for Python scientific computing? (WARNING: Large download, 15-30 minutes)"; then
+    if archer_confirm_or_default "Install Anaconda for Python scientific computing? (WARNING: Large download, 15-30 minutes)"; then
         install_with_retries yay anaconda || {
             echo -e "${YELLOW}Installing Anaconda via official installer...${NC}"
             cd /tmp
             wget https://repo.anaconda.com/archive/Anaconda3-2025.09-Linux-x86_64.sh
             bash Anaconda3-2025.09-Linux-x86_64.sh -b
-            echo 'export PATH="$HOME/anaconda3/bin:$PATH"' >> ~/.bashrc
+            echo 'export PATH="\$HOME/anaconda3/bin:\$PATH"' >> ~/.bashrc
         }
     fi
 
     # LFortran (separate due to long compilation time)
-    if confirm_action "Install LFortran compiler? (WARNING: Compilation takes 20-45 minutes)"; then
+    if archer_confirm_or_default "Install LFortran compiler? (WARNING: Compilation takes 20-45 minutes)"; then
         echo -e "${YELLOW}Installing LFortran from AUR (this will take a while)...${NC}"
         install_with_retries yay lfortran-git
     fi
@@ -272,7 +272,7 @@ install_scripting_web() {
     # Install via Mise
     echo -e "${YELLOW}Installing languages via Mise...${NC}"
 
-    if confirm_action "Install Node.js via Mise?"; then
+    if archer_confirm_or_default "Install Node.js via Mise?"; then
         mise install nodejs@latest
 
         # Configure npm to avoid sudo requirements for global packages
@@ -284,34 +284,34 @@ install_scripting_web() {
         fi
     fi
 
-    if confirm_action "Install Ruby via Mise?"; then
+    if archer_confirm_or_default "Install Ruby via Mise?"; then
         mise install ruby@latest
     fi
 
-    if confirm_action "Install PHP via Mise?"; then
+    if archer_confirm_or_default "Install PHP via Mise?"; then
         # Install PHP dependencies first
         echo -e "${YELLOW}Installing PHP dependencies...${NC}"
         install_with_retries gd
         mise install php@latest
     fi
 
-    if confirm_action "Install Perl via Mise?"; then
+    if archer_confirm_or_default "Install Perl via Mise?"; then
         mise plugin add perl && mise install perl@latest
     fi
 
     # Raku (community plugin)
-    if confirm_action "Install Raku (Perl 6) via Mise?"; then
+    if archer_confirm_or_default "Install Raku (Perl 6) via Mise?"; then
         mise plugin add raku && mise install raku@latest || echo -e "${YELLOW}Raku plugin not available${NC}"
     fi
 
     # Elixir/Erlang
-    if confirm_action "Install Elixir/Erlang via Mise?"; then
+    if archer_confirm_or_default "Install Elixir/Erlang via Mise?"; then
         mise install erlang@latest
         mise install elixir@latest
     fi
 
     # TypeScript via npm (after Node.js)
-    if confirm_action "Install TypeScript globally via npm?" && command -v npm &> /dev/null; then
+    if archer_confirm_or_default "Install TypeScript globally via npm?" && command -v npm &> /dev/null; then
         echo -e "${CYAN}Installing TypeScript and ts-node globally...${NC}"
 
         # Check if npm is configured with user prefix
@@ -340,15 +340,15 @@ install_scripting_web() {
     fi
 
     # UV - Python package manager
-    if confirm_action "Install UV (fast Python package manager)?"; then
+    if archer_confirm_or_default "Install UV (fast Python package manager)?"; then
         echo -e "${YELLOW}Installing UV via official installer...${NC}"
         curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        echo 'export PATH="\$HOME/.local/bin:\$PATH"' >> ~/.bashrc
         echo -e "${GREEN}UV installed! Restart your terminal or run 'source ~/.bashrc'${NC}"
     fi
 
     # System packages for web development
-    if confirm_action "Install Lua and LuaRocks?"; then
+    if archer_confirm_or_default "Install Lua and LuaRocks?"; then
         install_with_retries lua luarocks
     fi
 
@@ -360,7 +360,7 @@ install_devops_mobile() {
     echo -e "${BLUE}Installing DevOps/Mobile development tools...${NC}"
 
     # DevOps tools
-    if confirm_action "Install container and orchestration tools (Docker, Podman, Kubernetes)?"; then
+    if archer_confirm_or_default "Install container and orchestration tools (Docker, Podman, Kubernetes)?"; then
         container_packages=("docker" "docker-compose" "podman" "kubectl" "helm")
 
         # Try pacman first, fallback to AUR
@@ -382,7 +382,7 @@ install_devops_mobile() {
     fi
 
     # Infrastructure as Code tools
-    if confirm_action "Install Infrastructure as Code tools (Terraform, Ansible)?"; then
+    if archer_confirm_or_default "Install Infrastructure as Code tools (Terraform, Ansible)?"; then
         iac_packages=("terraform" "ansible")
 
         for package in "${iac_packages[@]}"; do
@@ -399,11 +399,11 @@ install_devops_mobile() {
     fi
 
     # Mobile development
-    if confirm_action "Install Flutter/Dart?"; then
+    if archer_confirm_or_default "Install Flutter/Dart?"; then
         mise plugin add flutter && mise install flutter@latest
     fi
 
-    if confirm_action "Install Kotlin?"; then
+    if archer_confirm_or_default "Install Kotlin?"; then
         install_with_retries yay kotlin
     fi
 
@@ -415,12 +415,12 @@ install_database_tools() {
     echo -e "${BLUE}Installing Database tools...${NC}"
 
     # SQL clients
-    if confirm_action "Install SQL clients (SQLite, PostgreSQL libs, MariaDB clients)?"; then
+    if archer_confirm_or_default "Install SQL clients (SQLite, PostgreSQL libs, MariaDB clients)?"; then
         install_with_retries sqlite postgresql-libs mariadb-clients
     fi
 
     # Offer Docker-based database installation
-    if confirm_action "Set up databases via Docker containers?"; then
+    if archer_confirm_or_default "Set up databases via Docker containers?"; then
         setup_docker_databases
     else
         # Traditional installation
@@ -446,26 +446,26 @@ install_dev_tools() {
 
     if [[ ${#installed_packages[@]} -gt 0 ]]; then
         echo -e "${GREEN}Already installed: ${installed_packages[*]}${NC}"
-        if ! confirm_action "Install additional development tools?"; then
+        if ! archer_confirm_or_default "Install additional development tools?"; then
             echo -e "${YELLOW}Skipping development tools installation.${NC}"
             return
         fi
     fi
 
     # Version control and tools
-    if confirm_action "Install version control tools (Git, GitHub CLI, etc.)?"; then
+    if archer_confirm_or_default "Install version control tools (Git, GitHub CLI, etc.)?"; then
         git_packages=("git" "git-lfs" "github-cli" "tig" "diff-so-fancy")
         install_with_retries "${git_packages[@]}"
     fi
 
     # Build tools
-    if confirm_action "Install build tools (CMake, Ninja, Meson, Autotools)?"; then
+    if archer_confirm_or_default "Install build tools (CMake, Ninja, Meson, Autotools)?"; then
         build_packages=("cmake" "ninja" "meson" "autoconf" "automake" "libtool")
         install_with_retries "${build_packages[@]}"
     fi
 
     # Network tools
-    if confirm_action "Install network/API tools (curl, wget, HTTPie, Postman)?"; then
+    if archer_confirm_or_default "Install network/API tools (curl, wget, HTTPie, Postman)?"; then
         network_packages=("curl" "wget" "httpie")
         install_with_retries "${network_packages[@]}"
         # Postman might be AUR only
@@ -473,38 +473,38 @@ install_dev_tools() {
     fi
 
     # Text processing tools
-    if confirm_action "Install modern text processing tools (ripgrep, fd, bat, jq)?"; then
+    if archer_confirm_or_default "Install modern text processing tools (ripgrep, fd, bat, jq)?"; then
         text_packages=("jq" "yq" "ripgrep" "fd" "bat" "exa")
         install_with_retries "${text_packages[@]}"
     fi
 
     # System monitoring
-    if confirm_action "Install system monitoring tools (htop, btop, glances)?"; then
+    if archer_confirm_or_default "Install system monitoring tools (htop, btop, glances)?"; then
         monitor_packages=("htop" "btop" "glances")
         install_with_retries "${monitor_packages[@]}"
     fi
 
     # Terminal multiplexers
-    if confirm_action "Install terminal multiplexers (tmux, screen)?"; then
+    if archer_confirm_or_default "Install terminal multiplexers (tmux, screen)?"; then
         terminal_packages=("tmux" "screen")
         install_with_retries "${terminal_packages[@]}"
     fi
 
     # Modern terminal emulators
-    if confirm_action "Install modern terminal emulators?"; then
-        if confirm_action "Install Alacritty (GPU-accelerated, minimal terminal)?"; then
+    if archer_confirm_or_default "Install modern terminal emulators?"; then
+        if archer_confirm_or_default "Install Alacritty (GPU-accelerated, minimal terminal)?"; then
             bash "${ARCHER_DIR}/install/development/terminal-alacritty.sh"
         fi
 
-        if confirm_action "Install Kitty (fast, feature-rich terminal)?"; then
+        if archer_confirm_or_default "Install Kitty (fast, feature-rich terminal)?"; then
             bash "${ARCHER_DIR}/install/development/terminal-kitty.sh"
         fi
 
-        if confirm_action "Install WezTerm (Rust-based terminal with advanced features)?"; then
+        if archer_confirm_or_default "Install WezTerm (Rust-based terminal with advanced features)?"; then
             bash "${ARCHER_DIR}/install/development/terminal-wezterm.sh"
         fi
 
-        if confirm_action "Install Hyper (Electron-based terminal with plugins)?"; then
+        if archer_confirm_or_default "Install Hyper (Electron-based terminal with plugins)?"; then
             bash "${ARCHER_DIR}/install/development/terminal-hyper.sh"
         fi
     fi
@@ -517,7 +517,7 @@ setup_docker_databases() {
     # Check if Docker is installed
     if ! command -v docker &> /dev/null; then
         echo -e "${YELLOW}Docker is not installed. Installing Docker first...${NC}"
-        if confirm_action "Install Docker for database containers?"; then
+        if archer_confirm_or_default "Install Docker for database containers?"; then
             install_with_retries docker docker-compose
             sudo systemctl enable docker
             sudo systemctl start docker
@@ -577,7 +577,7 @@ EOF
 setup_native_databases() {
     echo -e "${BLUE}Setting up native databases...${NC}"
 
-    if confirm_action "Initialize PostgreSQL?"; then
+    if archer_confirm_or_default "Initialize PostgreSQL?"; then
         install_with_retries postgresql
         sudo -u postgres initdb -D /var/lib/postgres/data
         sudo systemctl enable postgresql
@@ -585,7 +585,7 @@ setup_native_databases() {
         echo -e "${GREEN}PostgreSQL initialized and started${NC}"
     fi
 
-    if confirm_action "Initialize MariaDB?"; then
+    if archer_confirm_or_default "Initialize MariaDB?"; then
         install_with_retries mariadb
         sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
         sudo systemctl enable mariadb
@@ -594,7 +594,7 @@ setup_native_databases() {
         echo -e "${YELLOW}Run 'sudo mysql_secure_installation' to secure MariaDB${NC}"
     fi
 
-    if confirm_action "Enable Redis?"; then
+    if archer_confirm_or_default "Enable Redis?"; then
         install_with_retries redis
         sudo systemctl enable redis
         sudo systemctl start redis
@@ -614,7 +614,7 @@ install_dev_editors() {
     )
 
     for editor in "${editors[@]}"; do
-        if confirm_action "Install $editor?"; then
+        if archer_confirm_or_default "Install $editor?"; then
             if pacman -Si "$editor" &> /dev/null; then
                 install_with_retries "$editor"
             else
@@ -624,11 +624,11 @@ install_dev_editors() {
     done
 
     # VS Code and VSCodium using dedicated scripts
-    if confirm_action "Install Visual Studio Code?"; then
+    if archer_confirm_or_default "Install Visual Studio Code?"; then
         bash "${ARCHER_DIR}/install/development/app-vscode.sh"
     fi
 
-    if confirm_action "Install VSCodium (open-source VS Code)?"; then
+    if archer_confirm_or_default "Install VSCodium (open-source VS Code)?"; then
         bash "${ARCHER_DIR}/install/development/app-vscodium.sh"
     fi
 }
@@ -645,7 +645,7 @@ configure_git() {
         echo -e "${GREEN}Git already configured:${NC}"
         echo -e "  Name: $git_user"
         echo -e "  Email: $git_email"
-        if ! confirm_action "Reconfigure Git settings?"; then
+        if ! archer_confirm_or_default "Reconfigure Git settings?"; then
             echo -e "${YELLOW}Keeping existing Git configuration.${NC}"
             return
         fi
@@ -679,7 +679,7 @@ main() {
         echo -e "${CYAN}Previous installation detected:${NC}"
         cat "$STATE_FILE"
         echo ""
-        if confirm_action "Skip already completed sections?"; then
+        if archer_confirm_or_default "Skip already completed sections?"; then
             SKIP_COMPLETED=true
         else
             SKIP_COMPLETED=false
@@ -691,7 +691,7 @@ main() {
         echo "# Generated on $(date)" >> "$STATE_FILE"
     fi
 
-    if ! confirm_action "Continue with development tools installation?"; then
+    if ! archer_confirm_or_default "Continue with development tools installation?"; then
         echo -e "${YELLOW}Installation cancelled.${NC}"
         exit 0
     fi
@@ -731,7 +731,7 @@ main() {
 
 Installed tools:
 - Mise (language version manager)
-- System Programming: C/C++ (GCC+Clang), Rust, Go, Nim, D (DMD+LDC), Zig, V
+- System Programming: C/C++ (GCC+Clang), Rust, Go, Nim (via AUR), D (DMD+LDC), Zig, V
 - Numerical Computing: Fortran (GFortran+LFortran), Julia, R, Octave, Haskell
 - Scripting & Web: Node.js, Ruby, PHP, Perl, Raku, Elixir, TypeScript, Lua
 - DevOps/Mobile: Docker, Kubernetes, Ansible, Terraform, Flutter/Dart, Kotlin

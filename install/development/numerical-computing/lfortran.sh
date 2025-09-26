@@ -28,7 +28,7 @@ install_lfortran() {
     echo -e "${YELLOW}Please be patient - the installation will complete successfully.${NC}"
     echo ""
 
-    if ! confirm_action "Continue with LFortran installation (this will take a long time)?"; then
+    if ! archer_confirm_or_default "Continue with LFortran installation (this will take a long time)?"; then
         log_info "LFortran installation cancelled by user"
         return 1
     fi

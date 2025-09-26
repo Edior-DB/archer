@@ -13,7 +13,7 @@ echo -e "${BLUE}Docker - Build, ship, and run applications in containers${NC}"
 echo -e "${YELLOW}Installing Docker Engine and Docker Compose${NC}"
 echo ""
 
-if ! confirm_action "Install Docker and Docker Compose?"; then
+if ! archer_confirm_or_default "Install Docker and Docker Compose?"; then
     echo -e "${YELLOW}Docker installation cancelled.${NC}"
     exit 0
 fi

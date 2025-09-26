@@ -13,10 +13,10 @@ echo -e "${BLUE}Rust - A language empowering everyone to build reliable and effi
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-if ! confirm_action "Install Rust via Mise?"; then
-    echo -e "${YELLOW}Rust installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install Rust via Mise?"; then
+#     echo -e "${YELLOW}Rust installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Check if Mise is installed
 if ! command -v mise &> /dev/null; then

@@ -203,16 +203,16 @@ EOF
         echo -e "${YELLOW}Hyper configuration already exists, skipping...${NC}"
     fi
 
-    # Install recommended plugins
-    if confirm_action "Install recommended Hyper plugins?"; then
+  # Install recommended plugins
+  if archer_confirm_or_default "Install recommended Hyper plugins?" "no"; then
         echo -e "${YELLOW}Installing Hyper plugins...${NC}"
         hyper install hyper-search hyper-tabs-enhanced hyperterm-paste hyper-statusline hyper-catppuccin || {
             echo -e "${YELLOW}Plugin installation failed. You can install them manually later with 'hyper install <plugin-name>'${NC}"
         }
     fi
 
-    # Set as default terminal (optional)
-    if confirm_action "Set Hyper as default terminal emulator?"; then
+  # Set as default terminal (optional)
+  if archer_confirm_or_default "Set Hyper as default terminal emulator?" "no"; then
         # Update desktop environment terminal preference
         if command -v gsettings &> /dev/null; then
             gsettings set org.gnome.desktop.default-applications.terminal exec 'hyper'

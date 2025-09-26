@@ -13,7 +13,7 @@ echo -e "${BLUE}DBeaver - Universal Database Administration Tool${NC}"
 echo -e "${YELLOW}Installing DBeaver GUI database client${NC}"
 echo ""
 
-if ! confirm_action "Install DBeaver database administration tool?"; then
+if ! archer_confirm_or_default "Install DBeaver database administration tool?"; then
     echo -e "${YELLOW}DBeaver installation cancelled.${NC}"
     exit 0
 fi
@@ -144,7 +144,7 @@ ${NC}"
     desktop_file="$HOME/.local/share/applications/dbeaver.desktop"
     if [[ ! -f "$desktop_file" ]] && [[ ! -f "/usr/share/applications/dbeaver.desktop" ]]; then
         echo ""
-        if confirm_action "Create desktop entry for easy access?"; then
+  if archer_confirm_or_default "Create desktop entry for easy access?"; then
             echo -e "${BLUE}Creating desktop entry...${NC}"
             mkdir -p "$HOME/.local/share/applications"
             cat > "$desktop_file" <<EOF

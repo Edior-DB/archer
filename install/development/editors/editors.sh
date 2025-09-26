@@ -21,10 +21,10 @@ fi
 install_vscode() {
     echo -e "${BLUE}Installing Visual Studio Code...${NC}"
 
-    if confirm_action "Install Visual Studio Code (Microsoft official)?"; then
+    if archer_confirm_or_default "Install Visual Studio Code (Microsoft official)?"; then
         install_with_retries yay visual-studio-code-bin
 
-        if confirm_action "Install common VS Code extensions?"; then
+    if archer_confirm_or_default "Install common VS Code extensions?"; then
             echo -e "${YELLOW}Installing popular extensions...${NC}"
 
             # Essential extensions
@@ -66,10 +66,10 @@ install_vscode() {
 install_vscodium() {
     echo -e "${BLUE}Installing VSCodium (Open Source VS Code)...${NC}"
 
-    if confirm_action "Install VSCodium?"; then
+    if archer_confirm_or_default "Install VSCodium?"; then
         install_with_retries pacman vscodium
 
-        if confirm_action "Install common VSCodium extensions?"; then
+    if archer_confirm_or_default "Install common VSCodium extensions?"; then
             echo -e "${YELLOW}Installing extensions for VSCodium...${NC}"
 
             # Extensions compatible with VSCodium
@@ -96,11 +96,11 @@ install_vscodium() {
 install_neovim() {
     echo -e "${BLUE}Installing Neovim...${NC}"
 
-    if confirm_action "Install Neovim?"; then
+    if archer_confirm_or_default "Install Neovim?"; then
         install_with_retries pacman neovim
 
         # Install additional tools for Neovim
-        if confirm_action "Install Neovim development tools (LSP, tree-sitter, etc.)?"; then
+    if archer_confirm_or_default "Install Neovim development tools (LSP, tree-sitter, etc.)?"; then
             echo -e "${YELLOW}Installing Neovim development tools...${NC}"
 
             nvim_tools=(
@@ -133,7 +133,7 @@ install_neovim() {
             echo -e "${GREEN}Neovim development tools installed!${NC}"
         fi
 
-        if confirm_action "Install popular Neovim configuration (LazyVim)?"; then
+    if archer_confirm_or_default "Install popular Neovim configuration (LazyVim)?"; then
             echo -e "${YELLOW}Installing LazyVim configuration...${NC}"
 
             # Backup existing config if it exists
@@ -158,17 +158,17 @@ install_neovim() {
 install_vim() {
     echo -e "${BLUE}Installing Vim...${NC}"
 
-    if confirm_action "Install Vim?"; then
+    if archer_confirm_or_default "Install Vim?"; then
         install_with_retries pacman vim
 
-        if confirm_action "Install Vim plugins manager (vim-plug)?"; then
+    if archer_confirm_or_default "Install Vim plugins manager (vim-plug)?"; then
             echo -e "${YELLOW}Installing vim-plug...${NC}"
 
             curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
                 https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
             # Create basic vimrc with some useful plugins
-            if confirm_action "Create basic .vimrc with popular plugins?"; then
+            if archer_confirm_or_default "Create basic .vimrc with popular plugins?"; then
                 cat > "$HOME/.vimrc" << 'EOF'
 " Basic Vim Configuration with Plugins
 call plug#begin('~/.vim/plugged')
@@ -239,10 +239,10 @@ EOF
 install_emacs() {
     echo -e "${BLUE}Installing Emacs...${NC}"
 
-    if confirm_action "Install Emacs?"; then
+    if archer_confirm_or_default "Install Emacs?"; then
         install_with_retries pacman emacs
 
-        if confirm_action "Install Doom Emacs configuration?"; then
+    if archer_confirm_or_default "Install Doom Emacs configuration?"; then
             echo -e "${YELLOW}Installing Doom Emacs...${NC}"
 
             # Install dependencies
@@ -270,10 +270,10 @@ install_emacs() {
 install_sublime() {
     echo -e "${BLUE}Installing Sublime Text...${NC}"
 
-    if confirm_action "Install Sublime Text 4?"; then
+    if archer_confirm_or_default "Install Sublime Text 4?"; then
         install_with_retries yay sublime-text-4
 
-        if confirm_action "Install Package Control for Sublime Text?"; then
+    if archer_confirm_or_default "Install Package Control for Sublime Text?"; then
             echo -e "${YELLOW}Package Control will be installed on first Sublime Text launch${NC}"
             echo -e "${BLUE}Use Ctrl+Shift+P -> 'Install Package Control' after first launch${NC}"
         fi
@@ -287,14 +287,14 @@ install_jetbrains() {
     echo -e "${BLUE}Installing JetBrains IDEs...${NC}"
 
     # JetBrains Toolbox
-    if confirm_action "Install JetBrains Toolbox (IDE manager)?"; then
+    if archer_confirm_or_default "Install JetBrains Toolbox (IDE manager)?"; then
         install_with_retries yay jetbrains-toolbox
         echo -e "${GREEN}JetBrains Toolbox installed!${NC}"
         echo -e "${BLUE}Use Toolbox to install specific IDEs (IntelliJ, PyCharm, etc.)${NC}"
     fi
 
     # Individual IDEs
-    if confirm_action "Install individual JetBrains IDEs?"; then
+    if archer_confirm_or_default "Install individual JetBrains IDEs?"; then
         echo -e "${YELLOW}Available JetBrains IDEs:${NC}"
         echo "1. IntelliJ IDEA Community"
         echo "2. PyCharm Community"
@@ -338,7 +338,7 @@ install_atom() {
     echo -e "${BLUE}Installing Atom (Legacy Editor)...${NC}"
     echo -e "${YELLOW}Note: Atom has been sunset by GitHub. Consider VS Code or VSCodium instead.${NC}"
 
-    if confirm_action "Install Atom anyway?"; then
+    if archer_confirm_or_default "Install Atom anyway?"; then
         install_with_retries yay atom-editor-bin
         echo -e "${GREEN}Atom installation completed!${NC}"
     fi
@@ -349,27 +349,27 @@ install_code_editors() {
     echo -e "${BLUE}Installing other code editors...${NC}"
 
     # Gedit (simple)
-    if confirm_action "Install Gedit (simple text editor)?"; then
+    if archer_confirm_or_default "Install Gedit (simple text editor)?"; then
         install_with_retries pacman gedit
     fi
 
     # Kate (KDE)
-    if confirm_action "Install Kate (KDE advanced text editor)?"; then
+    if archer_confirm_or_default "Install Kate (KDE advanced text editor)?"; then
         install_with_retries pacman kate
     fi
 
     # Mousepad (lightweight)
-    if confirm_action "Install Mousepad (lightweight editor)?"; then
+    if archer_confirm_or_default "Install Mousepad (lightweight editor)?"; then
         install_with_retries pacman mousepad
     fi
 
     # CudaText
-    if confirm_action "Install CudaText (cross-platform editor)?"; then
+    if archer_confirm_or_default "Install CudaText (cross-platform editor)?"; then
         install_with_retries yay cudatext-qt5-bin
     fi
 
     # Notepadqq (Notepad++ clone)
-    if confirm_action "Install Notepadqq (Notepad++ clone)?"; then
+    if archer_confirm_or_default "Install Notepadqq (Notepad++ clone)?"; then
         install_with_retries yay notepadqq
     fi
 }
@@ -379,32 +379,32 @@ install_specialized_ides() {
     echo -e "${BLUE}Installing specialized IDEs...${NC}"
 
     # Qt Creator
-    if confirm_action "Install Qt Creator (C++/Qt development)?"; then
+    if archer_confirm_or_default "Install Qt Creator (C++/Qt development)?"; then
         install_with_retries pacman qtcreator
     fi
 
     # Code::Blocks
-    if confirm_action "Install Code::Blocks (C/C++ IDE)?"; then
+    if archer_confirm_or_default "Install Code::Blocks (C/C++ IDE)?"; then
         install_with_retries pacman codeblocks
     fi
 
     # Eclipse
-    if confirm_action "Install Eclipse IDE?"; then
+    if archer_confirm_or_default "Install Eclipse IDE?"; then
         install_with_retries yay eclipse-java
     fi
 
     # NetBeans
-    if confirm_action "Install Apache NetBeans?"; then
+    if archer_confirm_or_default "Install Apache NetBeans?"; then
         install_with_retries yay netbeans
     fi
 
     # Arduino IDE
-    if confirm_action "Install Arduino IDE?"; then
+    if archer_confirm_or_default "Install Arduino IDE?"; then
         install_with_retries pacman arduino
     fi
 
     # Bluefish (web development)
-    if confirm_action "Install Bluefish (web development editor)?"; then
+    if archer_confirm_or_default "Install Bluefish (web development editor)?"; then
         install_with_retries pacman bluefish
     fi
 }

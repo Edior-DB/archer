@@ -96,7 +96,7 @@ EOF
     fi
 
     # Set as default terminal (optional)
-    if confirm_action "Set Alacritty as default terminal emulator?"; then
+    if archer_confirm_or_default "Set Alacritty as default terminal emulator?" "no"; then
         # Update desktop environment terminal preference
         if command -v gsettings &> /dev/null; then
             gsettings set org.gnome.desktop.default-applications.terminal exec 'alacritty'

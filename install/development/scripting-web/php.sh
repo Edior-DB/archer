@@ -13,10 +13,10 @@ echo -e "${BLUE}PHP - Popular web development language${NC}"
 echo -e "${YELLOW}Installing via Mise for better version management${NC}"
 echo ""
 
-if ! confirm_action "Install PHP via Mise?"; then
-    echo -e "${YELLOW}PHP installation cancelled.${NC}"
-    exit 0
-fi
+# if ! confirm_action "Install PHP via Mise?"; then
+#     echo -e "${YELLOW}PHP installation cancelled.${NC}"
+#     exit 0
+# fi
 
 # Setup Mise and install PHP
 setup_mise || {
@@ -119,7 +119,7 @@ ${NC}"
     # Suggest Composer installation
     if ! command -v composer &>/dev/null; then
         echo ""
-        if confirm_action "Install Composer (PHP package manager)?"; then
+  if archer_confirm_or_default "Install Composer (PHP package manager)?"; then
             echo -e "${BLUE}Installing Composer...${NC}"
             cd /tmp
             curl -sS https://getcomposer.org/installer | php

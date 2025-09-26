@@ -13,7 +13,7 @@ echo -e "${BLUE}DBmate - Database Migration Tool${NC}"
 echo -e "${YELLOW}Installing DBmate for database schema migrations${NC}"
 echo ""
 
-if ! confirm_action "Install DBmate database migration tool?"; then
+if ! archer_confirm_or_default "Install DBmate database migration tool?"; then
     echo -e "${YELLOW}DBmate installation cancelled.${NC}"
     exit 0
 fi
@@ -131,7 +131,7 @@ ${NC}"
 
         # Offer to set up a sample project
         echo ""
-        if confirm_action "Set up a sample migration project for testing?"; then
+  if archer_confirm_or_default "Set up a sample migration project for testing?"; then
             echo -e "${BLUE}Setting up sample project...${NC}"
 
             # Create sample project structure

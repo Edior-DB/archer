@@ -18,7 +18,7 @@ echo -e "  • Support for Python environments and requirements.txt"
 echo -e "  • Zero configuration required"
 echo ""
 
-if ! confirm_action "Install UV Python package manager?"; then
+if ! archer_confirm_or_default "Install UV Python package manager?"; then
     echo -e "${YELLOW}UV installation cancelled.${NC}"
     exit 0
 fi
@@ -27,7 +27,7 @@ fi
 if command -v uv &> /dev/null; then
     echo -e "${GREEN}UV is already installed${NC}"
     uv --version
-    if ! confirm_action "Reinstall UV?"; then
+    if ! archer_confirm_or_default "Reinstall UV?"; then
         echo -e "${YELLOW}Keeping existing UV installation.${NC}"
         exit 0
     fi
