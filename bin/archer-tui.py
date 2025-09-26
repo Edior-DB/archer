@@ -446,8 +446,11 @@ class ArcherTUIApp(App):
         yield tree
 
 
-        # Middle right: Dynamic package table
-        yield DynamicPackageTable(id="package_panel")
+    # Middle right: Dynamic package table
+    yield DynamicPackageTable(id="package_panel")
+
+    # Installation output
+    yield InstallationOutputPanel(id="output_panel")
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
         """Handle menu selection from tree"""
