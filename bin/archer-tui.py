@@ -446,17 +446,8 @@ class ArcherTUIApp(App):
         yield tree
 
 
-        # Update the dynamic package table
-        package_panel = self.query_one("#package_panel", DynamicPackageTable)
-        package_panel.packages = message.options
-        package_panel.visible = True
-        output.add_output(f"[green]Package selection table shown with {len(message.options)} packages[/green]")
-        if message.options:
-            output.add_output(f"[green]Found {len(message.options)} installation options[/green]")
-            for opt in message.options:
-                output.add_output(f"[dim]- {opt.get('display', 'Unknown')}[/dim]")
-        else:
-            output.add_output("[yellow]This menu contains submenus - expand to see options[/yellow]")
+        # Middle right: Dynamic package table
+        yield DynamicPackageTable(id="package_panel")
 
     def on_archer_menu_tree_menu_selected(self, message: ArcherMenuTree.MenuSelected):
         """Handle menu selection from tree"""
