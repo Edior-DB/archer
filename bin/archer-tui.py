@@ -346,10 +346,9 @@ class ArcherTUIApp(App):
         height: 5;
         margin: 0 2;
         padding: 2;
-        color: black !important;
-        background: white !important;
         border: solid blue !important;
         text-style: bold;
+        font-size: 1.2em;
         content-align: center middle;
     }
 
