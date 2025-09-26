@@ -315,25 +315,21 @@ class ArcherTUIApp(App):
         column-span: 2;
         row-span: 1;
         border: solid $primary;
-        height: 10;
-        min-height: 10;
+        height: 5;
+        min-height: 5;
     }
 
     .button-container {
-        height: 4;
+        height: 100%;
         align: center middle;
-        padding: 1;
+        padding: 0 1;
     }
 
     .button-container Button {
-        min-width: 20;
-        width: auto;
-        height: 3;
-        margin: 0 2;
-        padding: 1;
-        border: solid blue !important;
-        text-style: bold;
-        content-align: center middle;
+        width: 1fr;
+        height: 100%;
+        margin: 0 1;
+        border: tall $primary;
     }
 
     #actions_panel Horizontal {
@@ -477,36 +473,27 @@ class ArcherTUIApp(App):
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses"""
         output = self.query_one("#output_panel", InstallationOutputPanel)
-        progress = self.query_one("#main_progress", ProgressBar)
+        progress_panel = self.query_one("#progress_panel", ProgressPanel)
 
         if event.button.id == "install_btn":
-            self.installation_mode = "choose_individual"
-            # Install only selected packages
-            if not self.current_options:
-                output.add_output("[red]No installation options available! Select a menu first.[/red]")
-                return
-            progress_panel = self.query_one("#progress_panel", ProgressPanel)
-            progress_panel.show_panel()
             package_panel = self.query_one("#package_panel", DynamicPackageTable)
             selected_pkgs = package_panel.get_selected_packages()
-            if selected_pkgs:
-                output.add_output(f"[green]Installing selected packages:[/green] {', '.join([p.get('name', '') for p in selected_pkgs])}")
-                await self._install_packages(selected_pkgs)
-            else:
+            if not selected_pkgs:
                 output.add_output("[red]No packages selected! Check packages in the table first.[/red]")
-                progress_panel.hide_panel()
                 return
 
+            progress_panel.show_panel()
+            output.add_output(f"[green]Installing selected packages:[/green] {', '.join([p.get('display', '') for p in selected_pkgs])}")
+            await self._install_packages(selected_pkgs, install_all_mode=False)
+
         elif event.button.id == "install_all_btn":
-            self.installation_mode = "install_all"
-            # Install all packages in the current menu
             if not self.current_options:
                 output.add_output("[red]No installation options available! Select a menu first.[/red]")
                 return
-            progress_panel = self.query_one("#progress_panel", ProgressPanel)
+
             progress_panel.show_panel()
             output.add_output(f"[green]Installing all packages from:[/green] {self.current_menu_key}")
-            await self._install_packages(self.current_options)
+            await self._install_packages(self.current_options, install_all_mode=True)
 
         elif event.button.id == "queue_btn":
             if self.current_options:
@@ -522,19 +509,17 @@ class ArcherTUIApp(App):
             progress.update(progress=0)
 
 
-    async def _install_packages(self, options: List[Dict]):
+    async def _install_packages(self, options: List[Dict], install_all_mode: bool = False):
         """
         Install logic:
-        - If 'Install All' mode: run install.sh in the current menu/category directory.
-        - If individual packages selected: run the corresponding script for each selected package.
+        - If 'install_all_mode' is True: run install.sh in the current menu/category directory.
+        - If 'install_all_mode' is False: run the corresponding script for each selected package.
         """
         output = self.query_one("#output_panel", InstallationOutputPanel)
         progress = self.query_one("#main_progress", ProgressBar)
 
-        # Determine if 'Install All' mode is active by checking if all options are selected
-        install_all_mode = self.installation_mode == "install_all"
         total_packages = len(options)
-        progress.update(total=total_packages * 100)
+        progress.update(total=total_packages)
 
         if install_all_mode:
             # Run install.sh in the current menu/category directory
@@ -567,26 +552,27 @@ class ArcherTUIApp(App):
                         output.add_output(f"[green]✓ install.sh completed successfully[/green]")
                 else:
                     output.add_output(f"[red]No install.sh found in {install_dir}[/red]")
-            progress.update(progress=100)
+            progress.update(progress=total_packages)
             output.add_output("[bold green]🎉 All installations completed![/bold green]")
             return
 
         # Otherwise, run individual scripts for each selected package
         for i, option in enumerate(options):
-            package_name = option.get('name', f'Package {i+1}')
+            package_name = option.get('display', f'Package {i+1}')
             script_path = option.get('script_path', '')
             install_dir = option.get('install_dir', '')
             # Skip disabled/unavailable packages
             if option.get('disabled', False):
                 output.add_output(f"[yellow]Skipping unavailable package:[/yellow] {package_name}")
+                progress.advance(1)
                 continue
 
             output.add_output(f"[cyan]Starting installation of:[/cyan] {package_name}")
 
             # Determine the script to run: prefer script_path, fallback to install_dir/package_name.sh
             script_to_run = script_path
-            if not script_to_run and install_dir and package_name:
-                candidate = os.path.join(install_dir, f"{package_name}.sh")
+            if not script_to_run and install_dir and option.get('name'):
+                candidate = os.path.join(install_dir, f"{option['name']}.sh")
                 if os.path.isfile(candidate):
                     script_to_run = candidate
 
@@ -619,8 +605,7 @@ class ArcherTUIApp(App):
                 output.add_output(f"[red]No install script found for {package_name}[/red]")
 
             # Update progress
-            progress_value = ((i + 1) * 100)
-            progress.update(progress=progress_value)
+            progress.advance(1)
 
         output.add_output("[bold green]🎉 All installations completed![/bold green]")
 
