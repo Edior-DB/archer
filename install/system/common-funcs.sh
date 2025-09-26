@@ -37,10 +37,24 @@ confirm_action() {
 }
 
 # Wait function using simple read
+# Behaves as a no-op when running in non-interactive contexts (AUTO_CONFIRM=1)
+# or when stdin/stdout are not TTYs (TUI panels). Otherwise it prompts the user.
 wait_for_input() {
     local message="${1:-Press Enter to continue...}"
+
+    # If AUTO_CONFIRM is enabled or either stdin/stdout is not a tty,
+    # treat this as non-interactive and don't block waiting for input.
+    if [ "${AUTO_CONFIRM:-0}" = "1" ] || ! [ -t 0 ] || ! [ -t 1 ]; then
+        # Print the message as informational (no newline to match previous behavior)
+        echo -n "$message"
+        echo ""  # ensure we end the line
+        return 0
+    fi
+
+    # Interactive path: prompt and wait for user
     echo -n "$message"
-    read -r
+    # Use -r to avoid interpreting backslashes; protect against interrupt
+    read -r || true
 }
 
 # Input function using simple read
