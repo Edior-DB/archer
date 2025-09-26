@@ -34,24 +34,6 @@ MIN_COLUMNS = 100
 MIN_ROWS = 25
 
 
-class PackageSelectionPanel(Container):
-    """Panel for package selection mode with radio buttons"""
-
-    def compose(self) -> ComposeResult:
-        yield Static("Installation Mode:", classes="panel-title")
-        # Try with simple buttons first to test visibility
-        with Container():
-                yield Button(label="Install All Packages", id="mode_install_all")
-                yield Button(label="Choose Individual Packages", id="mode_choose_individual")
-
-    def show_panel(self):
-        """Show this panel"""
-        self.display = True
-
-    def hide_panel(self):
-        """Hide this panel"""
-        self.display = False
-
 
 class DynamicPackageTable(Widget):
     """A widget that displays packages in a data table with checkboxes"""
@@ -346,9 +328,9 @@ class ArcherTUIApp(App):
     .button-container Button {
         min-width: 20;
         width: auto;
-        height: 5;
+        height: 3;
         margin: 0 2;
-        padding: 2;
+        padding: 1;
         border: solid blue !important;
         text-style: bold;
         content-align: center middle;
@@ -498,6 +480,7 @@ class ArcherTUIApp(App):
         progress = self.query_one("#main_progress", ProgressBar)
 
         if event.button.id == "install_btn":
+            self.installation_mode = "choose_individual"
             # Install only selected packages
             if not self.current_options:
                 output.add_output("[red]No installation options available! Select a menu first.[/red]")
@@ -506,17 +489,16 @@ class ArcherTUIApp(App):
             progress_panel.show_panel()
             package_panel = self.query_one("#package_panel", DynamicPackageTable)
             selected_pkgs = package_panel.get_selected_packages()
-            selected = [pkg.get('name', '') for pkg in selected_pkgs]
-            if selected:
-                selected_options = [opt for opt in self.current_options if opt.get('name', '') in selected]
-                output.add_output(f"[green]Installing selected packages:[/green] {', '.join(selected)}")
-                await self._install_packages(selected_options)
+            if selected_pkgs:
+                output.add_output(f"[green]Installing selected packages:[/green] {', '.join([p.get('name', '') for p in selected_pkgs])}")
+                await self._install_packages(selected_pkgs)
             else:
                 output.add_output("[red]No packages selected! Check packages in the table first.[/red]")
                 progress_panel.hide_panel()
                 return
 
         elif event.button.id == "install_all_btn":
+            self.installation_mode = "install_all"
             # Install all packages in the current menu
             if not self.current_options:
                 output.add_output("[red]No installation options available! Select a menu first.[/red]")
