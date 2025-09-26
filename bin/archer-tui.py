@@ -536,7 +536,8 @@ class ArcherTUIApp(App):
                         stderr=asyncio.subprocess.STDOUT,
                         cwd=install_dir
                     )
-                    while True:
+                    # While running, we can't know the exact progress, so we just show activity
+                    while process.returncode is None:
                         line = await process.stdout.readline()
                         if not line:
                             break
@@ -544,14 +545,21 @@ class ArcherTUIApp(App):
                         if line_text:
                             display_line = line_text[:60] + "..." if len(line_text) > 60 else line_text
                             output.add_output(f"[dim]{display_line}[/dim]")
+                        await asyncio.sleep(0.01) # yield control
+
                     await process.wait()
+
                     if process.returncode != 0:
                         output.add_output(f"[red]✗ install.sh failed with code {process.returncode}[/red]")
                     else:
                         output.add_output(f"[green]✓ install.sh completed successfully[/green]")
+                        # Mark all as complete
+                        progress.update(progress=total_packages)
                 else:
                     output.add_output(f"[red]No install.sh found in {install_dir}[/red]")
-            progress.update(progress=total_packages)
+
+            if progress.progress < total_packages:
+                 progress.update(progress=total_packages) # Ensure it completes
             output.add_output("[bold green]🎉 All installations completed![/bold green]")
             return
 
