@@ -428,8 +428,8 @@ class ArcherTUIApp(App):
         self.archer_menu = ArcherMenu(self.archer_ui)
         # modal state
         self._sudo_modal_active = False
-    # per-session sudo validation cache (True when we validated credentials)
-    self._sudo_validated = False
+        # per-session sudo validation cache (True when we validated credentials)
+        self._sudo_validated = False
 
     def compose(self) -> ComposeResult:
         """Create the application layout"""
