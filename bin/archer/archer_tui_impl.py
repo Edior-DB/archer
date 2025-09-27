@@ -286,6 +286,28 @@ class ActionButtonsPanel(Container):
             yield Button(label="INSTALL ALL", id="install_all_btn")
 
 
+class SudoModal(Container):
+    """A very small modal-like widget asking the user to allow sudo pre-flight."""
+
+    def __init__(self, message: str = "This action requires elevated privileges. Request sudo now?"):
+        super().__init__()
+        self.message = message
+
+    def compose(self) -> ComposeResult:
+        yield Static(self.message, id="sudo_msg")
+        with Horizontal():
+            yield Button(label="Continue", id="sudo_confirm")
+            yield Button(label="Cancel", id="sudo_cancel")
+
+    def on_button_pressed(self, event: Button.Pressed):
+        """Set a simple attribute on the modal to indicate the user's choice."""
+        btn = event.control
+        if btn.id == 'sudo_confirm':
+            self.choice = 'confirm'
+        elif btn.id == 'sudo_cancel':
+            self.choice = 'cancel'
+
+
 class ArcherTUIApp(App):
     """Main Archer TUI Application"""
 
@@ -304,6 +326,8 @@ class ArcherTUIApp(App):
         # Initialize the existing ArcherMenu system
         self.archer_ui = ArcherUI(verbose=False)
         self.archer_menu = ArcherMenu(self.archer_ui)
+    # modal state
+    self._sudo_modal_active = False
 
     def compose(self) -> ComposeResult:
         """Create the application layout"""
@@ -809,6 +833,82 @@ class ArcherTUIApp(App):
         finally:
             progress_panel.hide_panel()
 
+    def _command_looks_like_needs_sudo(self, command: str) -> bool:
+        """Heuristic: return True if the command or referenced scripts likely need sudo.
+
+        This is intentionally conservative: look for sudo keywords or common package manager
+        binaries or file paths that typically require root (e.g., /usr, /etc, pacman).
+        """
+        check_tokens = ("sudo", "pacman", "pacstrap", "yay", "paru", "makepkg", "dnf", "apt", "/usr/", "/etc/")
+        return any(tok in command for tok in check_tokens)
+
+    async def _show_sudo_modal_and_request(self) -> bool:
+        """Show the SudoModal and perform `archer_request_sudo` when user confirms.
+
+        Returns True when sudo credentials were obtained (or not needed). Returns False if
+        user cancelled or credentials couldn't be obtained.
+        """
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+
+        # Present a simple modal-like interaction in the output panel by asking user
+        # to confirm. We cannot open a true blocking modal easily; instead write a prompt
+        # and wait for a button press from the small modal widget we can add to the UI.
+        if self._sudo_modal_active:
+            return False
+
+        self._sudo_modal_active = True
+        try:
+            # Add the modal to the app layout (at root) and focus it
+            modal = SudoModal()
+            await self.mount(modal, after=self.query_one("#root_vertical"))
+            # Wait for a button press event by polling the modal's children
+            # We'll listen for button presses via events; set up a future.
+            fut = asyncio.get_event_loop().create_future()
+
+            async def _wait_for_choice():
+                # Busy-wait for modal button to set attribute
+                while True:
+                    try:
+                        btn = modal.query_one("#sudo_confirm")
+                    except Exception:
+                        btn = None
+                    try:
+                        cancel = modal.query_one("#sudo_cancel")
+                    except Exception:
+                        cancel = None
+                    # Check whether either was pressed by reading a custom attr
+                    if getattr(modal, 'choice', None) is not None:
+                        return modal.choice
+                    await asyncio.sleep(0.05)
+
+            choice = await _wait_for_choice()
+            # Remove modal
+            await modal.remove()
+            self._sudo_modal_active = False
+
+            if choice == 'confirm':
+                # Attempt to source common-funcs.sh and call archer_request_sudo synchronously
+                try:
+                    cli_path = os.path.join(self.archer_dir, 'install', 'system', 'common-funcs.sh')
+                    import subprocess as _sub
+                    rc = _sub.run([
+                        'bash', '-c', f"source '{cli_path}' >/dev/null 2>&1; archer_request_sudo"
+                    ]).returncode
+                    if rc == 0:
+                        output.add_output("[green]Sudo credentials obtained.[/green]")
+                        return True
+                    else:
+                        output.add_output(f"[yellow]Could not obtain sudo credentials (exit {rc}).[/yellow]")
+                        return False
+                except Exception as e:
+                    output.add_output(f"[red]Error requesting sudo: {e}[/red]")
+                    return False
+            else:
+                output.add_output("[dim]User cancelled sudo request.[/dim]")
+                return False
+        finally:
+            self._sudo_modal_active = False
+
     async def _install_selected(self):
         """Install packages selected in the DynamicPackageTable sequentially."""
         package_panel = self.query_one("#package_panel", DynamicPackageTable)
@@ -871,12 +971,47 @@ class ArcherTUIApp(App):
             # fall through to install selected
 
         if btn_id == 'install_btn' or btn_id == 'queue_btn':
-            # Start installation of selected packages
-            asyncio.create_task(self._install_selected())
+            # Before starting, check whether selected packages appear to need sudo and
+            # request credentials via a modal if so.
+            package_panel = self.query_one("#package_panel", DynamicPackageTable)
+            selected = package_panel.get_selected_packages()
+            # Determine if any selected item likely needs sudo
+            needs = False
+            for opt in selected:
+                target = opt.get('target', '')
+                if self._command_looks_like_needs_sudo(target):
+                    needs = True
+                    break
+
+            async def _maybe_request_and_install():
+                if needs:
+                    ok = await self._show_sudo_modal_and_request()
+                    if not ok:
+                        return
+                await self._install_selected()
+
+            asyncio.create_task(_maybe_request_and_install())
             return
 
         if btn_id == 'install_all_btn':
-            asyncio.create_task(self._install_all_for_current_menu())
+            # For Install All, check the menu's install.sh path for likely sudo needs
+            menu_key = getattr(self, 'current_menu_key', None)
+            menus = getattr(self.archer_menu, 'discovered_menus', {})
+            menu = menus.get(menu_key) if menu_key else None
+            install_sh = None
+            if menu:
+                menu_dir = os.path.dirname(menu.get('path', ''))
+                install_sh = os.path.join(menu_dir, 'install.sh')
+
+            async def _maybe_request_and_install_all():
+                if install_sh and os.path.exists(install_sh):
+                    if self._command_looks_like_needs_sudo(install_sh) or self._command_looks_like_needs_sudo(menu.get('path','')):
+                        ok = await self._show_sudo_modal_and_request()
+                        if not ok:
+                            return
+                await self._install_all_for_current_menu()
+
+            asyncio.create_task(_maybe_request_and_install_all())
             return
 
 
