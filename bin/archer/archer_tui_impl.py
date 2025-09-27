@@ -326,8 +326,8 @@ class ArcherTUIApp(App):
         # Initialize the existing ArcherMenu system
         self.archer_ui = ArcherUI(verbose=False)
         self.archer_menu = ArcherMenu(self.archer_ui)
-    # modal state
-    self._sudo_modal_active = False
+        # modal state
+        self._sudo_modal_active = False
 
     def compose(self) -> ComposeResult:
         """Create the application layout"""
