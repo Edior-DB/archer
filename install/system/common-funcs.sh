@@ -1091,6 +1091,13 @@ print_success() {
     echo -e "${GREEN}✓ $1${NC}"
 }
 
+# Convenience success logger to match other log_* helpers
+log_success() {
+    # Use the same format as log_message for consistency
+    # Prefix with a green check for clarity in interactive shells
+    echo -e "${GREEN}[SUCCESS $(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
 # Print warning message
 print_warning() {
     echo -e "${YELLOW}⚠ $1${NC}"
