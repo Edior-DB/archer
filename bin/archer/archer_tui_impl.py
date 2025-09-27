@@ -1062,6 +1062,16 @@ class ArcherTUIApp(App):
             # Add the modal to the app layout (at root) and focus it
             modal = SudoModal()
             await self.mount(modal, after=self.query_one("#root_vertical"))
+            # Ensure the password input receives focus so user typing goes into it
+            try:
+                try:
+                    inp = modal.query_one('#sudo_input', Input)
+                    # focus the input so typed characters are captured (masked)
+                    inp.focus()
+                except Exception:
+                    pass
+            except Exception:
+                pass
             # Wait for a button press event by polling the modal's children
             # We'll listen for button presses via events; set up a future.
             fut = asyncio.get_event_loop().create_future()
