@@ -36,6 +36,26 @@ check_textual() {
     fi
 }
 
+# Function to request/validate sudo credentials up-front on the terminal
+request_sudo() {
+    # If sudo is not installed, warn and continue (no escalation possible)
+    if ! command -v sudo &> /dev/null; then
+        echo -e "${YELLOW}Warning: sudo not found; continuing without privilege escalation${NC}"
+        return 0
+    fi
+
+    echo -e "${BLUE}Requesting sudo credentials...${NC}"
+    # Validate (this will prompt on the terminal if necessary)
+    if sudo -v; then
+        # Keep the timestamp updated in background while the session is active
+        ( while true; do sleep 60; sudo -n true 2>/dev/null || break; done ) &
+        return 0
+    else
+        echo -e "${RED}Failed to obtain sudo credentials. Aborting.${NC}"
+        return 1
+    fi
+}
+
 # Function to show help
 show_help() {
     cat << 'HELP'
@@ -152,6 +172,8 @@ main() {
         --debug|-d)
             check_python
             check_textual
+            # Request sudo credentials on the terminal before starting the TUI
+            request_sudo || exit 1
             cd "$ARCHER_DIR"
             exec python3 -m archer.tui --debug
             ;;
@@ -164,6 +186,8 @@ main() {
             # No arguments - run TUI by default
             check_python
             check_textual
+            # Request sudo credentials on the terminal before starting the TUI
+            request_sudo || exit 1
             cd "$ARCHER_DIR"
             exec python3 -m archer.tui
             ;;
