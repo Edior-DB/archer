@@ -669,31 +669,32 @@ class ArcherTUIApp(App):
 
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted):
-        # Support both menu_list and subtopics_panel
-        if event.control.id == "menu_list":
-            # store last highlighted menu row so Enter can activate it
+        # Support menu_list, package_table, and subtopics_panel highlights
+        cid = getattr(event.control, 'id', None)
+        # MENU LIST highlighted -> store for Enter activation
+        if cid == "menu_list":
             self._last_highlighted_menu_row = getattr(event, 'row_key', None) or getattr(event, 'row_index', None)
             return
-        if event.control.id != "subtopics_panel":
+
+        # PACKAGE TABLE highlighted -> remember per-menu cursor position
+        if cid == 'package_table':
+            pkg_row = getattr(event, 'row_key', None) or getattr(event, 'row_index', None)
+            try:
+                if not hasattr(self, '_package_cursor_map'):
+                    self._package_cursor_map = {}
+                if getattr(self, 'current_menu_key', None) is not None and pkg_row is not None:
+                    self._package_cursor_map[self.current_menu_key] = pkg_row
+            except Exception:
+                pass
+            return
+
+        # SUBTOPICS highlighted -> store last highlighted subtopic row
+        if cid != "subtopics_panel":
             return
         row_identifier = getattr(event, "row_key", None)
         if row_identifier is None:
             row_identifier = getattr(event, "row_index", None)
         self._last_highlighted_subtopic_row = row_identifier
-        # Capture package table highlighting to remember per-menu cursor
-        try:
-            if event.control.id == 'package_table':
-                pkg_row = getattr(event, 'row_key', None) or getattr(event, 'row_index', None)
-                try:
-                    if not hasattr(self, '_package_cursor_map'):
-                        self._package_cursor_map = {}
-                    if getattr(self, 'current_menu_key', None) is not None and pkg_row is not None:
-                        self._package_cursor_map[self.current_menu_key] = pkg_row
-                except Exception:
-                    pass
-                return
-        except Exception:
-            pass
 
     def on_key(self, event: events.Key):
         # Enter on highlighted menu -> populate subtopics
@@ -1138,12 +1139,26 @@ class ArcherTUIApp(App):
                         return False
 
                     # Attempt to validate sudo credentials without leaking output
-                    import subprocess as _sub
-                    proc = _sub.run(['sudo', '-S', '-v'], input=(pwd + '\n').encode('utf-8'), stdout=_sub.DEVNULL, stderr=_sub.DEVNULL)
-                    if proc.returncode == 0:
+                    # Use asyncio subprocess to avoid blocking the event loop
+                    proc = await asyncio.create_subprocess_exec(
+                        'sudo', '-S', '-v',
+                        stdin=asyncio.subprocess.PIPE,
+                        stdout=asyncio.subprocess.DEVNULL,
+                        stderr=asyncio.subprocess.DEVNULL,
+                    )
+                    try:
+                        # send password followed by newline
+                        await proc.communicate((pwd + '\n').encode('utf-8'))
+                    except Exception:
+                        # communicate may fail; ignore and continue to check returncode
+                        pass
+                    rc = await proc.wait()
+                    if rc == 0:
                         output.add_output("[green]Sudo credentials obtained.[/green]")
                         # Kick off a background refresher to keep the timestamp alive
                         try:
+                            # spawn background refresher; it's fine to use subprocess.Popen here
+                            import subprocess as _sub
                             _sub.Popen(['bash', '-c', "( while true; do sleep 60; sudo -n true 2>/dev/null || break; done ) &"], env=os.environ.copy())
                         except Exception:
                             pass
