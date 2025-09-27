@@ -116,8 +116,8 @@ ${NC}"
     fi
 
 else
-    echo -e "${RED}✗ Failed to install PostgreSQL${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install PostgreSQL${NC}"
+  archer_die "Failed to install PostgreSQL"
 fi
 
 wait_for_input

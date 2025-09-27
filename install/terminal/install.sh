@@ -172,7 +172,7 @@ main() {
             echo "  --file          Install file management tools only"
             echo "  --network       Install network tools only"
             echo ""
-            read -p "Choose installation type [essential/all/modern]: " choice
+                    archer_die "Unknown option: $1"
             case "$choice" in
                 essential|e) install_essential ;;
                 all|a) install_all ;;
@@ -183,13 +183,13 @@ main() {
                 text|t) install_text_tools ;;
                 file|f) install_file_tools ;;
                 network|n) install_network_tools ;;
-                *) echo -e "${RED}Invalid choice${NC}"; exit 1 ;;
+                *) echo -e "${RED}Invalid choice${NC}"; archer_die "Invalid choice passed to terminal install menu" ;;
             esac
             ;;
-        *)
+            *)
             echo -e "${RED}Unknown option: $1${NC}"
             echo "Use --essential, --all, --modern, or specific category options"
-            exit 1
+            archer_die "Unknown option: $1"
             ;;
     esac
 }

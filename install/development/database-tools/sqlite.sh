@@ -156,8 +156,8 @@ EOF
     echo -e "${CYAN}Install with: pacman -S sqlitebrowser sqlite3-tools${NC}"
 
 else
-    echo -e "${RED}✗ Failed to install SQLite${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install SQLite${NC}"
+  archer_die "Failed to install SQLite"
 fi
 
 wait_for_input

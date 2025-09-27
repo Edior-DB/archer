@@ -13,7 +13,7 @@ show_banner "Visual Studio Code Installation"
 # Check if AUR helper is available
 if ! check_aur_helper; then
     echo -e "${RED}AUR helper not found. Please run post-install.sh first.${NC}"
-    exit 1
+    archer_die "AUR helper not found"
 fi
 
 # Check for VSCodium conflict - if installed, use Flatpak for VS Code

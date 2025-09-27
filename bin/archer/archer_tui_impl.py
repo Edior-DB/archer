@@ -8,7 +8,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
 from textual.widgets import (
     Header, Footer, Tree, DataTable, RadioSet, RadioButton,
-    Checkbox, ProgressBar, Static, RichLog, Button, Select
+    Checkbox, ProgressBar, Static, RichLog, Button, Select, Input
 )
 from textual.widget import Widget
 from textual.reactive import reactive
@@ -352,9 +352,12 @@ class SudoModal(Container):
     def __init__(self, message: str = "This action requires elevated privileges. Request sudo now?"):
         super().__init__()
         self.message = message
+        self.password = None
 
     def compose(self) -> ComposeResult:
         yield Static(self.message, id="sudo_msg")
+        # Provide a password field so the modal can collect sudo password
+        yield Input(password=True, placeholder="Enter sudo password", id="sudo_input")
         with Horizontal():
             yield Button(label="Continue", id="sudo_confirm")
             yield Button(label="Cancel", id="sudo_cancel")
@@ -362,10 +365,47 @@ class SudoModal(Container):
     def on_button_pressed(self, event: Button.Pressed):
         """Set a simple attribute on the modal to indicate the user's choice."""
         btn = event.control
+        # Read the input widget value when confirming
+        try:
+            inp = self.query_one('#sudo_input', Input)
+            entered = getattr(inp, 'value', None) or None
+        except Exception:
+            entered = None
+
         if btn.id == 'sudo_confirm':
+            # Store password along with choice
+            self.password = entered
             self.choice = 'confirm'
         elif btn.id == 'sudo_cancel':
             self.choice = 'cancel'
+
+
+class FailureModal(Container):
+    """Modal to present fatal or non-fatal error messages from installers."""
+
+    def __init__(self, message: str, fatal: bool = False):
+        super().__init__()
+        self.message = message
+        self.fatal = fatal
+        self.choice = None
+
+    def compose(self) -> ComposeResult:
+        yield Static(self.message, id="failure_msg")
+        with Horizontal():
+            if self.fatal:
+                yield Button(label="Abort", id="fail_abort")
+                yield Button(label="Continue", id="fail_continue")
+            else:
+                yield Button(label="Close", id="fail_close")
+
+    def on_button_pressed(self, event: Button.Pressed):
+        btn = event.control
+        if getattr(btn, 'id', '') == 'fail_abort':
+            self.choice = 'abort'
+        elif getattr(btn, 'id', '') == 'fail_continue':
+            self.choice = 'continue'
+        else:
+            self.choice = 'close'
 
 
 class ArcherTUIApp(App):
@@ -388,6 +428,8 @@ class ArcherTUIApp(App):
         self.archer_menu = ArcherMenu(self.archer_ui)
         # modal state
         self._sudo_modal_active = False
+    # per-session sudo validation cache (True when we validated credentials)
+    self._sudo_validated = False
 
     def compose(self) -> ComposeResult:
         """Create the application layout"""
@@ -786,23 +828,23 @@ class ArcherTUIApp(App):
             # runs the helper in a subshell that sources the common functions.
             needs_sudo = any(x in command for x in ("sudo", "pacman", "pacstrap", "yay", "paru", "makepkg"))
             if needs_sudo:
+                # If we haven't validated sudo for this TUI session yet, prompt via the
+                # in-TUI modal so no terminal prompt appears. If validation fails, skip.
                 try:
-                    # Build a safe check command that sources common-funcs and
-                    # calls archer_request_sudo
-                    cli_path = os.path.join(self.archer_dir, 'install', 'system', 'common-funcs.sh')
-                    # Run synchronously to get result before starting the installer.
-                    # Use an argument list to avoid shell-quoting issues.
-                    import subprocess as _sub
-                    rc = _sub.run([
-                        'bash', '-c', f"source '{cli_path}' >/dev/null 2>&1; archer_request_sudo"
-                    ]).returncode
-                    if rc != 0:
-                        out = self.query_one("#output_panel", InstallationOutputPanel)
-                        out.add_output(f"[yellow]Skipping install because sudo credentials could not be obtained (exit {rc}).[/yellow]")
-                        progress_panel.hide_panel()
-                        return
+                    if not getattr(self, '_sudo_validated', False):
+                        ok = await self._show_sudo_modal_and_request()
+                        if not ok:
+                            out = self.query_one("#output_panel", InstallationOutputPanel)
+                            out.add_output("[yellow]Skipping install because sudo credentials could not be obtained or were cancelled.[/yellow]")
+                            progress_panel.hide_panel()
+                            return
                 except Exception:
-                    pass
+                    # Fallback: if modal fails for any reason, skip the install to avoid
+                    # falling back to a terminal prompt.
+                    out = self.query_one("#output_panel", InstallationOutputPanel)
+                    out.add_output("[red]Internal error requesting sudo credentials; skipping install.[/red]")
+                    progress_panel.hide_panel()
+                    return
 
             # Run child scripts with stdin redirected to DEVNULL so they cannot
             # block waiting for input from the TUI's stdin. Also ensure we
@@ -874,6 +916,34 @@ class ArcherTUIApp(App):
                         except Exception:
                             pass
 
+                # Detect error tokens and fatal markers
+                if stripped.startswith('ARCHER_ERROR:'):
+                    # Extract message and show non-fatal modal
+                    err_msg = stripped.split(':',1)[1].strip()
+                    try:
+                        # Show non-fatal failure modal (user can close)
+                        await self._show_failure_modal_and_handle(err_msg, fatal=False)
+                    except Exception:
+                        pass
+
+                if stripped.startswith('ARCHER_FATAL:') or 'ARCHER_FATAL=1' in stripped:
+                    # Fatal condition: show modal offering Abort/Continue
+                    err_msg = stripped.split(':',1)[1].strip() if ':' in stripped else 'Fatal error'
+                    try:
+                        choice = await self._show_failure_modal_and_handle(err_msg, fatal=True)
+                        if choice == 'abort':
+                            output.add_output('[red]Installation aborted by user after fatal error.[/red]')
+                            # Terminate the child process and stop streaming
+                            try:
+                                proc.kill()
+                            except Exception:
+                                pass
+                            progress_panel.hide_panel()
+                            return
+                        # otherwise continue streaming
+                    except Exception:
+                        pass
+
                 # Always write the output to the log panel
                 output.add_output(text)
 
@@ -892,6 +962,26 @@ class ArcherTUIApp(App):
             output.add_output(f"[red]Exception running {description}: {e}[/red]")
         finally:
             progress_panel.hide_panel()
+
+    async def _show_failure_modal_and_handle(self, message: str, fatal: bool = False) -> Optional[str]:
+        """Mount a FailureModal, wait for user choice, then remove it and return the choice."""
+        output = self.query_one("#output_panel", InstallationOutputPanel)
+        modal = FailureModal(message, fatal=fatal)
+        await self.mount(modal, after=self.query_one("#root_vertical"))
+
+        async def _wait_choice():
+            while True:
+                if getattr(modal, 'choice', None) is not None:
+                    return modal.choice
+                await asyncio.sleep(0.05)
+
+        choice = await _wait_choice()
+        try:
+            await modal.remove()
+        except Exception:
+            pass
+        # Map modal choices to returned value
+        return choice
 
     def _command_looks_like_needs_sudo(self, command: str) -> bool:
         """Heuristic: return True if the command or referenced scripts likely need sudo.
@@ -947,21 +1037,35 @@ class ArcherTUIApp(App):
             self._sudo_modal_active = False
 
             if choice == 'confirm':
-                # Attempt to source common-funcs.sh and call archer_request_sudo synchronously
+                # Validate the provided password using sudo -S -v.
                 try:
-                    cli_path = os.path.join(self.archer_dir, 'install', 'system', 'common-funcs.sh')
+                    pwd = getattr(modal, 'password', None)
+                    if pwd is None:
+                        # No password entered; fail
+                        output.add_output("[yellow]No sudo password entered.[/yellow]")
+                        return False
+
+                    # Attempt to validate sudo credentials without leaking output
                     import subprocess as _sub
-                    rc = _sub.run([
-                        'bash', '-c', f"source '{cli_path}' >/dev/null 2>&1; archer_request_sudo"
-                    ]).returncode
-                    if rc == 0:
+                    proc = _sub.run(['sudo', '-S', '-v'], input=(pwd + '\n').encode('utf-8'), stdout=_sub.DEVNULL, stderr=_sub.DEVNULL)
+                    if proc.returncode == 0:
                         output.add_output("[green]Sudo credentials obtained.[/green]")
+                        # Kick off a background refresher to keep the timestamp alive
+                        try:
+                            _sub.Popen(['bash', '-c', "( while true; do sleep 60; sudo -n true 2>/dev/null || break; done ) &"], env=os.environ.copy())
+                        except Exception:
+                            pass
+                        # Mark session as validated so subsequent installs don't re-prompt
+                        try:
+                            self._sudo_validated = True
+                        except Exception:
+                            pass
                         return True
                     else:
-                        output.add_output(f"[yellow]Could not obtain sudo credentials (exit {rc}).[/yellow]")
+                        output.add_output("[red]Invalid sudo password or cannot validate credentials.[/red]")
                         return False
                 except Exception as e:
-                    output.add_output(f"[red]Error requesting sudo: {e}[/red]")
+                    output.add_output(f"[red]Error validating sudo credentials: {e}[/red]")
                     return False
             else:
                 output.add_output("[dim]User cancelled sudo request.[/dim]")
@@ -1016,7 +1120,11 @@ class ArcherTUIApp(App):
             output.add_output(f"[red]Menu not found: {menu_key}[/red]")
             return
 
-        menu_dir = os.path.dirname(menu.get('path', ''))
+        # menu.get('path') is already the directory path recorded by ArcherMenu
+        menu_dir = menu.get('path', '')
+        # If 'path' points to a file (rare), prefer its directory
+        if os.path.isfile(menu_dir):
+            menu_dir = os.path.dirname(menu_dir)
         install_sh = os.path.join(menu_dir, 'install.sh')
         if not os.path.exists(install_sh):
             output.add_output(f"[red]install.sh not found for {menu_key}: {install_sh}[/red]")
@@ -1071,7 +1179,9 @@ class ArcherTUIApp(App):
             menu = menus.get(menu_key) if menu_key else None
             install_sh = None
             if menu:
-                menu_dir = os.path.dirname(menu.get('path', ''))
+                menu_dir = menu.get('path', '')
+                if os.path.isfile(menu_dir):
+                    menu_dir = os.path.dirname(menu_dir)
                 install_sh = os.path.join(menu_dir, 'install.sh')
 
             async def _maybe_request_and_install_all():

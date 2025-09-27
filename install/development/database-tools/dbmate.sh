@@ -192,8 +192,8 @@ EOF
     fi
 
 else
-    echo -e "${RED}✗ Failed to install DBmate${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install DBmate${NC}"
+  archer_die "Failed to install DBmate"
 fi
 
 wait_for_input

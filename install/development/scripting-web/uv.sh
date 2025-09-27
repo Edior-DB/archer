@@ -83,7 +83,7 @@ else
     echo -e "${RED}✗ Failed to install UV${NC}"
     echo -e "${YELLOW}You can try installing manually:${NC}"
     echo -e "${CYAN}  curl -LsSf https://astral.sh/uv/install.sh | sh${NC}"
-    exit 1
+    archer_die "Failed to install UV Python package manager"
 fi
 
 wait_for_input

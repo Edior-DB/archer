@@ -110,8 +110,8 @@ ${NC}"
     fi
 
 else
-    echo -e "${RED}✗ Failed to install MariaDB${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install MariaDB${NC}"
+  archer_die "Failed to install MariaDB"
 fi
 
 wait_for_input

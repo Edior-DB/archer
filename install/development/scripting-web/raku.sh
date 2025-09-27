@@ -168,8 +168,8 @@ else
     echo -e "${YELLOW}Raku installation can be complex. You can try:${NC}"
     echo -e "${CYAN}1. Manual installation from https://rakudo.org/downloads${NC}"
     echo -e "${CYAN}2. Using rakubrew: curl https://rakubrew.org/install-on-perl.sh | sh${NC}"
-    echo -e "${CYAN}3. Docker: docker run -it rakudo/star${NC}"
-    exit 1
+  echo -e "${CYAN}3. Docker: docker run -it rakudo/star${NC}"
+  archer_die "Failed to install Raku"
 fi
 
 wait_for_input

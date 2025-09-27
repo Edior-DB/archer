@@ -87,8 +87,8 @@ Documentation: https://docs.docker.com/
 ${NC}"
 
 else
-    echo -e "${RED}✗ Failed to install Docker${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install Docker${NC}"
+  archer_die "Failed to install Docker"
 fi
 
 wait_for_input

@@ -33,10 +33,10 @@ else
         aur_helper="paru"
     else
         echo -e "${YELLOW}AUR helper (yay or paru) not found. Installing yay first...${NC}"
-        if ! install_with_retries base-devel git; then
-            echo -e "${RED}✗ Failed to install build dependencies${NC}"
-            exit 1
-        fi
+    if ! install_with_retries base-devel git; then
+      echo -e "${RED}✗ Failed to install build dependencies${NC}"
+      archer_die "Failed to install build dependencies for DBeaver"
+    fi
 
         cd /tmp
         git clone https://aur.archlinux.org/yay.git
@@ -48,10 +48,10 @@ else
     echo -e "${BLUE}Installing DBeaver from AUR using $aur_helper...${NC}"
     if $aur_helper -S --noconfirm dbeaver; then
         echo -e "${GREEN}✓ DBeaver installed successfully from AUR!${NC}"
-    else
-        echo -e "${RED}✗ Failed to install DBeaver from AUR${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install DBeaver from AUR${NC}"
+    archer_die "Failed to install DBeaver from AUR"
+  fi
 fi
 
 # Check if DBeaver was installed successfully

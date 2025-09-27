@@ -1252,6 +1252,8 @@ archer_die() {
 archer_die_with_context() {
     local src_file="${1:-unknown}"
     local src_line="${2:-0}"
+    # Emit an explicit fatal token for the TUI to parse, then delegate
+    printf "ARCHER_FATAL: An unexpected error occurred at %s:%s\n" "$src_file" "$src_line" >&2 || true
     archer_die "An unexpected error occurred at ${src_file}:${src_line}"
 }
 

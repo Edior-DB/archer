@@ -36,9 +36,9 @@ if install_with_retries yay "${aur_packages[@]}"; then
     fi
 else
     echo -e "${RED}✗ Failed to install DMD v2 from AUR${NC}"
-    echo -e "${YELLOW}Note: DMD v2 requires AUR access. Install yay or paru first.${NC}"
-    echo -e "${YELLOW}Pacman only has DMD v1 which is outdated.${NC}"
-    exit 1
+  echo -e "${YELLOW}Note: DMD v2 requires AUR access. Install yay or paru first.${NC}"
+  echo -e "${YELLOW}Pacman only has DMD v1 which is outdated.${NC}"
+  archer_die "Failed to install DMD v2 from AUR"
 fi
 
     # Show versions

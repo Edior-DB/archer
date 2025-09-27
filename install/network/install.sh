@@ -173,7 +173,7 @@ main() {
         -c|--custom)
             echo "Interactive selection mode not yet implemented"
             echo "Use: $0 [component1] [component2] ..."
-            exit 1
+            archer_die "Interactive selection mode not implemented for network module"
             ;;
         "")
             show_help

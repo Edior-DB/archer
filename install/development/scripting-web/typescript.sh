@@ -314,11 +314,11 @@ EOF
     fi
 
 else
-    echo -e "${RED}✗ Failed to install TypeScript${NC}"
-    echo -e "${YELLOW}You can try manual installation:${NC}"
-    echo -e "  npm install -g typescript"
-    echo -e "  npm install -g ts-node"
-    exit 1
+  echo -e "${RED}✗ Failed to install TypeScript${NC}"
+  echo -e "${YELLOW}You can try manual installation:${NC}"
+  echo -e "  npm install -g typescript"
+  echo -e "  npm install -g ts-node"
+  archer_die "Failed to install TypeScript"
 fi
 
 wait_for_input

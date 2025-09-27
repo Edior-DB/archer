@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
         *)
             echo "Unknown option: $1"
             echo "Use --help for usage information"
-            exit 1
+            archer_die "Unknown option: $1"
             ;;
     esac
 done
@@ -44,7 +44,7 @@ show_banner "Development Tools Installation"
 # Check if AUR helper is available
 if ! check_aur_helper; then
     echo -e "${RED}AUR helper not found. Please run post-install.sh first.${NC}"
-    exit 1
+    archer_die "AUR helper not found. Please run post-install.sh first."
 fi
 
 # Programming Languages Selection

@@ -38,7 +38,7 @@ detect_gpus() {
 
     if [[ -z "$gpu_info" ]]; then
         echo -e "${RED}No GPU detected! This might be a headless system.${NC}"
-        exit 1
+        archer_die "No GPU detected"
     fi
 
     echo -e "${CYAN}Detected GPU(s):${NC}"

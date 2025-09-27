@@ -21,13 +21,13 @@ fi
 # Setup Mise and install Ruby
 setup_mise || {
     echo -e "${RED}Failed to setup Mise. Trying system package manager...${NC}"
-    if install_with_retries ruby; then
-        echo -e "${GREEN}✓ Ruby installed via system package manager!${NC}"
-        exit 0
-    else
-        echo -e "${RED}✗ Failed to install Ruby${NC}"
-        exit 1
-    fi
+  if install_with_retries ruby; then
+    echo -e "${GREEN}✓ Ruby installed via system package manager!${NC}"
+    exit 0
+  else
+    echo -e "${RED}✗ Failed to install Ruby${NC}"
+    archer_die "Failed to install Ruby via system package manager"
+  fi
 }
 
 echo -e "${BLUE}Installing Ruby via Mise...${NC}"
@@ -92,7 +92,7 @@ else
     echo -e "${YELLOW}Trying fallback installation via pacman...${NC}"
     if install_with_retries ruby; then
         echo -e "${GREEN}✓ Ruby installed via pacman${NC}"
-  else
+    else
     echo -e "${RED}✗ Failed to install Ruby${NC}"
     archer_die "Failed to install Ruby via all methods"
   fi

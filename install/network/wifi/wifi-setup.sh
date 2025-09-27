@@ -275,7 +275,7 @@ main() {
             "connect")
                 if [[ -z "$2" ]]; then
                     echo -e "${RED}Usage: $0 connect <SSID> [password]${NC}"
-                    exit 1
+                    archer_die "Usage: $0 connect <SSID> [password]"
                 fi
                 SSID="$2"
                 PASSWORD="$3"
@@ -298,7 +298,7 @@ main() {
             *)
                 echo -e "${RED}Unknown command: $1${NC}"
                 echo "Use '$0 help' for usage information."
-                exit 1
+                archer_die "Unknown command: $1"
                 ;;
         esac
     fi

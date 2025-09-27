@@ -15,6 +15,7 @@ YELLOW="\033[1;33m"
 CYAN="\033[36m"
 NC="\033[0m"
 
+show_logo() {
     echo -e "\033[0;34m"
     cat << "EOF"
 ██████╗ ███████╗██████╗ ███╗   ███╗ ██████╗ ███╗   ██╗██████╗ ██╗
@@ -119,7 +120,7 @@ main() {
             echo -e "  - $pkg"
         done
         echo -e "${YELLOW}Please download and place these resources in the appropriate local directory, then re-run this script.${NC}"
-        exit 1
+            archer_die "Missing required resources: ${still_missing[*]}"
     fi
 
     # Apply the layout using KDE's native API
@@ -131,14 +132,14 @@ main() {
             qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$(cat "$LAYOUT_PATH")"
         else
             echo -e "${RED}Neither qdbus nor qdbus6 found. Cannot apply layout via KDE API.${NC}"
-            exit 1
+            archer_die "Neither qdbus nor qdbus6 found. Cannot apply layout via KDE API."
         fi
         echo -e "${GREEN}Redmondi (Windows-like) layout applied using KDE API!${NC}"
         echo -e "${YELLOW}If you just applied a new layout, log out and back in for changes to take full effect.${NC}"
     else
         echo -e "${RED}Layout script $LAYOUT_PATH not found.${NC}"
         echo -e "${YELLOW}Please create a KDE Plasma layout script for Redmondi and place it in $LAYOUT_PATH.${NC}"
-        exit 1
+        archer_die "Layout script $LAYOUT_PATH not found."
     fi
 }
 

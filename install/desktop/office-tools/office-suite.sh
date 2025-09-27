@@ -28,7 +28,7 @@ EOF
 check_aur_helper() {
     if ! command -v yay &> /dev/null && ! command -v paru &> /dev/null; then
         echo -e "${RED}AUR helper not found. Please run post-install.sh first.${NC}"
-        exit 1
+        archer_die "AUR helper not found. Please run post-install.sh first."
     fi
 
     # Set AUR helper

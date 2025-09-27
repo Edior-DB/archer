@@ -14,7 +14,7 @@ show_banner "Code Editors & IDEs Installation"
 # Check if AUR helper is available
 if ! check_aur_helper; then
     echo -e "${RED}AUR helper not found. Please run post-install.sh first.${NC}"
-    exit 1
+    archer_die "AUR helper not found"
 fi
 
 # Visual Studio Code installation with extensions

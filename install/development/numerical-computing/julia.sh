@@ -45,10 +45,10 @@ else
         # Add to PATH
         export PATH="$HOME/.juliaup/bin:$PATH"
         echo 'export PATH="$HOME/.juliaup/bin:$PATH"' >> ~/.bashrc
-    else
-        echo -e "${RED}✗ Failed to install Julia${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install Julia${NC}"
+    archer_die "Failed to install Julia"
+  fi
 fi
 
 # Show version
