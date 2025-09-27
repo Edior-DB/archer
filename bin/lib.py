@@ -155,13 +155,9 @@ class ArcherMenu:
         menu_dir = Path(menu_meta.get('path', ''))
         # prefer listing scripts in the menu directory
         if menu_dir.exists() and menu_dir.is_dir():
-            # first, if install.sh exists, offer it as the primary option
-            install_sh = menu_dir / 'install.sh'
-            if install_sh.exists():
-                options.append({
-                    'display': 'Run install.sh',
-                    'target': str(install_sh.resolve()),
-                })
+            # Do not add a menu-level 'Run install.sh' option here. Install All
+            # should be invoked via the 'Install All' button instead. Only list
+            # individual scripts in this menu.
             # also enumerate other .sh scripts (non-install.sh)
             for p in sorted(menu_dir.glob('*.sh')):
                 if p.name == 'install.sh':

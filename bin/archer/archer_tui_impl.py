@@ -57,16 +57,36 @@ class DynamicPackageTable(Widget):
     def _refresh_table(self):
         """Refresh the table with current packages"""
         table = self.query_one("#package_table", DataTable)
-        table.clear(columns=True)
+        # Try to preserve cursor position across refreshes to avoid jumping to top
+        prev_cursor = None
+        try:
+            prev_cursor = getattr(table, 'cursor_row', None)
+            if prev_cursor is None:
+                coord = getattr(table, 'cursor_coordinate', None)
+                if coord and hasattr(coord, 'row'):
+                    prev_cursor = coord.row
+        except Exception:
+            prev_cursor = None
+
+        # Clear rows only; keep columns to avoid rebuilding and losing focus/cursor
+        try:
+            table.clear(columns=False)
+        except TypeError:
+            # Fallback if clear doesn't accept columns arg
+            table.clear()
 
         if not self._packages:
             # Create empty table with headers
             table.add_columns("Select", "Package")
             return
 
-        # Add columns
-        # Use larger checkbox glyphs for better visibility
-        table.add_columns("⟦ \u25A1 ⟧", "Package")  # Bigger visual box in Select column
+        # Ensure columns exist (only add if the table has no columns attribute)
+        try:
+            has_cols = bool(getattr(table, 'columns', None))
+        except Exception:
+            has_cols = False
+        if not has_cols:
+            table.add_columns("⟦ \u25A1 ⟧", "Package")  # Bigger visual box in Select column
 
         # Add rows
         for i, package in enumerate(self._packages):
@@ -77,6 +97,44 @@ class DynamicPackageTable(Widget):
             # Larger checked/unchecked glyphs for readability
             checkbox = "⟦ \u25A0 ⟧" if i in self._selected_package_indices else "⟦ \u25A1 ⟧"
             table.add_row(checkbox, display_name)
+
+        # Restore cursor position if possible
+        try:
+            if prev_cursor is not None and prev_cursor < len(self._packages):
+                setattr(table, 'cursor_row', prev_cursor)
+                table.focus()
+        except Exception:
+            pass
+
+    def on_key(self, event: events.Key):
+        """Toggle selection with spacebar without jumping the cursor."""
+        if event.key != 'space':
+            return
+
+        table = self.query_one("#package_table", DataTable)
+        # Determine current cursor row
+        row = None
+        try:
+            row = getattr(table, 'cursor_row', None)
+            if row is None:
+                coord = getattr(table, 'cursor_coordinate', None)
+                if coord and hasattr(coord, 'row'):
+                    row = coord.row
+        except Exception:
+            row = None
+
+        if row is None:
+            return
+
+        # Toggle selection state
+        if row in self._selected_package_indices:
+            self._selected_package_indices.remove(row)
+        else:
+            self._selected_package_indices.add(row)
+
+        # Refresh table but attempt to keep cursor where it is
+        self._refresh_table()
+        event.stop()
 
     def on_data_table_cell_selected(self, event: DataTable.CellSelected):
         """Handle cell selection (toggle checkbox when Select column is clicked)"""
