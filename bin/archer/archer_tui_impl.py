@@ -856,6 +856,39 @@ class ArcherTUIApp(App):
             # interactive confirmations in the TUI session.
             env.setdefault('AUTO_CONFIRM', '1')
 
+            # If we have a validated sudo password cached, create a temporary
+            # askpass helper and set SUDO_ASKPASS so child sudo calls can use it.
+            askpass_path = None
+            try:
+                if needs_sudo and getattr(self, '_sudo_validated', False) and getattr(self, '_sudo_password', None):
+                    import tempfile
+                    # Create a small, executable helper that prints the password
+                    tf = tempfile.NamedTemporaryFile(delete=False, prefix='archer_askpass_', mode='w')
+                    askpass_path = tf.name
+                    # write a POSIX shell script that echoes the password
+                    pw = getattr(self, '_sudo_password')
+                    tf.write('#!/bin/sh\n')
+                    # Use printf to avoid issues with echo flags
+                    safe_pw = pw.replace("'", "'\\''")
+                    tf.write("printf '%s' '" + safe_pw + "'\n")
+                    tf.close()
+                    try:
+                        os.chmod(askpass_path, 0o700)
+                    except Exception:
+                        pass
+                    # Ensure environment has SUDO_ASKPASS
+                    env['SUDO_ASKPASS'] = askpass_path
+                    # Also prefix the shell command to export the variable for shells
+                    # that inherit env only from the command string; we'll also ensure
+                    # to request askpass by adding -A to sudo occurrences.
+                    prefix = f"SUDO_ASKPASS='{askpass_path}' ";
+                    try:
+                        command = prefix + command.replace('sudo ', 'sudo -A ')
+                    except Exception:
+                        command = prefix + command
+            except Exception:
+                askpass_path = None
+
             proc = await asyncio.create_subprocess_shell(
                 command,
                 stdout=asyncio.subprocess.PIPE,
@@ -962,6 +995,24 @@ class ArcherTUIApp(App):
             output.add_output(f"[red]Exception running {description}: {e}[/red]")
         finally:
             progress_panel.hide_panel()
+            # Clean up temporary askpass helper if we created one
+            try:
+                if askpass_path and os.path.exists(askpass_path):
+                    try:
+                        os.remove(askpass_path)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            # Clear cached sudo password
+            try:
+                if getattr(self, '_sudo_password', None):
+                    try:
+                        self._sudo_password = None
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
     async def _show_failure_modal_and_handle(self, message: str, fatal: bool = False) -> Optional[str]:
         """Mount a FailureModal, wait for user choice, then remove it and return the choice."""
@@ -1058,6 +1109,12 @@ class ArcherTUIApp(App):
                         # Mark session as validated so subsequent installs don't re-prompt
                         try:
                             self._sudo_validated = True
+                            # Cache the validated sudo password for askpass helper
+                            try:
+                                # store transiently on the app instance; cleared on exit
+                                self._sudo_password = pwd
+                            except Exception:
+                                pass
                         except Exception:
                             pass
                         return True
