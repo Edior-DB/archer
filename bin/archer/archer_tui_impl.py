@@ -65,7 +65,8 @@ class DynamicPackageTable(Widget):
             return
 
         # Add columns
-        table.add_columns("☐", "Package")  # Use checkbox symbols for Select column
+        # Use larger checkbox glyphs for better visibility
+        table.add_columns("⟦ \u25A1 ⟧", "Package")  # Bigger visual box in Select column
 
         # Add rows
         for i, package in enumerate(self._packages):
@@ -73,7 +74,8 @@ class DynamicPackageTable(Widget):
             # If package is disabled, gray it out
             if package.get('disabled', False):
                 display_name = f"[dim]{display_name}[/dim]"
-            checkbox = "☑" if i in self._selected_package_indices else "☐"
+            # Larger checked/unchecked glyphs for readability
+            checkbox = "⟦ \u25A0 ⟧" if i in self._selected_package_indices else "⟦ \u25A1 ⟧"
             table.add_row(checkbox, display_name)
 
     def on_data_table_cell_selected(self, event: DataTable.CellSelected):
@@ -925,6 +927,17 @@ class ArcherTUIApp(App):
             target = opt.get('target')
             if not target:
                 output.add_output(f"[red]No target for {display}, skipping.[/red]")
+                continue
+
+            # If the selected target is a menu-level install.sh, skip it here.
+            # 'Install All' is the canonical way to run menu-level install.sh files.
+            try:
+                target_basename = os.path.basename(target)
+            except Exception:
+                target_basename = ''
+
+            if target_basename == 'install.sh':
+                output.add_output(f"[dim]Skipping menu-level install.sh for {display}; use Install All instead.[/dim]")
                 continue
 
             # Build command to run the script in the archer directory
