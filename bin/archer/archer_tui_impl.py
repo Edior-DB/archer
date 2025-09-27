@@ -639,7 +639,24 @@ class ArcherTUIApp(App):
             _, _, options = self.archer_menu.get_menu_options_filtered(menu_key)
             self.current_menu_key = menu_key
             self.current_options = options
+            # Remember package panel cursor positions per menu so we can restore
+            # the user's last position when they return to the same menu.
             package_panel.packages = options
+            try:
+                # Ensure mapping exists
+                if not hasattr(self, '_package_cursor_map'):
+                    self._package_cursor_map = {}
+                # Restore previous cursor for this menu if present
+                prev = self._package_cursor_map.get(menu_key)
+                if prev is not None:
+                    try:
+                        tbl = package_panel.query_one('#package_table', DataTable)
+                        setattr(tbl, 'cursor_row', prev)
+                        tbl.focus()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
             # Show package panel but keep subtopics visible so user can navigate back
             package_panel.visible = True
             subtopics_table.visible = True
@@ -663,6 +680,20 @@ class ArcherTUIApp(App):
         if row_identifier is None:
             row_identifier = getattr(event, "row_index", None)
         self._last_highlighted_subtopic_row = row_identifier
+        # Capture package table highlighting to remember per-menu cursor
+        try:
+            if event.control.id == 'package_table':
+                pkg_row = getattr(event, 'row_key', None) or getattr(event, 'row_index', None)
+                try:
+                    if not hasattr(self, '_package_cursor_map'):
+                        self._package_cursor_map = {}
+                    if getattr(self, 'current_menu_key', None) is not None and pkg_row is not None:
+                        self._package_cursor_map[self.current_menu_key] = pkg_row
+                except Exception:
+                    pass
+                return
+        except Exception:
+            pass
 
     def on_key(self, event: events.Key):
         # Enter on highlighted menu -> populate subtopics
