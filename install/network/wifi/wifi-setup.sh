@@ -24,7 +24,7 @@ ${BLUE}-------------------------------------------------------------------------
 root_check() {
     if [[ "$(id -u)" != "0" ]]; then
         echo -e "${RED}ERROR! This script must be run under the 'root' user!${NC}"
-        exit 1
+        archer_die "wifi-setup requires root privileges"
     fi
 }
 
@@ -60,7 +60,7 @@ check_wifi_adapter() {
     if [[ -z "$wifi_devices" ]]; then
         echo -e "${RED}ERROR! No WiFi adapter found!${NC}"
         echo -e "${YELLOW}Please check if your WiFi driver is installed properly.${NC}"
-        exit 1
+        archer_die "No WiFi adapter found"
     fi
 
     echo -e "${GREEN}WiFi adapter found: $wifi_devices${NC}"
@@ -232,7 +232,7 @@ interactive_menu() {
                 ;;
             6)
                 echo -e "${GREEN}Goodbye!${NC}"
-                exit 0
+                return 0
                 ;;
             *)
                 echo -e "${RED}Invalid option. Please try again.${NC}"

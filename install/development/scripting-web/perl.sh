@@ -15,7 +15,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install Perl via Mise?"; then
   echo -e "${YELLOW}Perl installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 # Check if Mise is installed
@@ -128,10 +128,10 @@ ${NC}"
     fi
 
 else
-    echo -e "${RED}✗ Failed to install Perl via Mise${NC}"
-    echo -e "${YELLOW}Note: System Perl is usually pre-installed on Linux systems${NC}"
-    echo -e "${YELLOW}You can check with: perl --version${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install Perl via Mise${NC}"
+  echo -e "${YELLOW}Note: System Perl is usually pre-installed on Linux systems${NC}"
+  echo -e "${YELLOW}You can check with: perl --version${NC}"
+  archer_die "Failed to install Perl via Mise"
 fi
 
 wait_for_input

@@ -39,10 +39,10 @@ else
     # Fallback to pacman (older but stable LDC)
     if install_with_retries ldc "${pacman_packages[@]}"; then
         echo -e "${GREEN}✓ LDC installed from pacman (may be older version)!${NC}"
-    else
-        echo -e "${RED}✗ Failed to install LDC from both AUR and pacman${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install LDC from both AUR and pacman${NC}"
+    archer_die "Failed to install LDC from AUR and pacman"
+  fi
 fi
 
     # Show versions

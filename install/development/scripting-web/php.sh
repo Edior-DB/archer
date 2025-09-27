@@ -21,13 +21,13 @@ fi
 # Setup Mise and install PHP
 setup_mise || {
     echo -e "${RED}Failed to setup Mise. Trying system package manager...${NC}"
-    if install_with_retries php; then
-        echo -e "${GREEN}✓ PHP installed via system package manager!${NC}"
-        exit 0
-    else
-        echo -e "${RED}✗ Failed to install PHP${NC}"
-        exit 1
-    fi
+  if install_with_retries php; then
+    echo -e "${GREEN}✓ PHP installed via system package manager!${NC}"
+    return 0
+  else
+    echo -e "${RED}✗ Failed to install PHP${NC}"
+    archer_die "Failed to install PHP via system package manager"
+  fi
 }
 
 echo -e "${BLUE}Installing PHP dependencies first...${NC}"
@@ -132,14 +132,14 @@ ${NC}"
 else
     echo -e "${RED}✗ Failed to install PHP via Mise${NC}"
     echo -e "${YELLOW}Trying system package manager...${NC}"
-    if install_with_retries php; then
-        echo -e "${GREEN}✓ PHP installed via system package manager!${NC}"
-    else
-        echo -e "${RED}✗ Failed to install PHP${NC}"
-        echo -e "${YELLOW}You can try installing PHP manually:${NC}"
-        echo -e "${CYAN}  sudo pacman -S php php-apache${NC}"
-        exit 1
-    fi
+  if install_with_retries php; then
+    echo -e "${GREEN}✓ PHP installed via system package manager!${NC}"
+  else
+    echo -e "${RED}✗ Failed to install PHP${NC}"
+    echo -e "${YELLOW}You can try installing PHP manually:${NC}"
+    echo -e "${CYAN}  sudo pacman -S php php-apache${NC}"
+    archer_die "Failed to install PHP via any available method"
+  fi
 fi
 
 echo ""

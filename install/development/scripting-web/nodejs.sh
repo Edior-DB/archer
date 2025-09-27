@@ -24,10 +24,10 @@ setup_mise || {
     if install_with_retries nodejs npm; then
         echo -e "${GREEN}✓ Node.js installed via system package manager!${NC}"
         exit 0
-    else
-        echo -e "${RED}✗ Failed to install Node.js${NC}"
-        exit 1
-    fi
+        else
+            echo -e "${RED}✗ Failed to install Node.js${NC}"
+            archer_die "Failed to install Node.js via fallback methods"
+        fi
 }
 
 echo -e "${BLUE}Installing Node.js via Mise...${NC}"
@@ -90,15 +90,15 @@ Version management with Mise:
   mise ls nodejs             # List available versions
 ${NC}"
 
-else
-    echo -e "${RED}✗ Failed to install Node.js via Mise${NC}"
-    echo -e "${YELLOW}Trying fallback installation via pacman...${NC}"
-    if install_with_retries nodejs npm; then
-        echo -e "${GREEN}✓ Node.js installed via pacman${NC}"
     else
-        echo -e "${RED}✗ Failed to install Node.js${NC}"
-        exit 1
+        echo -e "${RED}✗ Failed to install Node.js via Mise${NC}"
+        echo -e "${YELLOW}Trying fallback installation via pacman...${NC}"
+        if install_with_retries nodejs npm; then
+            echo -e "${GREEN}✓ Node.js installed via pacman${NC}"
+        else
+            echo -e "${RED}✗ Failed to install Node.js${NC}"
+            archer_die "Failed to install Node.js via pacman fallback"
+        fi
     fi
-fi
 
 wait_for_input

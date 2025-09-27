@@ -126,8 +126,8 @@ ${NC}"
     fi
 
 else
-    echo -e "${RED}✗ Failed to install Redis${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install Redis${NC}"
+  archer_die "Failed to install Redis"
 fi
 
 wait_for_input

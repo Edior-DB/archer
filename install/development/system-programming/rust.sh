@@ -15,7 +15,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install Rust via Mise?"; then
   echo -e "${YELLOW}Rust installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 # Check if Mise is installed
@@ -88,10 +88,10 @@ else
         source ~/.cargo/env
         echo -e "${GREEN}✓ Rust installed via rustup${NC}"
         echo 'source ~/.cargo/env' >> ~/.bashrc
-    else
-        echo -e "${RED}✗ Failed to install Rust${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install Rust${NC}"
+    archer_die "Failed to install Rust via rustup fallback"
+  fi
 fi
 
 wait_for_input

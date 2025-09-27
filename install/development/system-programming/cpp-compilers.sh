@@ -20,7 +20,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install C/C++ compilers and build tools?"; then
   echo -e "${YELLOW}C/C++ toolchain installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 echo -e "${BLUE}Installing C/C++ development environment...${NC}"
@@ -87,8 +87,8 @@ Documentation:
 ${NC}"
 
 else
-    echo -e "${RED}✗ Failed to install C/C++ compilers${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install C/C++ compilers${NC}"
+  archer_die "Failed to install C/C++ compilers"
 fi
 
 wait_for_input

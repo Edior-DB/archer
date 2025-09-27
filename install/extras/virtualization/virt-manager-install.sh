@@ -25,22 +25,22 @@ if pacman -Q iptables &>/dev/null; then
 			echo -e "${YELLOW}Installing without ebtables... Some networking features may not work.${NC}"
 			if ! sudo pacman -S --noconfirm virt-manager qemu vde2 dnsmasq bridge-utils openbsd-netcat; then
 				echo -e "${RED}Failed to install virt-manager or dependencies.${NC}"
-				exit 1
+				archer_die "Failed to install virt-manager dependencies"
 			fi
 		elif [[ "$choice" == *Remove* ]]; then
 			echo -e "${RED}Please remove iptables manually with 'sudo pacman -Rs iptables' and rerun this script.${NC}"
 			echo -e "${RED}WARNING: Removing iptables might break iproute2, base, netctl, and networkmanager.${NC}"
-			exit 1
+			archer_die "iptables conflict prevents virt-manager installation"
 		else
 			echo -e "${YELLOW}Exiting. Wait for Arch Linux to resolve the iptables/ebtables conflict.${NC}"
-			exit 1
+			archer_die "Deferred due to iptables/ebtables conflict"
 		fi
 	else
 		# iptables is present but using nft backend, proceed as normal
     echo -e "${YELLOW}Installing everything${NC}"
 		if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
 			echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
-			exit 1
+			archer_die "Failed to install virt-manager dependencies"
 		fi
 	fi
 else
@@ -48,7 +48,7 @@ else
   echo -e "${YELLOW}Installing everything${NC}"
 	if ! sudo pacman -S --noconfirm virt-manager qemu vde2 ebtables dnsmasq bridge-utils openbsd-netcat; then
 		echo -e "\033[31mFailed to install virt-manager or dependencies. Please resolve any package conflicts manually.\033[0m"
-		exit 1
+		archer_die "Failed to install virt-manager dependencies"
 	fi
 fi
 

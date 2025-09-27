@@ -15,7 +15,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install Nim via Mise?"; then
   echo -e "${YELLOW}Nim installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 # Check if Mise is installed
@@ -96,10 +96,10 @@ else
     echo -e "${YELLOW}Trying fallback installation via pacman...${NC}"
     if install_with_retries nim; then
         echo -e "${GREEN}✓ Nim installed via pacman${NC}"
-    else
-        echo -e "${RED}✗ Failed to install Nim${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install Nim${NC}"
+    archer_die "Failed to install Nim via pacman fallback"
+  fi
 fi
 
 wait_for_input

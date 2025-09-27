@@ -29,21 +29,21 @@ if ! command -v node &> /dev/null; then
                 mise install node@latest
                 mise use -g node@latest
                 eval "$(mise activate bash)" 2>/dev/null || true
-            else
-                echo -e "${RED}Please install Node.js manually first.${NC}"
-                exit 1
-            fi
+      else
+        echo -e "${RED}Please install Node.js manually first.${NC}"
+        archer_die "Node.js required for TypeScript installation but not found"
+      fi
         fi
-    else
-        echo -e "${YELLOW}TypeScript installation cancelled.${NC}"
-        exit 0
-    fi
+  else
+    echo -e "${YELLOW}TypeScript installation cancelled.${NC}"
+    return 0
+  fi
 fi
 
 # Verify Node.js and npm are available
 if ! command -v npm &> /dev/null; then
-    echo -e "${RED}npm not found. Please ensure Node.js is properly installed.${NC}"
-    exit 1
+  echo -e "${RED}npm not found. Please ensure Node.js is properly installed.${NC}"
+  archer_die "npm not found; Node.js installation appears incomplete"
 fi
 
 if ! archer_confirm_or_default "Install TypeScript globally via npm?"; then

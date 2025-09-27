@@ -13,7 +13,7 @@ show_banner "Gaming Setup for Arch Linux"
 # Check if AUR helper is available
 if ! check_aur_helper; then
     echo -e "${RED}AUR helper not found. Please run post-install.sh first.${NC}"
-    exit 1
+    archer_die "AUR helper missing; run post-install.sh before gaming setup"
 fi
 
 # Install gaming platforms

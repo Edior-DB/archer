@@ -15,7 +15,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install Zig via Mise?"; then
   echo -e "${YELLOW}Zig installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 # Check if Mise is installed
@@ -102,10 +102,10 @@ else
     echo -e "${YELLOW}Trying fallback installation via pacman...${NC}"
     if install_with_retries zig; then
         echo -e "${GREEN}✓ Zig installed via pacman${NC}"
-    else
-        echo -e "${RED}✗ Failed to install Zig${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install Zig${NC}"
+    archer_die "Failed to install Zig via all methods"
+  fi
 fi
 
 wait_for_input

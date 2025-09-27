@@ -27,10 +27,10 @@ elif command -v paru &> /dev/null; then
     aur_helper="paru"
 else
     echo -e "${YELLOW}AUR helper (yay or paru) not found. Installing yay first...${NC}"
-    if ! install_with_retries base-devel git; then
-        echo -e "${RED}✗ Failed to install build dependencies${NC}"
-        exit 1
-    fi
+  if ! install_with_retries base-devel git; then
+    echo -e "${RED}✗ Failed to install build dependencies${NC}"
+    archer_die "Failed to install build dependencies for AUR helper"
+  fi
 
     cd /tmp
     git clone https://aur.archlinux.org/yay.git
@@ -171,10 +171,10 @@ ${NC}"
         echo -e "${YELLOW}Try starting manually: sudo systemctl start mongodb${NC}"
     fi
 
-else
-    echo -e "${RED}✗ Failed to install MongoDB${NC}"
-    echo -e "${YELLOW}You may need to install it manually from the AUR${NC}"
-    exit 1
+  else
+  echo -e "${RED}✗ Failed to install MongoDB${NC}"
+  echo -e "${YELLOW}You may need to install it manually from the AUR${NC}"
+  archer_die "Failed to install MongoDB via AUR helper"
 fi
 
 wait_for_input

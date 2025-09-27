@@ -15,7 +15,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install V language?"; then
   echo -e "${YELLOW}V language installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 # Install dependencies
@@ -27,8 +27,8 @@ dependencies=(
 )
 
 if ! install_with_retries "${dependencies[@]}"; then
-    echo -e "${RED}✗ Failed to install dependencies${NC}"
-    exit 1
+  echo -e "${RED}✗ Failed to install dependencies${NC}"
+  archer_die "Failed to install build dependencies for V language"
 fi
 
 echo -e "${BLUE}Cloning and building V language...${NC}"
@@ -49,20 +49,20 @@ if sudo git clone --depth=1 https://github.com/vlang/v /opt/vlang; then
         echo -e "${BLUE}Installing V to /usr/local/bin...${NC}"
         if sudo v symlink; then
             echo -e "${GREEN}✓ V language installed successfully!${NC}"
-        else
-            echo -e "${RED}✗ Failed to install V binary${NC}"
-            cd ~ && rm -rf "$TEMP_DIR"
-            exit 1
-        fi
     else
-        echo -e "${RED}✗ Failed to build V compiler${NC}"
-        cd ~ && rm -rf "$TEMP_DIR"
-        exit 1
+      echo -e "${RED}✗ Failed to install V binary${NC}"
+      cd ~ && rm -rf "$TEMP_DIR"
+      archer_die "Failed to install V binary"
     fi
-else
-    echo -e "${RED}✗ Failed to clone V repository${NC}"
+    else
+    echo -e "${RED}✗ Failed to build V compiler${NC}"
     cd ~ && rm -rf "$TEMP_DIR"
-    exit 1
+    archer_die "Failed to build V compiler"
+  fi
+else
+  echo -e "${RED}✗ Failed to clone V repository${NC}"
+  cd ~ && rm -rf "$TEMP_DIR"
+  archer_die "Failed to clone V repository"
 fi
 
 # Cleanup

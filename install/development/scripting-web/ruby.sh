@@ -15,7 +15,7 @@ echo ""
 
 if ! archer_confirm_or_default "Install Ruby via Mise?"; then
   echo -e "${YELLOW}Ruby installation cancelled.${NC}"
-  exit 0
+  return 0
 fi
 
 # Setup Mise and install Ruby
@@ -92,10 +92,10 @@ else
     echo -e "${YELLOW}Trying fallback installation via pacman...${NC}"
     if install_with_retries ruby; then
         echo -e "${GREEN}✓ Ruby installed via pacman${NC}"
-    else
-        echo -e "${RED}✗ Failed to install Ruby${NC}"
-        exit 1
-    fi
+  else
+    echo -e "${RED}✗ Failed to install Ruby${NC}"
+    archer_die "Failed to install Ruby via all methods"
+  fi
 fi
 
 wait_for_input

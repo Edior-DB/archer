@@ -2,6 +2,7 @@
 *.memo
 *.code-workspace
 .ai-context
+test*
 notes/*
 
 # Ignore private development notes

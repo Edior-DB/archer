@@ -5,7 +5,7 @@
 # Source this file in other scripts: source "$(dirname "${BASH_SOURCE[0]}")/../system/common-funcs.sh"
 
 # Prevent multiple sourcing
-if [[ "${ARCHER_COMMON_FUNCS_LOADED}" == "1" ]]; then
+if [[ "${ARCHER_COMMON_FUNCS_LOADED:-}" == "1" ]]; then
     return 0
 fi
 ARCHER_COMMON_FUNCS_LOADED=1
@@ -1218,3 +1218,52 @@ cleanup() {
 trap cleanup EXIT
 
 echo -e "${CYAN}Common functions library loaded${NC}"
+
+# Centralized error helper for TUI-friendly reporting
+# Prints a token the TUI can parse and then either exits or returns.
+# If the current script is being sourced, archer_die will set
+# ARCHER_FATAL=1 and return 1 so the caller can decide how to proceed.
+# If the script was executed directly, archer_die will exit 1 so the
+# process terminates as before.
+# Usage: archer_die "message..."
+archer_die() {
+    local msg="$*"
+    # Ensure we always emit the token on stderr to be robust
+    printf "ARCHER_ERROR: %s\n" "$msg" >&2 || true
+    # Also log for non-TUI flows
+    log_error "$msg" || true
+
+    # Determine if this file is being sourced or executed. If BASH_SOURCE[0]
+    # is not the same as $0 then we're being sourced.
+    if [ "${BASH_SOURCE[0]:-}" != "${0:-}" ]; then
+        # Mark a global fatal flag so callers (e.g., a menu runner) can detect
+        # that a fatal error happened and optionally show a modal or terminate
+        # the overall installer gracefully.
+        ARCHER_FATAL=1
+        # Return non-zero so that scripts sourcing this can use 'return' logic.
+        return 1
+    else
+        # Executed directly — exit hard as historical behavior
+        exit 1
+    fi
+}
+
+# Helper used by the ERR trap so we can include context (file:line).
+archer_die_with_context() {
+    local src_file="${1:-unknown}"
+    local src_line="${2:-0}"
+    archer_die "An unexpected error occurred at ${src_file}:${src_line}"
+}
+
+# Optional ERR trap helpers. Scripts may opt-in to enable the trap so that
+# uncaught errors surface through archer_die. This is intentionally opt-in to
+# avoid surprising existing scripts that expect different error behavior.
+archer_enable_error_trap() {
+    # Trap runs in the context of the current shell; capture BASH_SOURCE and LINENO
+    # when the ERR happens by using a small function wrapper.
+    trap 'archer_die_with_context "${BASH_SOURCE[1]:-unknown}" "${LINENO:-0}"' ERR
+}
+
+archer_disable_error_trap() {
+    trap - ERR
+}
